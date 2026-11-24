@@ -1,14 +1,25 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import {
   Volume2, Flame, Trophy, Lock, CheckCircle2, XCircle,
   Share2, Sparkles, BookOpen, BrainCircuit, ArrowRight,
-  RotateCcw, Crown, Check, Copy, X, Loader2, Mail, LogOut, User
+  RotateCcw, Crown, Check, Copy, X, Loader2, LogOut, User, ShieldCheck, FileText
 } from 'lucide-react';
+import { PRIVACY_TEXT, OFFER_TEXT } from './legal';
 
 const SUPABASE_URL = 'https://vdjduptyloghojeqaglw.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_L9Gw77mlbgOdzYt4-a6nEA_ZqeNxiui';
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const FREE_WORDS_LIMIT = 5;
+
+const VOICES = [
+  { id: 'random', label: '🎲 Різні голоси' },
+  { id: 'de-DE-KatjaNeural', label: '👩 Katja' },
+  { id: 'de-DE-ConradNeural', label: '👨 Conrad' },
+  { id: 'de-DE-AmalaNeural', label: '👩 Amala' },
+  { id: 'de-DE-KillianNeural', label: '👨 Killian' }
+];
 
 const FALLBACK_DATA = [
   { id: 1, level: 'A1', category: 'colloquial', article: 'der', word: 'Kumpel', plural: 'die Kumpels', translation: 'приятель, друзяка', example: 'Mein Kumpel kommt heute Abend vorbei.', exampleUa: 'Мій приятель завітає сьогодні ввечері.' },
@@ -36,16 +47,25 @@ export default function App() {
   const [vocabulary, setVocabulary] = useState(FALLBACK_DATA);
   const [loading, setLoading] = useState(true);
 
-  // Стан користувача та авторизації
   const [user, setUser] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState('login');
   const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [agreedTerms, setAgreedTerms] = useState(true);
   const [authLoading, setAuthLoading] = useState(false);
-  const [authSent, setAuthSent] = useState(false);
+  const [authMessage, setAuthMessage] = useState('');
   const [authError, setAuthError] = useState('');
+
+  const [legalModal, setLegalModal] = useState(null);
 
   const [selectedLevel, setSelectedLevel] = useState('A1');
   const [selectedCategory, setSelectedCategory] = useState('colloquial');
+  const [selectedVoice, setSelectedVoice] = useState('random');
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const audioRef = useRef(null);
+
   const [mode, setMode] = useState('cards');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
@@ -64,7 +84,6 @@ export default function App() {
   const [quizAnswer, setQuizAnswer] = useState(null);
   const [quizOptions, setQuizOptions] = useState([]);
 
-  // Завантаження слів із Supabase
   useEffect(() => {
     async function fetchWords() {
       setLoading(true);
@@ -74,7 +93,7 @@ export default function App() {
         .order('id', { ascending: true });
 
       if (!error && data && data.length > 0) {
-        const formatted = data.map((row) => ({
+        setVocabulary(data.map((row) => ({
           id: row.id,
           level: row.level,
           category: row.category,
@@ -84,32 +103,23 @@ export default function App() {
           translation: row.translation,
           example: row.example,
           exampleUa: row.example_ua
-        }));
-        setVocabulary(formatted);
+        })));
       }
       setLoading(false);
     }
     fetchWords();
   }, []);
 
-  // Завантаження або створення профілю в базі даних при вході
   const syncUserProfile = async (authUser) => {
     if (!authUser) return;
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', authUser.id)
-      .single();
+    const { data: profile } = await supabase.from('profiles').select('*').eq('id', authUser.id).single();
 
     if (profile) {
       const mergedXp = Math.max(profile.xp || 0, Number(localStorage.getItem('dmd_xp')) || 0);
       const localLearned = JSON.parse(localStorage.getItem('dmd_learned') || '[]');
       const dbLearned = Array.isArray(profile.learned_ids) ? profile.learned_ids : [];
       const mergedLearned = Array.from(new Set([...dbLearned, ...localLearned]));
-
-      const proActive = Boolean(
-        profile.is_pro && (!profile.pro_until || new Date(profile.pro_until) > new Date())
-      );
+      const proActive = Boolean(profile.is_pro && (!profile.pro_until || new Date(profile.pro_until) > new Date()));
 
       setXp(mergedXp);
       setStreak(Math.max(profile.streak || 1, Number(localStorage.getItem('dmd_streak')) || 1));
@@ -122,22 +132,17 @@ export default function App() {
         updated_at: new Date().toISOString()
       }).eq('id', authUser.id);
     } else {
-      const initialXp = Number(localStorage.getItem('dmd_xp')) || 0;
-      const initialStreak = Number(localStorage.getItem('dmd_streak')) || 1;
-      const initialLearned = JSON.parse(localStorage.getItem('dmd_learned') || '[]');
-
       await supabase.from('profiles').insert({
         id: authUser.id,
         email: authUser.email,
-        xp: initialXp,
-        streak: initialStreak,
-        learned_ids: initialLearned,
+        xp: Number(localStorage.getItem('dmd_xp')) || 0,
+        streak: Number(localStorage.getItem('dmd_streak')) || 1,
+        learned_ids: JSON.parse(localStorage.getItem('dmd_learned') || '[]'),
         is_pro: false
       });
     }
   };
 
-  // Відстеження сесії користувача
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       const currentUser = session?.user ?? null;
@@ -145,26 +150,22 @@ export default function App() {
       if (currentUser) syncUserProfile(currentUser);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
-      if (currentUser) syncUserProfile(currentUser);
+      if (event === 'PASSWORD_RECOVERY') {
+        setAuthMode('update_password');
+        setAuthError('');
+        setAuthMessage('');
+        setShowAuthModal(true);
+      } else if (currentUser) {
+        syncUserProfile(currentUser);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  // Ініціалізація голосів озвучки
-  useEffect(() => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.getVoices();
-      window.speechSynthesis.onvoiceschanged = () => {
-        window.speechSynthesis.getVoices();
-      };
-    }
-  }, []);
-
-  // Збереження прогресу локально та в хмару
   useEffect(() => {
     localStorage.setItem('dmd_xp', xp);
     localStorage.setItem('dmd_streak', streak);
@@ -172,38 +173,88 @@ export default function App() {
     localStorage.setItem('dmd_pro', isPro);
 
     if (user) {
-      supabase
-        .from('profiles')
-        .update({
-          xp,
-          streak,
-          learned_ids: learnedIds,
-          is_pro: isPro,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', user.id)
-        .then(() => {});
+      supabase.from('profiles').update({
+        xp, streak, learned_ids: learnedIds, is_pro: isPro, updated_at: new Date().toISOString()
+      }).eq('id', user.id).then(() => {});
     }
   }, [xp, streak, learnedIds, isPro, user]);
 
-  const handleSendLoginLink = async (e) => {
-    e.preventDefault();
-    if (!authEmail.trim()) return;
-    setAuthLoading(true);
-    setAuthError('');
+  // Жива нейромережева озвучка з вибором голосу та резервом
+  const speakGerman = (text) => {
+    const cleanText = (text || '').trim();
+    if (!cleanText) return;
 
-    const { error } = await supabase.auth.signInWithOtp({
-      email: authEmail.trim(),
-      options: {
-        emailRedirectTo: window.location.origin
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+
+    const neuralVoices = ['de-DE-KatjaNeural', 'de-DE-ConradNeural', 'de-DE-AmalaNeural', 'de-DE-KillianNeural'];
+    const chosenVoice = selectedVoice === 'random'
+      ? neuralVoices[Math.floor(Math.random() * neuralVoices.length)]
+      : selectedVoice;
+
+    setIsSpeaking(true);
+    const url = `https://tts.travisvn.com/api/tts?t=${encodeURIComponent(cleanText)}&v=${encodeURIComponent(chosenVoice)}&r=-5%25`;
+    const audio = new Audio(url);
+    audioRef.current = audio;
+
+    audio.onended = () => setIsSpeaking(false);
+    audio.onerror = () => {
+      setIsSpeaking(false);
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(cleanText);
+        u.lang = 'de-DE';
+        u.rate = 0.92;
+        window.speechSynthesis.speak(u);
       }
-    });
+    };
 
-    setAuthLoading(false);
-    if (error) {
-      setAuthError('Не вдалося надіслати лист. Перевір правильність пошти.');
-    } else {
-      setAuthSent(true);
+    audio.play().catch(() => {
+      setIsSpeaking(false);
+    });
+  };
+
+  const openAuth = (targetMode = 'login') => {
+    setAuthMode(targetMode);
+    setAuthError('');
+    setAuthMessage('');
+    setShowAuthModal(true);
+  };
+
+  const handleAuthSubmit = async (e) => {
+    e.preventDefault();
+    setAuthError('');
+    setAuthMessage('');
+    setAuthLoading(true);
+
+    try {
+      if (authMode === 'login') {
+        const { error } = await supabase.auth.signInWithPassword({ email: authEmail.trim(), password: authPassword });
+        if (error) setAuthError('Невірна пошта або пароль. Натисни «Забули пароль?», щоб задати новий.');
+        else { setShowAuthModal(false); setAuthPassword(''); }
+      } else if (authMode === 'register') {
+        if (!agreedTerms) { setAuthError('Підтверди згоду з Політикою конфіденційності та Офертою.'); return; }
+        if (authPassword.length < 6) { setAuthError('Пароль має містити щонайменше 6 символів.'); return; }
+        const { data, error } = await supabase.auth.signUp({
+          email: authEmail.trim(), password: authPassword, options: { emailRedirectTo: window.location.origin }
+        });
+        if (error) setAuthError(error.message || 'Помилка реєстрації.');
+        else if (data?.session) { setShowAuthModal(false); setAuthPassword(''); }
+        else setAuthMessage(`Лист підтвердження надіслано на ${authEmail}. Перейди за посиланням у листі.`);
+      } else if (authMode === 'forgot') {
+        const { error } = await supabase.auth.resetPasswordForEmail(authEmail.trim(), { redirectTo: window.location.origin });
+        if (error) setAuthError('Не вдалося надіслати лист. Перевір пошту.');
+        else setAuthMessage(`Посилання для відновлення пароля надіслано на ${authEmail}.`);
+      } else if (authMode === 'update_password') {
+        if (newPassword.length < 6) { setAuthError('Мінімум 6 символів.'); return; }
+        const { error } = await supabase.auth.updateUser({ password: newPassword });
+        if (error) setAuthError('Не вдалося оновити пароль.');
+        else { setAuthMessage('Пароль успішно оновлено!'); setNewPassword(''); setTimeout(() => setShowAuthModal(false), 1500); }
+      }
+    } finally {
+      setAuthLoading(false);
     }
   };
 
@@ -228,10 +279,7 @@ export default function App() {
   };
 
   const handleSelectModule = (lvl, cat) => {
-    if (isLocked(lvl, cat)) {
-      setShowPaywall(true);
-      return;
-    }
+    if (isLocked(lvl, cat)) { setShowPaywall(true); return; }
     setSelectedLevel(lvl);
     setSelectedCategory(cat);
     setCurrentIndex(0);
@@ -239,49 +287,34 @@ export default function App() {
     setQuizAnswer(null);
   };
 
-  const filteredWords = useMemo(() => {
-    const list = vocabulary.filter(
-      (item) => item.level === selectedLevel && item.category === selectedCategory
-    );
+  const allCategoryWords = useMemo(() => {
+    const list = vocabulary.filter((item) => item.level === selectedLevel && item.category === selectedCategory);
     return list.length > 0 ? list : vocabulary;
   }, [vocabulary, selectedLevel, selectedCategory]);
+
+  const filteredWords = useMemo(() => {
+    return isPro ? allCategoryWords : allCategoryWords.slice(0, FREE_WORDS_LIMIT);
+  }, [allCategoryWords, isPro]);
+
+  const goToNextWord = () => {
+    const nextIndex = currentIndex + 1;
+    if (!isPro && nextIndex >= filteredWords.length && allCategoryWords.length > FREE_WORDS_LIMIT) {
+      setShowPaywall(true);
+      return;
+    }
+    setIsFlipped(false);
+    setCurrentIndex(nextIndex % filteredWords.length);
+  };
 
   const currentWord = filteredWords[currentIndex] || filteredWords[0];
   const isCurrentLearned = currentWord ? learnedIds.includes(currentWord.id) : false;
 
   useEffect(() => {
     if (!currentWord) return;
-    const others = vocabulary
-      .filter((w) => w.id !== currentWord.id)
-      .sort(() => 0.5 - Math.random())
-      .slice(0, 3);
-    const options = [...others, currentWord].sort(() => 0.5 - Math.random());
-    setQuizOptions(options);
+    const others = vocabulary.filter((w) => w.id !== currentWord.id).sort(() => 0.5 - Math.random()).slice(0, 3);
+    setQuizOptions([...others, currentWord].sort(() => 0.5 - Math.random()));
     setQuizAnswer(null);
   }, [currentWord, mode, vocabulary]);
-
-  const speakGerman = (text) => {
-    if (!text || !('speechSynthesis' in window)) return;
-    const synth = window.speechSynthesis;
-    if (synth.speaking) {
-      synth.cancel();
-    }
-    synth.resume();
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'de-DE';
-    utterance.rate = 0.92;
-
-    const voices = synth.getVoices();
-    const germanVoice =
-      voices.find((v) => v.lang === 'de-DE') ||
-      voices.find((v) => v.lang.startsWith('de'));
-    if (germanVoice) {
-      utterance.voice = germanVoice;
-    }
-
-    synth.speak(utterance);
-  };
 
   const getArticleColor = (article) => {
     if (article === 'der') return 'text-blue-600 bg-blue-50 border-blue-200';
@@ -297,8 +330,7 @@ export default function App() {
     } else {
       addXp(5);
     }
-    setIsFlipped(false);
-    setCurrentIndex((prev) => (prev + 1) % filteredWords.length);
+    goToNextWord();
   };
 
   const handleQuizChoice = (option) => {
@@ -306,9 +338,7 @@ export default function App() {
     setQuizAnswer(option.id);
     if (option.id === currentWord.id) {
       addXp(20);
-      if (!learnedIds.includes(currentWord.id)) {
-        setLearnedIds((prev) => [...prev, currentWord.id]);
-      }
+      if (!learnedIds.includes(currentWord.id)) setLearnedIds((prev) => [...prev, currentWord.id]);
       speakGerman(currentWord.word);
     }
   };
@@ -320,7 +350,7 @@ export default function App() {
     return 'Легенда deutsch mit Dmytro';
   };
 
-  const shareText = `🇩🇪 Мій прогрес у deutsch mit Dmytro:\n✨ ${xp} XP балів\n📚 Вивчено слів: ${learnedIds.length}\n🔥 Серія: ${streak} дн.\nВивчай німецьку A1–B2 за категоріями!`;
+  const shareText = `🇩🇪 Мій прогрес у deutsch mit Dmytro:\n✨ ${xp} XP балів\n📚 Вивчено слів: ${learnedIds.length}\n🔥 Серія: ${streak} дн.`;
 
   const handleCopyShare = () => {
     navigator.clipboard.writeText(shareText);
@@ -329,7 +359,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-16">
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col">
       <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
         <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2.5 shrink-0">
@@ -340,15 +370,13 @@ export default function App() {
               <h1 className="font-bold text-sm sm:text-lg leading-tight tracking-tight">
                 deutsch mit <span className="text-amber-600">Dmytro</span>
               </h1>
-              <p className="text-[11px] text-slate-500 hidden sm:block">
-                База слів: {vocabulary.length} шт. • Рівні A1–B2
-              </p>
+              <p className="text-[11px] text-slate-500 hidden sm:block">База слів: {vocabulary.length} шт. • A1–B2</p>
             </div>
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-2.5">
             <div className="relative flex items-center gap-1 bg-amber-50 text-amber-700 px-2.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold border border-amber-200">
-              <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-500" />
+              <Trophy className="w-3.5 h-3.5 text-amber-500" />
               <span>{xp}</span>
               {xpGain && (
                 <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm whitespace-nowrap">
@@ -362,44 +390,26 @@ export default function App() {
               <span>{streak}</span>
             </div>
 
-            <button
-              onClick={() => setShowShareModal(true)}
-              className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
-              title="Поділитися результатом"
-            >
+            <button onClick={() => setShowShareModal(true)} className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
               <Share2 className="w-4 h-4" />
             </button>
 
             {!user ? (
-              <button
-                onClick={() => {
-                  setAuthSent(false);
-                  setAuthError('');
-                  setShowAuthModal(true);
-                }}
-                className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold transition"
-              >
+              <button onClick={() => openAuth('login')} className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold transition">
                 <User className="w-3.5 h-3.5" />
                 <span>Увійти</span>
               </button>
             ) : (
               <div className="flex items-center gap-1.5 bg-slate-100 px-2.5 py-1 rounded-full text-xs font-medium text-slate-700">
                 <span className="max-w-[90px] sm:max-w-[140px] truncate">{user.email}</span>
-                <button
-                  onClick={handleLogout}
-                  className="p-1 rounded-full hover:bg-slate-200 text-slate-500 hover:text-rose-600 transition"
-                  title="Вийти з акаунта"
-                >
+                <button onClick={handleLogout} className="p-1 rounded-full hover:bg-slate-200 text-slate-500 hover:text-rose-600">
                   <LogOut className="w-3.5 h-3.5" />
                 </button>
               </div>
             )}
 
             {!isPro ? (
-              <button
-                onClick={() => setShowPaywall(true)}
-                className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold transition shadow-sm"
-              >
+              <button onClick={() => setShowPaywall(true)} className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold transition shadow-sm">
                 <Crown className="w-3.5 h-3.5 text-amber-400" />
                 <span className="hidden sm:inline">Абонемент</span>
                 <span className="sm:hidden">PRO</span>
@@ -413,13 +423,11 @@ export default function App() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 pt-6 space-y-6">
+      <main className="max-w-4xl w-full mx-auto px-4 pt-6 pb-12 space-y-6 flex-1">
         <section className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">1. Обери свій рівень</h2>
-            <span className="text-xs text-slate-500 font-medium">
-              Статус: <strong className="text-slate-800">{getRank()}</strong>
-            </span>
+            <span className="text-xs text-slate-500 font-medium">Статус: <strong className="text-slate-800">{getRank()}</strong></span>
           </div>
 
           <div className="grid grid-cols-4 gap-2.5">
@@ -431,9 +439,7 @@ export default function App() {
                   key={lvl}
                   onClick={() => handleSelectModule(lvl, selectedCategory)}
                   className={`relative py-3 rounded-xl font-bold text-base transition flex items-center justify-center gap-1.5 border ${
-                    active
-                      ? 'bg-slate-900 text-white border-slate-900 shadow-md'
-                      : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                    active ? 'bg-slate-900 text-white border-slate-900 shadow-md' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                   }`}
                 >
                   <span>{lvl}</span>
@@ -454,23 +460,19 @@ export default function App() {
                     key={cat.id}
                     onClick={() => handleSelectModule(selectedLevel, cat.id)}
                     className={`p-3 rounded-xl border text-left transition flex items-center justify-between ${
-                      active
-                        ? 'bg-amber-50 border-amber-400 text-slate-900 shadow-sm'
-                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                      active ? 'bg-amber-50 border-amber-400 text-slate-900 shadow-sm' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
                       <span className="text-xl">{cat.icon}</span>
                       <div>
                         <div className="font-semibold text-sm">{cat.label}</div>
-                        <div className="text-[11px] text-slate-400">Рівень {selectedLevel}</div>
+                        <div className="text-[11px] text-slate-400">
+                          {locked ? `Рівень ${selectedLevel} • PRO` : !isPro ? `Перші ${FREE_WORDS_LIMIT} слів безкоштовно` : `Рівень ${selectedLevel}`}
+                        </div>
                       </div>
                     </div>
-                    {locked ? (
-                      <Lock className="w-4 h-4 text-amber-500" />
-                    ) : (
-                      active && <CheckCircle2 className="w-4 h-4 text-amber-600" />
-                    )}
+                    {locked ? <Lock className="w-4 h-4 text-amber-500" /> : active && <CheckCircle2 className="w-4 h-4 text-amber-600" />}
                   </button>
                 );
               })}
@@ -478,6 +480,7 @@ export default function App() {
           </div>
         </section>
 
+        {/* Панель режимів та вибору живого голосу */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="inline-flex bg-slate-200/70 p-1 rounded-xl">
             <button
@@ -498,11 +501,29 @@ export default function App() {
             </button>
           </div>
 
-          <div className="flex items-center gap-2 text-sm font-medium text-slate-500">
-            {loading && <Loader2 className="w-4 h-4 animate-spin text-amber-600" />}
-            <span>
-              Слово <span className="text-slate-900 font-bold">{currentIndex + 1}</span> з {filteredWords.length}
-            </span>
+          <div className="flex items-center gap-2.5">
+            <select
+              value={selectedVoice}
+              onChange={(e) => setSelectedVoice(e.target.value)}
+              className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-none focus:border-amber-400"
+              title="Обери голос диктора"
+            >
+              {VOICES.map((v) => (
+                <option key={v.id} value={v.id}>{v.label}</option>
+              ))}
+            </select>
+
+            <div className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-slate-500">
+              {loading && <Loader2 className="w-4 h-4 animate-spin text-amber-600" />}
+              <span>
+                <strong className="text-slate-900">{currentIndex + 1}</strong> / {filteredWords.length}
+                {!isPro && allCategoryWords.length > FREE_WORDS_LIMIT && (
+                  <button onClick={() => setShowPaywall(true)} className="ml-1.5 text-amber-700 font-semibold hover:underline">
+                    (усього {allCategoryWords.length} у PRO)
+                  </button>
+                )}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -521,7 +542,9 @@ export default function App() {
                     e.stopPropagation();
                     speakGerman(`${currentWord.article} ${currentWord.word}`);
                   }}
-                  className="p-3 rounded-full bg-amber-100 hover:bg-amber-200 text-amber-800 transition"
+                  className={`p-3 rounded-full transition ${
+                    isSpeaking ? 'bg-amber-500 text-white scale-105' : 'bg-amber-100 hover:bg-amber-200 text-amber-800'
+                  }`}
                   title="Прослухати вимову"
                 >
                   <Volume2 className="w-5 h-5" />
@@ -534,12 +557,8 @@ export default function App() {
                     {currentWord.article}
                   </span>
                 )}
-                <h3 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900">
-                  {currentWord.word}
-                </h3>
-                {currentWord.plural && (
-                  <p className="text-sm text-slate-400">Множина: {currentWord.plural}</p>
-                )}
+                <h3 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900">{currentWord.word}</h3>
+                {currentWord.plural && <p className="text-sm text-slate-400">Множина: {currentWord.plural}</p>}
 
                 {isFlipped ? (
                   <div className="pt-6 mt-6 border-t border-slate-100 space-y-3">
@@ -575,22 +594,11 @@ export default function App() {
             </div>
 
             <div className="flex items-center gap-3">
-              <button
-                onClick={() => {
-                  setIsFlipped(false);
-                  setCurrentIndex((prev) => (prev + 1) % filteredWords.length);
-                }}
-                className="flex-1 py-3.5 px-4 rounded-2xl border border-slate-300 bg-white hover:bg-slate-50 font-semibold text-slate-700 transition flex items-center justify-center gap-2"
-              >
+              <button onClick={goToNextWord} className="flex-1 py-3.5 px-4 rounded-2xl border border-slate-300 bg-white hover:bg-slate-50 font-semibold text-slate-700 transition flex items-center justify-center gap-2">
                 <RotateCcw className="w-4 h-4" /> Повторити пізніше
               </button>
-              <button
-                onClick={handleMarkLearned}
-                className="flex-1 py-3.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition flex items-center justify-center gap-2 shadow-sm"
-              >
-                <span>
-                  {isCurrentLearned ? 'Закріпити слово (+5 XP)' : 'Знаю це слово (+15 XP)'}
-                </span>
+              <button onClick={handleMarkLearned} className="flex-1 py-3.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition flex items-center justify-center gap-2 shadow-sm">
+                <span>{isCurrentLearned ? 'Закріпити слово (+5 XP)' : 'Знаю це слово (+15 XP)'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -601,10 +609,7 @@ export default function App() {
           <section className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Обери правильний переклад</span>
-              <button
-                onClick={() => speakGerman(`${currentWord.article} ${currentWord.word}`)}
-                className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-full hover:bg-amber-100"
-              >
+              <button onClick={() => speakGerman(`${currentWord.article} ${currentWord.word}`)} className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-full hover:bg-amber-100">
                 <Volume2 className="w-4 h-4" /> Озвучити
               </button>
             </div>
@@ -621,19 +626,13 @@ export default function App() {
                 const isSelected = quizAnswer === option.id;
                 const isCorrect = option.id === currentWord.id;
                 let btnStyle = 'bg-slate-50 border-slate-200 hover:border-slate-400 text-slate-800';
-
                 if (quizAnswer) {
                   if (isCorrect) btnStyle = 'bg-emerald-50 border-emerald-500 text-emerald-900 font-bold';
                   else if (isSelected) btnStyle = 'bg-rose-50 border-rose-500 text-rose-900';
                   else btnStyle = 'bg-slate-50 border-slate-200 opacity-50';
                 }
-
                 return (
-                  <button
-                    key={option.id}
-                    onClick={() => handleQuizChoice(option)}
-                    className={`p-4 rounded-2xl border-2 text-left transition flex items-center justify-between ${btnStyle}`}
-                  >
+                  <button key={option.id} onClick={() => handleQuizChoice(option)} className={`p-4 rounded-2xl border-2 text-left transition flex items-center justify-between ${btnStyle}`}>
                     <span>{option.translation}</span>
                     {quizAnswer && isCorrect && <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />}
                     {quizAnswer && isSelected && !isCorrect && <XCircle className="w-5 h-5 text-rose-600 shrink-0" />}
@@ -644,10 +643,7 @@ export default function App() {
 
             {quizAnswer && (
               <div className="pt-2 flex justify-end">
-                <button
-                  onClick={() => setCurrentIndex((prev) => (prev + 1) % filteredWords.length)}
-                  className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 rounded-xl font-semibold flex items-center gap-2"
-                >
+                <button onClick={goToNextWord} className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 rounded-xl font-semibold flex items-center gap-2">
                   Наступне слово <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
@@ -656,173 +652,148 @@ export default function App() {
         )}
       </main>
 
-      {/* Вікно входу / реєстрації через пошту */}
+      <footer className="bg-white border-t border-slate-200 py-6 px-4 text-xs text-slate-500">
+        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div>© {new Date().getFullYear()} <strong>deutsch mit Dmytro</strong></div>
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            <button onClick={() => setLegalModal('privacy')} className="hover:text-slate-900 underline">Політика конфіденційності</button>
+            <button onClick={() => setLegalModal('offer')} className="hover:text-slate-900 underline">Публічна оферта</button>
+            <a href="mailto:sirobabadima9@gmail.com" className="hover:text-slate-900">Підтримка</a>
+          </div>
+        </div>
+      </footer>
+
       {showAuthModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative space-y-5">
-            <button
-              onClick={() => setShowAuthModal(false)}
-              className="absolute top-5 right-5 p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            <button onClick={() => setShowAuthModal(false)} className="absolute top-5 right-5 p-2 rounded-full bg-slate-100 text-slate-600"><X className="w-4 h-4" /></button>
 
-            <div className="space-y-1.5">
-              <div className="inline-flex items-center gap-1.5 bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-xs font-bold">
-                <Mail className="w-3.5 h-3.5" /> Вхід без пароля
+            {(authMode === 'login' || authMode === 'register') && (
+              <div className="inline-flex bg-slate-100 p-1 rounded-xl w-full">
+                <button type="button" onClick={() => openAuth('login')} className={`flex-1 py-2 rounded-lg text-xs font-bold ${authMode === 'login' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}>Вхід</button>
+                <button type="button" onClick={() => openAuth('register')} className={`flex-1 py-2 rounded-lg text-xs font-bold ${authMode === 'register' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}>Реєстрація</button>
               </div>
-              <h3 className="text-2xl font-extrabold text-slate-900">Акаунт deutsch mit Dmytro</h3>
-              <p className="text-sm text-slate-600">
-                Зберігай свої бали XP, вивчені слова та абонемент PRO на всіх пристроях.
-              </p>
+            )}
+
+            <div className="space-y-1">
+              <h3 className="text-2xl font-extrabold text-slate-900">
+                {authMode === 'login' && 'З поверненням!'}
+                {authMode === 'register' && 'Створити акаунт'}
+                {authMode === 'forgot' && 'Відновлення пароля'}
+                {authMode === 'update_password' && 'Новий пароль'}
+              </h3>
             </div>
 
-            {!authSent ? (
-              <form onSubmit={handleSendLoginLink} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
-                    Твоя електронна пошта
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={authEmail}
-                    onChange={(e) => setAuthEmail(e.target.value)}
-                    placeholder="name@gmail.com"
-                    className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:border-amber-500 focus:outline-none text-slate-900"
-                  />
-                </div>
-
-                {authError && (
-                  <p className="text-xs font-semibold text-rose-600">{authError}</p>
+            {authMessage ? (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-center space-y-2">
+                <CheckCircle2 className="w-7 h-7 text-emerald-600 mx-auto" />
+                <p className="text-xs text-emerald-900">{authMessage}</p>
+              </div>
+            ) : (
+              <form onSubmit={handleAuthSubmit} className="space-y-3.5">
+                {authMode !== 'update_password' && (
+                  <input type="email" required value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} placeholder="Електронна пошта" className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm" />
                 )}
 
-                <button
-                  type="submit"
-                  disabled={authLoading}
-                  className="w-full py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm transition flex items-center justify-center gap-2"
-                >
+                {(authMode === 'login' || authMode === 'register') && (
+                  <div className="space-y-1">
+                    <input type="password" required minLength={6} value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} placeholder="Пароль (мінімум 6 символів)" className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm" />
+                    {authMode === 'login' && (
+                      <div className="text-right">
+                        <button type="button" onClick={() => openAuth('forgot')} className="text-xs font-semibold text-amber-600 hover:underline">Забули пароль?</button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {authMode === 'update_password' && (
+                  <input type="password" required minLength={6} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Новий пароль (мінімум 6 символів)" className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm" />
+                )}
+
+                {authMode === 'register' && (
+                  <label className="flex items-start gap-2.5 text-xs text-slate-600 cursor-pointer">
+                    <input type="checkbox" checked={agreedTerms} onChange={(e) => setAgreedTerms(e.target.checked)} className="mt-0.5 rounded" />
+                    <span>
+                      Погоджуюся з <button type="button" onClick={() => setLegalModal('privacy')} className="text-amber-700 underline font-semibold">Політикою конфіденційності</button> та <button type="button" onClick={() => setLegalModal('offer')} className="text-amber-700 underline font-semibold">Публічною офертою</button>.
+                    </span>
+                  </label>
+                )}
+
+                {authError && <p className="text-xs font-semibold text-rose-600">{authError}</p>}
+
+                <button type="submit" disabled={authLoading} className="w-full py-3.5 rounded-2xl bg-slate-900 text-white font-bold text-sm flex items-center justify-center gap-2">
                   {authLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-                  <span>Отримати лист для входу</span>
+                  <span>
+                    {authMode === 'login' && 'Увійти'}
+                    {authMode === 'register' && 'Зареєструватися'}
+                    {authMode === 'forgot' && 'Відновити пароль'}
+                    {authMode === 'update_password' && 'Зберегти пароль'}
+                  </span>
                 </button>
               </form>
-            ) : (
-              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5 text-center space-y-2">
-                <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto" />
-                <h4 className="font-bold text-emerald-950">Перевір свою пошту!</h4>
-                <p className="text-xs text-emerald-800 leading-relaxed">
-                  Ми надіслали лист на <strong>{authEmail}</strong>. Відкрий його та натисни кнопку <strong>Sign in</strong>, щоб миттєво увійти в акаунт.
-                </p>
-              </div>
             )}
           </div>
         </div>
       )}
 
-      {/* Вікно абонемента PRO */}
+      {legalModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+            <div className="p-5 border-b flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {legalModal === 'privacy' ? <ShieldCheck className="w-5 h-5 text-emerald-600" /> : <FileText className="w-5 h-5 text-amber-600" />}
+                <h3 className="font-extrabold text-lg">{legalModal === 'privacy' ? 'Політика конфіденційності' : 'Публічна оферта'}</h3>
+              </div>
+              <button onClick={() => setLegalModal(null)} className="p-2 rounded-full bg-slate-100"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="p-5 overflow-y-auto space-y-3 text-xs sm:text-sm text-slate-700 leading-relaxed">
+              {(legalModal === 'privacy' ? PRIVACY_TEXT : OFFER_TEXT).map((item, idx) => (
+                <p key={idx}><strong>{item.title}.</strong> {item.body}</p>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {showPaywall && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative space-y-6">
-            <button
-              onClick={() => setShowPaywall(false)}
-              className="absolute top-5 right-5 p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600"
-            >
-              <X className="w-4 h-4" />
-            </button>
-
-            <div className="space-y-2">
-              <div className="inline-flex items-center gap-1.5 bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-xs font-bold">
-                <Crown className="w-3.5 h-3.5" /> Повний абонемент deutsch mit Dmytro
-              </div>
-              <h3 className="text-2xl font-extrabold text-slate-900">Відкрий усі рівні A1–B2 без обмежень</h3>
-              <p className="text-sm text-slate-600">
-                Повний доступ до розмовної лексики, баз для підготовки до іспитів (Goethe, telc) та офіційної німецької мови.
-              </p>
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative space-y-5">
+            <button onClick={() => setShowPaywall(false)} className="absolute top-5 right-5 p-2 rounded-full bg-slate-100"><X className="w-4 h-4" /></button>
+            <div className="space-y-1.5">
+              <div className="inline-flex items-center gap-1.5 bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-xs font-bold"><Crown className="w-3.5 h-3.5" /> Повний абонемент PRO</div>
+              <h3 className="text-2xl font-extrabold">Відкрий усі слова та рівні A1–B2</h3>
+              <p className="text-sm text-slate-600">Безкоштовно доступні перші 5 слів. З підпискою відкривається вся база слів без обмежень.</p>
             </div>
 
             {!user && (
-              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3.5 flex items-center justify-between gap-3">
-                <p className="text-xs text-amber-900 font-medium">
-                  Спершу увійди за поштою, щоб абонемент зберігся за твоїм акаунтом.
-                </p>
-                <button
-                  onClick={() => {
-                    setShowPaywall(false);
-                    setAuthSent(false);
-                    setShowAuthModal(true);
-                  }}
-                  className="shrink-0 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs px-3 py-2 rounded-xl"
-                >
-                  Увійти
-                </button>
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3 flex items-center justify-between gap-3">
+                <p className="text-xs text-amber-900">Спершу увійди в акаунт, щоб зберегти підписку.</p>
+                <button onClick={() => { setShowPaywall(false); openAuth('register'); }} className="shrink-0 bg-amber-500 text-slate-950 font-bold text-xs px-3 py-2 rounded-xl">Увійти</button>
               </div>
             )}
 
             <div className="grid grid-cols-3 gap-2.5">
-              {PLANS.map((plan) => {
-                const active = selectedPlan === plan.id;
-                return (
-                  <button
-                    key={plan.id}
-                    onClick={() => setSelectedPlan(plan.id)}
-                    className={`relative p-3.5 rounded-2xl border-2 text-left transition flex flex-col justify-between ${
-                      active
-                        ? 'border-amber-500 bg-amber-50/60 shadow-sm'
-                        : 'border-slate-200 hover:border-slate-300 bg-white'
-                    }`}
-                  >
-                    {plan.discount && (
-                      <span className="absolute -top-2.5 right-2 bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                        {plan.discount}
-                      </span>
-                    )}
-                    <div className="text-xs font-bold text-slate-500">{plan.title}</div>
-                    <div className="my-2">
-                      <div className="text-xl font-extrabold text-slate-900">{plan.price} ₴</div>
-                      {plan.oldPrice && (
-                        <div className="text-[11px] text-slate-400 line-through">{plan.oldPrice} ₴</div>
-                      )}
-                    </div>
-                    <div className="text-[11px] text-slate-600 font-medium">{plan.perMonth} грн/міс</div>
-                  </button>
-                );
-              })}
+              {PLANS.map((plan) => (
+                <button key={plan.id} onClick={() => setSelectedPlan(plan.id)} className={`relative p-3.5 rounded-2xl border-2 text-left ${selectedPlan === plan.id ? 'border-amber-500 bg-amber-50/60' : 'border-slate-200'}`}>
+                  {plan.discount && <span className="absolute -top-2.5 right-2 bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{plan.discount}</span>}
+                  <div className="text-xs font-bold text-slate-500">{plan.title}</div>
+                  <div className="my-2 text-xl font-extrabold">{plan.price} ₴</div>
+                  <div className="text-[11px] text-slate-600">{plan.perMonth} грн/міс</div>
+                </button>
+              ))}
             </div>
 
-            <ul className="space-y-2 text-sm text-slate-700">
-              <li className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-emerald-600 shrink-0" /> Усі рівні: A1, A2, B1 та B2
-              </li>
-              <li className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-emerald-600 shrink-0" /> Постійне поповнення нових слів та прикладів
-              </li>
-              <li className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-emerald-600 shrink-0" /> Озвучення вимови та безлімітні тести
-              </li>
-            </ul>
-
-            <div className="space-y-2.5 pt-2">
+            <div className="space-y-2 pt-1">
               <button
                 onClick={() => {
-                  if (!user) {
-                    setShowPaywall(false);
-                    setShowAuthModal(true);
-                    return;
-                  }
-                  alert('Оплата для акаунта ' + user.email + ' на суму ' + PLANS.find(p => p.id === selectedPlan).price + ' грн');
+                  if (!user) { setShowPaywall(false); openAuth('register'); return; }
+                  alert('Оплата для ' + user.email + ' на суму ' + PLANS.find(p => p.id === selectedPlan).price + ' грн');
                 }}
-                className="w-full py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm transition shadow-md"
+                className="w-full py-3.5 rounded-2xl bg-slate-900 text-white font-bold text-sm"
               >
                 Оформити абонемент ({PLANS.find((p) => p.id === selectedPlan)?.price} грн)
               </button>
-
-              <button
-                onClick={() => {
-                  setIsPro(true);
-                  setShowPaywall(false);
-                }}
-                className="w-full py-2.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 font-semibold text-xs transition"
-              >
+              <button onClick={() => { setIsPro(true); setShowPaywall(false); }} className="w-full py-2.5 rounded-xl bg-amber-100 text-amber-900 font-semibold text-xs">
                 🧪 Демо-режим: активувати PRO безкоштовно для тесту
               </button>
             </div>
@@ -833,43 +804,19 @@ export default function App() {
       {showShareModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl relative space-y-5">
-            <button
-              onClick={() => setShowShareModal(false)}
-              className="absolute top-5 right-5 p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600"
-            >
-              <X className="w-4 h-4" />
-            </button>
-
-            <h3 className="text-xl font-extrabold text-slate-900">Поділитися прогресом</h3>
-
-            <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-amber-900 text-white p-6 rounded-2xl space-y-4 shadow-inner">
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-amber-400 text-sm">deutsch mit Dmytro 🇩🇪</span>
-                <Sparkles className="w-4 h-4 text-amber-300" />
+            <button onClick={() => setShowShareModal(false)} className="absolute top-5 right-5 p-2 rounded-full bg-slate-100"><X className="w-4 h-4" /></button>
+            <h3 className="text-xl font-extrabold">Поділитися прогресом</h3>
+            <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-amber-900 text-white p-6 rounded-2xl space-y-4">
+              <div className="flex justify-between"><span className="font-bold text-amber-400 text-sm">deutsch mit Dmytro 🇩🇪</span><Sparkles className="w-4 h-4 text-amber-300" /></div>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="bg-white/10 rounded-xl p-2.5"><div className="text-xl font-extrabold">{xp}</div><div className="text-[10px] uppercase">Балів XP</div></div>
+                <div className="bg-white/10 rounded-xl p-2.5"><div className="text-xl font-extrabold">{learnedIds.length}</div><div className="text-[10px] uppercase">Слів</div></div>
+                <div className="bg-white/10 rounded-xl p-2.5"><div className="text-xl font-extrabold">{streak} 🔥</div><div className="text-[10px] uppercase">Днів</div></div>
               </div>
-              <div className="grid grid-cols-3 gap-2 text-center py-2">
-                <div className="bg-white/10 rounded-xl p-2.5">
-                  <div className="text-xl font-extrabold">{xp}</div>
-                  <div className="text-[10px] text-slate-300 uppercase">Балів XP</div>
-                </div>
-                <div className="bg-white/10 rounded-xl p-2.5">
-                  <div className="text-xl font-extrabold">{learnedIds.length}</div>
-                  <div className="text-[10px] text-slate-300 uppercase">Слів</div>
-                </div>
-                <div className="bg-white/10 rounded-xl p-2.5">
-                  <div className="text-xl font-extrabold">{streak} 🔥</div>
-                  <div className="text-[10px] text-slate-300 uppercase">Днів поспіль</div>
-                </div>
-              </div>
-              <p className="text-xs text-slate-300 text-center">Ранг: {getRank()}</p>
             </div>
-
-            <button
-              onClick={handleCopyShare}
-              className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-sm transition flex items-center justify-center gap-2"
-            >
+            <button onClick={handleCopyShare} className="w-full py-3 rounded-xl bg-amber-500 text-slate-950 font-bold text-sm flex items-center justify-center gap-2">
               {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-              {copied ? 'Скопійовано для Stories / Telegram!' : 'Скопіювати текст результату'}
+              {copied ? 'Скопійовано!' : 'Скопіювати результат'}
             </button>
           </div>
         </div>
