@@ -71,6 +71,43 @@ const ACHIEVEMENTS = [
   { id: 'pro_member', icon: '👑', title: 'Учень PRO', desc: 'Активувати повний абонемент PRO', check: (s) => s.isPro },
 ];
 
+const getLocalDateStr = (date = new Date()) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
+const getYesterdayDateStr = () => {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return getLocalDateStr(d);
+};
+
+const calculateStreakState = (currentStreak, lastActiveDate) => {
+  const today = getLocalDateStr();
+  const yesterday = getYesterdayDateStr();
+  const safeStreak = Math.max(Number(currentStreak) || 0, 1);
+
+  if (!lastActiveDate) {
+    return { streak: safeStreak, lastActiveDate: today };
+  }
+  if (lastActiveDate === today) {
+    return { streak: safeStreak, lastActiveDate: today };
+  }
+  if (lastActiveDate === yesterday) {
+    return { streak: safeStreak + 1, lastActiveDate: today };
+  }
+  return { streak: 1, lastActiveDate: today };
+};
+
+const formatProUntilDate = (isoString) => {
+  if (!isoString) return 'Безстроковий доступ';
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) return '';
+  return `до ${date.toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric' })}`;
+};
+
 export default function App() {
   const [vocabulary, setVocabulary] = useState(FALLBACK_DATA);
   const [loading, setLoading] = useState(true);
@@ -101,9 +138,19 @@ export default function App() {
 
   const [xp, setXp] = useState(() => Number(localStorage.getItem('dmd_xp')) || 0);
   const [xpGain, setXpGain] = useState(null);
-  const [streak, setStreak] = useState(() => Number(localStorage.getItem('dmd_streak')) || 1);
+  const [streak, setStreak] = useState(() => {
+    const savedStreak = Number(localStorage.getItem('dmd_streak')) || 1;
+    const savedDate = localStorage.getItem('dmd_last_active');
+    return calculateStreakState(savedStreak, savedDate).streak;
+  });
+  const [lastActiveDate, setLastActiveDate] = useState(() => {
+    const savedStreak = Number(localStorage.getItem('dmd_streak')) || 1;
+    const savedDate = localStorage.getItem('dmd_last_active');
+    return calculateStreakState(savedStreak, savedDate).lastActiveDate;
+  });
   const [learnedIds, setLearnedIds] = useState(() => JSON.parse(localStorage.getItem('dmd_learned') || '[]'));
   const [isPro, setIsPro] = useState(() => localStorage.getItem('dmd_pro') === 'true');
+  const [proUntil, setProUntil] = useState(() => localStorage.getItem('dmd_pro_until') || null);
 
   const [showPaywall, setShowPaywall] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState('3m');
@@ -116,6 +163,14 @@ export default function App() {
 
   const [quizAnswer, setQuizAnswer] = useState(null);
   const [quizOptions, setQuizOptions] = useState([]);
+
+  const touchDailyStreak = () => {
+    setStreak((prevStreak) => {
+      const next = calculateStreakState(prevStreak, lastActiveDate);
+      setLastActiveDate(next.lastActiveDate);
+      return next.streak;
+    });
+  };
 
   useEffect(() => {
     async function fetchWords() {
@@ -144,21 +199,39 @@ export default function App() {
       const mergedLearned = Array.from(new Set([...dbLearned, ...localLearned]));
       const proActive = Boolean(profile.is_pro && (!profile.pro_until || new Date(profile.pro_until) > new Date()));
 
+      const baseStreak = Math.max(profile.streak || 1, Number(localStorage.getItem('dmd_streak')) || 1);
+      const latestDate = profile.last_active_date || localStorage.getItem('dmd_last_active') || null;
+      const computedStreak = calculateStreakState(baseStreak, latestDate);
+
       setXp(mergedXp);
-      setStreak(Math.max(profile.streak || 1, Number(localStorage.getItem('dmd_streak')) || 1));
+      setStreak(computedStreak.streak);
+      setLastActiveDate(computedStreak.lastActiveDate);
       setLearnedIds(mergedLearned);
       setIsPro(proActive);
+      setProUntil(proActive ? (profile.pro_until || null) : null);
 
       await supabase.from('profiles').update({
-        xp: mergedXp, learned_ids: mergedLearned, updated_at: new Date().toISOString()
+        xp: mergedXp,
+        streak: computedStreak.streak,
+        last_active_date: computedStreak.lastActiveDate,
+        learned_ids: mergedLearned,
+        updated_at: new Date().toISOString()
       }).eq('id', authUser.id);
 
       return proActive;
     } else {
+      const today = getLocalDateStr();
+      const initialStreak = Number(localStorage.getItem('dmd_streak')) || 1;
+      setStreak(initialStreak);
+      setLastActiveDate(today);
+      setProUntil(null);
+
       await supabase.from('profiles').insert({
-        id: authUser.id, email: authUser.email,
+        id: authUser.id,
+        email: authUser.email,
         xp: Number(localStorage.getItem('dmd_xp')) || 0,
-        streak: Number(localStorage.getItem('dmd_streak')) || 1,
+        streak: initialStreak,
+        last_active_date: today,
         learned_ids: JSON.parse(localStorage.getItem('dmd_learned') || '[]'),
         is_pro: false
       });
@@ -192,15 +265,22 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('dmd_xp', xp);
     localStorage.setItem('dmd_streak', streak);
+    if (lastActiveDate) localStorage.setItem('dmd_last_active', lastActiveDate);
     localStorage.setItem('dmd_learned', JSON.stringify(learnedIds));
     localStorage.setItem('dmd_pro', isPro);
+    if (proUntil) localStorage.setItem('dmd_pro_until', proUntil);
+    else localStorage.removeItem('dmd_pro_until');
 
     if (user) {
       supabase.from('profiles').update({
-        xp, streak, learned_ids: learnedIds, updated_at: new Date().toISOString()
+        xp,
+        streak,
+        last_active_date: lastActiveDate || getLocalDateStr(),
+        learned_ids: learnedIds,
+        updated_at: new Date().toISOString()
       }).eq('id', user.id).then(() => {});
     }
-  }, [xp, streak, learnedIds, isPro, user]);
+  }, [xp, streak, lastActiveDate, learnedIds, isPro, proUntil, user]);
 
   const handleCheckProStatus = async () => {
     if (!user) return;
@@ -289,8 +369,10 @@ export default function App() {
     await supabase.auth.signOut();
     setUser(null);
     setIsPro(false);
+    setProUntil(null);
     setShowProfileModal(false);
     localStorage.removeItem('dmd_pro');
+    localStorage.removeItem('dmd_pro_until');
   };
 
   const addXp = (points) => {
@@ -376,6 +458,7 @@ export default function App() {
 
   const handleMarkLearned = () => {
     if (!currentWord) return;
+    touchDailyStreak();
     if (!isCurrentLearned) {
       setLearnedIds((prev) => (prev.includes(currentWord.id) ? prev : [...prev, currentWord.id]));
       addXp(15);
@@ -396,6 +479,7 @@ export default function App() {
     if (quizAnswer || !currentWord) return;
     setQuizAnswer(option.id);
     if (option.id === currentWord.id) {
+      touchDailyStreak();
       addXp(20);
       if (!learnedIds.includes(currentWord.id)) setLearnedIds((prev) => [...prev, currentWord.id]);
       speakGerman(currentWord.word);
@@ -815,9 +899,14 @@ export default function App() {
                 <p className="text-xs text-slate-500 font-medium mt-0.5">{getRank()}</p>
               </div>
               {isPro ? (
-                <span className="inline-flex items-center gap-1.5 bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-full text-xs font-bold self-start">
-                  <Crown className="w-3.5 h-3.5" /> Активний PRO
-                </span>
+                <div className="flex flex-col items-start sm:items-end gap-1 self-start">
+                  <span className="inline-flex items-center gap-1.5 bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-full text-xs font-bold">
+                    <Crown className="w-3.5 h-3.5" /> Активний PRO
+                  </span>
+                  <span className="text-[11px] font-semibold text-emerald-700 px-1">
+                    {formatProUntilDate(proUntil)}
+                  </span>
+                </div>
               ) : (
                 <button
                   type="button"
