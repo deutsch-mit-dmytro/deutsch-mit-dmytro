@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import {
   Volume2, Flame, Trophy, CheckCircle2, XCircle,
   Share2, Sparkles, BookOpen, BrainCircuit, ArrowRight,
-  RotateCcw, Crown, Check, Copy, X, Loader2, LogOut, User, ShieldCheck, FileText, ExternalLink, Search
+  RotateCcw, Crown, Check, Copy, X, Loader2, LogOut, User, ShieldCheck, FileText, ExternalLink, Search, Keyboard
 } from 'lucide-react';
 
 const SUPABASE_URL = 'https://vdjduptyloghojeqaglw.supabase.co';
@@ -41,6 +41,9 @@ const CATEGORIES = [
   { id: 'exam', label: 'Для іспитів', icon: '🎓' },
   { id: 'official', label: 'Офіційна', icon: '💼' }
 ];
+
+const ARTICLES = ['der', 'die', 'das'];
+const UMLAUT_CHARS = ['ä', 'ö', 'ü', 'ß', 'Ä', 'Ö', 'Ü'];
 
 const PLANS = [
   { id: '1m', months: 1, title: '1 місяць', price: 169, oldPrice: null, discount: null, perMonth: 169 },
@@ -125,8 +128,8 @@ export default function App() {
 
   const [legalModal, setLegalModal] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
-  const [profileTab, setProfileTab] = useState('overview'); // 'overview' | 'achievements' | 'dictionary'
-  const [achFilter, setAchFilter] = useState('all'); // 'all' | 'unlocked' | 'locked'
+  const [profileTab, setProfileTab] = useState('overview');
+  const [achFilter, setAchFilter] = useState('all');
   const [dictSearch, setDictSearch] = useState('');
   const [dictLevelFilter, setDictLevelFilter] = useState('ALL');
 
@@ -138,7 +141,7 @@ export default function App() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const audioRef = useRef(null);
 
-  const [mode, setMode] = useState('cards');
+  const [mode, setMode] = useState('cards'); // 'cards' | 'quiz' | 'spelling'
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
 
@@ -169,6 +172,12 @@ export default function App() {
 
   const [quizAnswer, setQuizAnswer] = useState(null);
   const [quizOptions, setQuizOptions] = useState([]);
+
+  // Стан для режиму «Правопис (Spelling)»
+  const [selectedArticle, setSelectedArticle] = useState('');
+  const [spellingInput, setSpellingInput] = useState('');
+  const [spellingResult, setSpellingResult] = useState(null); // null | { articleOk, wordOk, allOk }
+  const spellingInputRef = useRef(null);
 
   const touchDailyStreak = () => {
     setStreak((prevStreak) => {
@@ -387,8 +396,6 @@ export default function App() {
     setTimeout(() => setXpGain(null), 1500);
   };
 
-  const isLocked = () => false;
-
   const handleSelectModule = (lvl, cat) => {
     setSelectedLevel(lvl);
     setSelectedCategory(cat);
@@ -397,6 +404,9 @@ export default function App() {
     setCurrentIndex(0);
     setIsFlipped(false);
     setQuizAnswer(null);
+    setSelectedArticle('');
+    setSpellingInput('');
+    setSpellingResult(null);
   };
 
   const learnedWordsList = useMemo(
@@ -453,6 +463,9 @@ export default function App() {
       return;
     }
     setIsFlipped(false);
+    setSelectedArticle('');
+    setSpellingInput('');
+    setSpellingResult(null);
     setCurrentIndex(nextIndex % filteredWords.length);
   };
 
@@ -464,6 +477,9 @@ export default function App() {
     const others = vocabulary.filter((w) => w.id !== currentWord.id).sort(() => 0.5 - Math.random()).slice(0, 3);
     setQuizOptions([...others, currentWord].sort(() => 0.5 - Math.random()));
     setQuizAnswer(null);
+    setSelectedArticle('');
+    setSpellingInput('');
+    setSpellingResult(null);
   }, [currentWord, mode, vocabulary]);
 
   const getArticleColor = (article) => {
@@ -471,6 +487,13 @@ export default function App() {
     if (article === 'die') return 'text-rose-600 bg-rose-50 border-rose-200';
     if (article === 'das') return 'text-emerald-600 bg-emerald-50 border-emerald-200';
     return 'text-slate-600 bg-slate-100 border-slate-200';
+  };
+
+  const getArticleSelectStyle = (art, isSelected) => {
+    if (!isSelected) return 'bg-slate-50 border-slate-200 text-slate-700 hover:border-slate-400';
+    if (art === 'der') return 'bg-blue-600 border-blue-600 text-white shadow-sm';
+    if (art === 'die') return 'bg-rose-600 border-rose-600 text-white shadow-sm';
+    return 'bg-emerald-600 border-emerald-600 text-white shadow-sm';
   };
 
   const handleMarkLearned = () => {
@@ -502,6 +525,52 @@ export default function App() {
       addXp(20);
       if (!learnedIds.includes(currentWord.id)) setLearnedIds((prev) => [...prev, currentWord.id]);
       speakGerman(currentWord.word);
+    }
+  };
+
+  const handleInsertUmlaut = (char) => {
+    if (spellingResult) return;
+    const input = spellingInputRef.current;
+    if (!input) {
+      setSpellingInput((prev) => prev + char);
+      return;
+    }
+    const start = input.selectionStart ?? spellingInput.length;
+    const end = input.selectionEnd ?? spellingInput.length;
+    const updated = spellingInput.slice(0, start) + char + spellingInput.slice(end);
+    setSpellingInput(updated);
+    requestAnimationFrame(() => {
+      input.focus();
+      input.setSelectionRange(start + char.length, start + char.length);
+    });
+  };
+
+  const handleSpellingSubmit = (e) => {
+    e.preventDefault();
+    if (!currentWord || spellingResult) return;
+
+    const needsArticle = ARTICLES.includes((currentWord.article || '').toLowerCase());
+    if (needsArticle && !selectedArticle) return;
+    if (!spellingInput.trim()) return;
+
+    const expectedArticle = (currentWord.article || '').trim().toLowerCase();
+    const expectedWord = (currentWord.word || '').trim();
+    const typedWord = spellingInput.trim();
+
+    const articleOk = !needsArticle || selectedArticle.toLowerCase() === expectedArticle;
+    // Перевіряємо точний регістр (іменники з великої літери — вимога іспитів Goethe / telc)
+    const wordOk = typedWord === expectedWord;
+    const allOk = articleOk && wordOk;
+
+    setSpellingResult({ articleOk, wordOk, allOk });
+    speakGerman(`${currentWord.article} ${currentWord.word}`);
+
+    if (allOk) {
+      touchDailyStreak();
+      addXp(25);
+      if (!learnedIds.includes(currentWord.id)) {
+        setLearnedIds((prev) => [...prev, currentWord.id]);
+      }
     }
   };
 
@@ -603,6 +672,7 @@ export default function App() {
 
   const currentPlanObj = PLANS.find((p) => p.id === selectedPlan) || PLANS[1];
   const hasMoreWordsInPro = !isPro && !practiceAllLearnedMode && allCategoryWords.length > availableModuleWords.length;
+  const currentNeedsArticle = currentWord ? ARTICLES.includes((currentWord.article || '').toLowerCase()) : false;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col">
@@ -736,22 +806,30 @@ export default function App() {
 
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <div className="inline-flex bg-slate-200/70 p-1 rounded-xl">
+            <div className="inline-flex flex-wrap bg-slate-200/70 p-1 rounded-xl gap-1">
               <button
                 onClick={() => setMode('cards')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition ${
                   mode === 'cards' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <BookOpen className="w-4 h-4" /> Картки слів
+                <BookOpen className="w-4 h-4" /> Картки
               </button>
               <button
                 onClick={() => setMode('quiz')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition ${
                   mode === 'quiz' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <BrainCircuit className="w-4 h-4" /> Тест (+20 XP)
+              </button>
+              <button
+                onClick={() => setMode('spelling')}
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition ${
+                  mode === 'spelling' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Keyboard className="w-4 h-4" /> Правопис (+25 XP)
               </button>
             </div>
 
@@ -963,6 +1041,176 @@ export default function App() {
                 </button>
               </div>
             )}
+          </section>
+        )}
+
+        {currentWord && mode === 'spelling' && (
+          <section className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                {currentNeedsArticle ? 'Обери артикль і напиши слово німецькою' : 'Напиши слово німецькою'}
+              </span>
+              <button
+                type="button"
+                onClick={() => speakGerman(`${currentWord.article} ${currentWord.word}`)}
+                className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-full hover:bg-amber-100 shrink-0"
+              >
+                <Volume2 className="w-4 h-4" /> Озвучити
+              </button>
+            </div>
+
+            <div className="text-center py-3 space-y-1.5">
+              <span className="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-500">
+                {currentWord.level} • {CATEGORIES.find((c) => c.id === currentWord.category)?.label}
+              </span>
+              <h3 className="text-2xl sm:text-4xl font-extrabold text-slate-900">{currentWord.translation}</h3>
+              <p className="text-xs text-slate-400">Іменники пиши з великої літери (напр. Kumpel)</p>
+            </div>
+
+            <form onSubmit={handleSpellingSubmit} className="space-y-4 max-w-lg mx-auto">
+              {currentNeedsArticle && (
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">1. Артикль</label>
+                  <div className="grid grid-cols-3 gap-2.5">
+                    {ARTICLES.map((art) => {
+                      const isSelected = selectedArticle === art;
+                      return (
+                        <button
+                          key={art}
+                          type="button"
+                          disabled={Boolean(spellingResult)}
+                          onClick={() => setSelectedArticle(art)}
+                          className={`py-2.5 rounded-xl border-2 font-bold text-sm transition ${getArticleSelectStyle(art, isSelected)}`}
+                        >
+                          {art}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  {currentNeedsArticle ? '2. Німецьке слово' : 'Німецьке слово'}
+                </label>
+                <input
+                  ref={spellingInputRef}
+                  type="text"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck="false"
+                  disabled={Boolean(spellingResult)}
+                  value={spellingInput}
+                  onChange={(e) => setSpellingInput(e.target.value)}
+                  placeholder="Введи слово німецькою..."
+                  className="w-full px-4 py-3.5 rounded-2xl border-2 border-slate-200 focus:border-amber-400 focus:outline-none text-base sm:text-lg font-bold text-slate-900 bg-slate-50/60"
+                />
+
+                {!spellingResult && (
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                    <span className="text-[11px] text-slate-400 mr-1">Умлаути:</span>
+                    {UMLAUT_CHARS.map((char) => (
+                      <button
+                        key={char}
+                        type="button"
+                        onClick={() => handleInsertUmlaut(char)}
+                        className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-amber-100 hover:text-amber-900 border border-slate-200 text-sm font-bold text-slate-700 transition"
+                      >
+                        {char}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {!spellingResult ? (
+                <div className="flex items-center gap-2.5 pt-1">
+                  <button
+                    type="button"
+                    onClick={goToNextWord}
+                    className="py-3 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-xs sm:text-sm font-semibold text-slate-600 transition"
+                  >
+                    Пропустити
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={(currentNeedsArticle && !selectedArticle) || !spellingInput.trim()}
+                    className="flex-1 py-3 px-5 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white font-bold text-sm transition shadow-sm"
+                  >
+                    Перевірити відповідь
+                  </button>
+                </div>
+              ) : (
+                <div
+                  className={`p-4 rounded-2xl border-2 space-y-2.5 ${
+                    spellingResult.allOk
+                      ? 'bg-emerald-50 border-emerald-400 text-emerald-950'
+                      : 'bg-rose-50 border-rose-400 text-rose-950'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 font-extrabold text-sm sm:text-base">
+                      {spellingResult.allOk ? (
+                        <>
+                          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                          <span>Ідеально! +25 XP</span>
+                        </>
+                      ) : (
+                        <>
+                          <XCircle className="w-5 h-5 text-rose-600 shrink-0" />
+                          <span>Є помилка — перевір написання</span>
+                        </>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => speakGerman(`${currentWord.article} ${currentWord.word}`)}
+                      className="p-1.5 rounded-lg bg-white/80 hover:bg-white text-slate-700"
+                    >
+                      <Volume2 className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {!spellingResult.allOk && (
+                    <div className="text-xs space-y-1">
+                      {currentNeedsArticle && !spellingResult.articleOk && (
+                        <p>
+                          Артикль: ти обрав <strong>{selectedArticle}</strong>, правильно — <strong>{currentWord.article}</strong>.
+                        </p>
+                      )}
+                      {!spellingResult.wordOk && (
+                        <p>
+                          Слово: ти написав <strong>«{spellingInput.trim()}»</strong>, правильно — <strong>«{currentWord.word}»</strong> (зверни увагу на велику літеру).
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="bg-white/80 p-3 rounded-xl text-xs space-y-1">
+                    <div className="font-bold text-slate-900">
+                      {currentWord.article ? `${currentWord.article} ` : ''}{currentWord.word}
+                      {currentWord.plural ? ` (${currentWord.plural})` : ''} — {currentWord.translation}
+                    </div>
+                    {currentWord.example && (
+                      <div className="text-slate-600 pt-0.5">
+                        «{currentWord.example}» — <span className="text-slate-500">{currentWord.exampleUa}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex justify-end pt-1">
+                    <button
+                      type="button"
+                      onClick={goToNextWord}
+                      className="bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2"
+                    >
+                      Наступне слово <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </form>
           </section>
         )}
       </main>
