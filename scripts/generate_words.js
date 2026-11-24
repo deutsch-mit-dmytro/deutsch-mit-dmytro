@@ -4,19 +4,19 @@ const SUPABASE_KEY = process.env.SUPABASE_KEY;
 
 const MODELS = [
   'gemini-3.8-flash',
-  'gemini-2.5-flash-lite',
-  'gemini-2.0-flash',
+  'gemini-3.8-flash-lite',
+  'gemini-3.8-pro',
 ];
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-async function generateWithFallback(prompt) {
+async function generateWithRetry(prompt) {
   let lastError = null;
 
-  for (const model of MODELS) {
-    for (let attempt = 1; attempt <= 3; attempt++) {
+  for (let attempt = 1; attempt <= 6; attempt++) {
+    for (const model of MODELS) {
       try {
-        console.log(`Пробую модель ${model} (спроба ${attempt}/3)...`);
+        console.log(`Коло ${attempt}/6: пробую модель ${model}...`);
         const res = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
           {
@@ -38,21 +38,15 @@ async function generateWithFallback(prompt) {
         }
 
         lastError = JSON.stringify(json);
-        // Якщо модель перевантажена (503) або тимчасово лімітована (429), чекаємо перед повтором
-        if (res.status === 503 || res.status === 429) {
-          await sleep(4000 * attempt);
-          continue;
-        }
-        // Якщо модель не знайдена (404), одразу переходимо до наступної зі списку
-        break;
       } catch (err) {
         lastError = err.message;
-        await sleep(3000);
       }
     }
+    console.log('Сервери перевантажені, чекаю 10 секунд перед наступним колом...');
+    await sleep(10000);
   }
 
-  throw new Error('Жодна з моделей Gemini не відповіла: ' + lastError);
+  throw new Error('Не вдалося отримати відповідь від Gemini після 6 спроб: ' + lastError);
 }
 
 async function run() {
@@ -68,7 +62,7 @@ async function run() {
     ? existingData.map((item) => item.word).join(', ')
     : '';
 
-  // 2. Генеруємо 12 нових слів з автоматичним перебором моделей
+  // 2. Генеруємо 12 нових слів
   const prompt = `Згенеруй 12 корисних німецьких слів (по 1 слову на кожну комбінацію рівня A1, A2, B1, B2 та категорії colloquial, exam, official).
 НЕ використовуй ці слова, бо вони вже є в базі: [${existingWords}].
 Поверни ТІЛЬКИ валідний JSON-масив об'єктів без markdown-розмітки. Кожен об'єкт має містити поля:
@@ -81,7 +75,7 @@ async function run() {
 - "example": природне речення-приклад німецькою
 - "example_ua": переклад прикладу українською`;
 
-  const rawText = await generateWithFallback(prompt);
+  const rawText = await generateWithRetry(prompt);
   const newWords = JSON.parse(rawText);
 
   // 3. Записуємо нові слова у Supabase (ігноруючи можливі дублікати)
