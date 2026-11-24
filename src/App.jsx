@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import {
-  Volume2, Flame, Trophy, Lock, CheckCircle2, XCircle,
+  Volume2, Flame, Trophy, CheckCircle2, XCircle,
   Share2, Sparkles, BookOpen, BrainCircuit, ArrowRight,
-  RotateCcw, Crown, Check, Copy, X, Loader2, LogOut, User, ShieldCheck, FileText, ExternalLink
+  RotateCcw, Crown, Check, Copy, X, Loader2, LogOut, User, ShieldCheck, FileText, ExternalLink, Search
 } from 'lucide-react';
 
 const SUPABASE_URL = 'https://vdjduptyloghojeqaglw.supabase.co';
@@ -49,26 +49,26 @@ const PLANS = [
 ];
 
 const ACHIEVEMENTS = [
-  { id: 'first_step', icon: '🚀', title: 'Перший крок', desc: 'Почати навчання на платформі', check: (s) => s.streakDays >= 1 || s.learnedCount >= 1 },
-  { id: 'words_10', icon: '📖', title: 'Перша десятка', desc: 'Вивчити 10 німецьких слів', check: (s) => s.learnedCount >= 10 },
-  { id: 'words_25', icon: '🧠', title: 'Впевнений словник', desc: 'Вивчити 25 німецьких слів', check: (s) => s.learnedCount >= 25 },
-  { id: 'words_50', icon: '📚', title: 'Пів сотні в активі', desc: 'Вивчити 50 німецьких слів', check: (s) => s.learnedCount >= 50 },
-  { id: 'words_100', icon: '💯', title: 'Сотня слів', desc: 'Вивчити 100 німецьких слів', check: (s) => s.learnedCount >= 100 },
-  { id: 'words_200', icon: '🎓', title: 'Словниковий запас PRO', desc: 'Вивчити 200 німецьких слів', check: (s) => s.learnedCount >= 200 },
-  { id: 'words_250', icon: '👑', title: 'Повна база', desc: 'Вивчити 250+ слів із бази', check: (s) => s.learnedCount >= 250 },
-  { id: 'xp_100', icon: '⚡', title: 'Розминка', desc: 'Набрати 100 балів XP', check: (s) => s.xp >= 100 },
-  { id: 'xp_300', icon: '✨', title: 'Перші 300 XP', desc: 'Набрати 300 балів XP', check: (s) => s.xp >= 300 },
-  { id: 'xp_500', icon: '🔥', title: 'Пів тисячі балів', desc: 'Набрати 500 балів XP', check: (s) => s.xp >= 500 },
-  { id: 'xp_1000', icon: '🏆', title: 'Тисячник', desc: 'Набрати 1 000 балів XP', check: (s) => s.xp >= 1000 },
-  { id: 'xp_2500', icon: '💎', title: 'Марафонець XP', desc: 'Набрати 2 500 балів XP', check: (s) => s.xp >= 2500 },
-  { id: 'xp_5000', icon: '🇩🇪', title: 'Легенда deutsch mit Dmytro', desc: 'Набрати 5 000 балів XP', check: (s) => s.xp >= 5000 },
-  { id: 'streak_3', icon: '🕯️', title: 'Три дні поспіль', desc: 'Тримати серію 3 дні', check: (s) => s.streakDays >= 3 },
-  { id: 'streak_7', icon: '📅', title: 'Тиждень без пропусків', desc: 'Тримати серію 7 днів поспіль', check: (s) => s.streakDays >= 7 },
-  { id: 'streak_14', icon: '💪', title: 'Два тижні дисципліни', desc: 'Тримати серію 14 днів поспіль', check: (s) => s.streakDays >= 14 },
-  { id: 'streak_30', icon: '🏅', title: 'Місяць німецької', desc: 'Тримати серію 30 днів поспіль', check: (s) => s.streakDays >= 30 },
-  { id: 'level_a2', icon: '🎯', title: 'Знавець A2', desc: 'Вивчити перше слово рівня A2', check: (s) => s.hasLevelA2 },
-  { id: 'level_b', icon: '🚀', title: 'Рівень B1–B2 у грі', desc: 'Вивчити перше слово рівня B1 або B2', check: (s) => s.hasLevelB1OrB2 },
-  { id: 'pro_member', icon: '👑', title: 'Учень PRO', desc: 'Активувати повний абонемент PRO', check: (s) => s.isPro },
+  { id: 'first_step', icon: '🚀', title: 'Перший крок', desc: 'Почати навчання на платформі', check: (s) => s.streakDays >= 1 || s.learnedCount >= 1, getProgress: (s) => ({ current: Math.min(Math.max(s.streakDays, s.learnedCount), 1), target: 1 }) },
+  { id: 'words_10', icon: '📖', title: 'Перша десятка', desc: 'Вивчити 10 німецьких слів', check: (s) => s.learnedCount >= 10, getProgress: (s) => ({ current: Math.min(s.learnedCount, 10), target: 10 }) },
+  { id: 'words_25', icon: '🧠', title: 'Впевнений словник', desc: 'Вивчити 25 німецьких слів', check: (s) => s.learnedCount >= 25, getProgress: (s) => ({ current: Math.min(s.learnedCount, 25), target: 25 }) },
+  { id: 'words_50', icon: '📚', title: 'Пів сотні в активі', desc: 'Вивчити 50 німецьких слів', check: (s) => s.learnedCount >= 50, getProgress: (s) => ({ current: Math.min(s.learnedCount, 50), target: 50 }) },
+  { id: 'words_100', icon: '💯', title: 'Сотня слів', desc: 'Вивчити 100 німецьких слів', check: (s) => s.learnedCount >= 100, getProgress: (s) => ({ current: Math.min(s.learnedCount, 100), target: 100 }) },
+  { id: 'words_200', icon: '🎓', title: 'Словниковий запас PRO', desc: 'Вивчити 200 німецьких слів', check: (s) => s.learnedCount >= 200, getProgress: (s) => ({ current: Math.min(s.learnedCount, 200), target: 200 }) },
+  { id: 'words_250', icon: '👑', title: 'Повна база', desc: 'Вивчити 250+ слів із бази', check: (s) => s.learnedCount >= 250, getProgress: (s) => ({ current: Math.min(s.learnedCount, 250), target: 250 }) },
+  { id: 'xp_100', icon: '⚡', title: 'Розминка', desc: 'Набрати 100 балів XP', check: (s) => s.xp >= 100, getProgress: (s) => ({ current: Math.min(s.xp, 100), target: 100 }) },
+  { id: 'xp_300', icon: '✨', title: 'Перші 300 XP', desc: 'Набрати 300 балів XP', check: (s) => s.xp >= 300, getProgress: (s) => ({ current: Math.min(s.xp, 300), target: 300 }) },
+  { id: 'xp_500', icon: '🔥', title: 'Пів тисячі балів', desc: 'Набрати 500 балів XP', check: (s) => s.xp >= 500, getProgress: (s) => ({ current: Math.min(s.xp, 500), target: 500 }) },
+  { id: 'xp_1000', icon: '🏆', title: 'Тисячник', desc: 'Набрати 1 000 балів XP', check: (s) => s.xp >= 1000, getProgress: (s) => ({ current: Math.min(s.xp, 1000), target: 1000 }) },
+  { id: 'xp_2500', icon: '💎', title: 'Марафонець XP', desc: 'Набрати 2 500 балів XP', check: (s) => s.xp >= 2500, getProgress: (s) => ({ current: Math.min(s.xp, 2500), target: 2500 }) },
+  { id: 'xp_5000', icon: '🇩🇪', title: 'Легенда deutsch mit Dmytro', desc: 'Набрати 5 000 балів XP', check: (s) => s.xp >= 5000, getProgress: (s) => ({ current: Math.min(s.xp, 5000), target: 5000 }) },
+  { id: 'streak_3', icon: '🕯️', title: 'Три дні поспіль', desc: 'Тримати серію 3 дні', check: (s) => s.streakDays >= 3, getProgress: (s) => ({ current: Math.min(s.streakDays, 3), target: 3 }) },
+  { id: 'streak_7', icon: '📅', title: 'Тиждень без пропусків', desc: 'Тримати серію 7 днів поспіль', check: (s) => s.streakDays >= 7, getProgress: (s) => ({ current: Math.min(s.streakDays, 7), target: 7 }) },
+  { id: 'streak_14', icon: '💪', title: 'Два тижні дисципліни', desc: 'Тримати серію 14 днів поспіль', check: (s) => s.streakDays >= 14, getProgress: (s) => ({ current: Math.min(s.streakDays, 14), target: 14 }) },
+  { id: 'streak_30', icon: '🏅', title: 'Місяць німецької', desc: 'Тримати серію 30 днів поспіль', check: (s) => s.streakDays >= 30, getProgress: (s) => ({ current: Math.min(s.streakDays, 30), target: 30 }) },
+  { id: 'level_a2', icon: '🎯', title: 'Знавець A2', desc: 'Вивчити перше слово рівня A2', check: (s) => s.hasLevelA2, getProgress: (s) => ({ current: s.hasLevelA2 ? 1 : 0, target: 1 }) },
+  { id: 'level_b', icon: '🚀', title: 'Рівень B1–B2 у грі', desc: 'Вивчити перше слово рівня B1 або B2', check: (s) => s.hasLevelB1OrB2, getProgress: (s) => ({ current: s.hasLevelB1OrB2 ? 1 : 0, target: 1 }) },
+  { id: 'pro_member', icon: '👑', title: 'Учень PRO', desc: 'Активувати повний абонемент PRO', check: (s) => s.isPro, getProgress: (s) => ({ current: s.isPro ? 1 : 0, target: 1 }) },
 ];
 
 const getLocalDateStr = (date = new Date()) => {
@@ -125,10 +125,16 @@ export default function App() {
 
   const [legalModal, setLegalModal] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileTab, setProfileTab] = useState('overview'); // 'overview' | 'achievements' | 'dictionary'
+  const [achFilter, setAchFilter] = useState('all'); // 'all' | 'unlocked' | 'locked'
+  const [dictSearch, setDictSearch] = useState('');
+  const [dictLevelFilter, setDictLevelFilter] = useState('ALL');
 
   const [selectedLevel, setSelectedLevel] = useState('A1');
   const [selectedCategory, setSelectedCategory] = useState('colloquial');
   const [reviewLearnedInModule, setReviewLearnedInModule] = useState(false);
+  const [practiceAllLearnedMode, setPracticeAllLearnedMode] = useState(false);
+  const [practiceLevelFilter, setPracticeLevelFilter] = useState('ALL');
   const [isSpeaking, setIsSpeaking] = useState(false);
   const audioRef = useRef(null);
 
@@ -381,24 +387,28 @@ export default function App() {
     setTimeout(() => setXpGain(null), 1500);
   };
 
-  // Усі 4 рівні та 3 категорії відкриті (4 × 3 × 5 = 60 безкоштовних слів)
   const isLocked = () => false;
 
   const handleSelectModule = (lvl, cat) => {
     setSelectedLevel(lvl);
     setSelectedCategory(cat);
     setReviewLearnedInModule(false);
+    setPracticeAllLearnedMode(false);
     setCurrentIndex(0);
     setIsFlipped(false);
     setQuizAnswer(null);
   };
+
+  const learnedWordsList = useMemo(
+    () => vocabulary.filter((word) => learnedIds.includes(word.id)),
+    [vocabulary, learnedIds]
+  );
 
   const allCategoryWords = useMemo(() => {
     const list = vocabulary.filter((item) => item.level === selectedLevel && item.category === selectedCategory);
     return list.length > 0 ? list : vocabulary;
   }, [vocabulary, selectedLevel, selectedCategory]);
 
-  // Перші 5 слів у кожній категорії кожного рівня (4 × 3 × 5 = 60 слів)
   const availableModuleWords = useMemo(() => {
     return isPro ? allCategoryWords : allCategoryWords.slice(0, FREE_WORDS_LIMIT);
   }, [allCategoryWords, isPro]);
@@ -414,9 +424,14 @@ export default function App() {
   );
 
   const filteredWords = useMemo(() => {
+    if (practiceAllLearnedMode) {
+      if (practiceLevelFilter === 'ALL') return learnedWordsList;
+      const byLvl = learnedWordsList.filter((w) => w.level === practiceLevelFilter);
+      return byLvl.length > 0 ? byLvl : learnedWordsList;
+    }
     if (reviewLearnedInModule) return learnedCategoryWords;
     return unlearnedCategoryWords;
-  }, [reviewLearnedInModule, learnedCategoryWords, unlearnedCategoryWords]);
+  }, [practiceAllLearnedMode, practiceLevelFilter, learnedWordsList, reviewLearnedInModule, learnedCategoryWords, unlearnedCategoryWords]);
 
   useEffect(() => {
     if (currentIndex >= filteredWords.length) {
@@ -427,7 +442,13 @@ export default function App() {
   const goToNextWord = () => {
     if (filteredWords.length === 0) return;
     const nextIndex = currentIndex + 1;
-    if (!isPro && !reviewLearnedInModule && nextIndex >= filteredWords.length && allCategoryWords.length > availableModuleWords.length) {
+    if (
+      !isPro &&
+      !reviewLearnedInModule &&
+      !practiceAllLearnedMode &&
+      nextIndex >= filteredWords.length &&
+      allCategoryWords.length > availableModuleWords.length
+    ) {
       setShowPaywall(true);
       return;
     }
@@ -463,9 +484,11 @@ export default function App() {
     }
     setIsFlipped(false);
     setCurrentIndex((prev) => {
-      const nextLen = reviewLearnedInModule
-        ? learnedCategoryWords.length
-        : Math.max(unlearnedCategoryWords.length - (isCurrentLearned ? 0 : 1), 0);
+      const nextLen = practiceAllLearnedMode
+        ? filteredWords.length
+        : reviewLearnedInModule
+          ? learnedCategoryWords.length
+          : Math.max(unlearnedCategoryWords.length - (isCurrentLearned ? 0 : 1), 0);
       if (nextLen <= 0) return 0;
       return (prev + 1) % nextLen;
     });
@@ -489,30 +512,79 @@ export default function App() {
     return 'Легенда deutsch mit Dmytro';
   };
 
-  const learnedWordsList = useMemo(
-    () => vocabulary.filter((word) => learnedIds.includes(word.id)),
-    [vocabulary, learnedIds]
-  );
+  const achievementStats = useMemo(() => ({
+    xp: xp || 0,
+    learnedCount: learnedIds.length,
+    streakDays: streak || 0,
+    isPro: Boolean(isPro),
+    hasLevelA2: learnedWordsList.some((word) => word.level === 'A2'),
+    hasLevelB1OrB2: learnedWordsList.some((word) => word.level === 'B1' || word.level === 'B2'),
+  }), [xp, learnedIds.length, streak, isPro, learnedWordsList]);
 
   const userAchievements = useMemo(() => {
-    const stats = {
-      xp: xp || 0,
-      learnedCount: learnedIds.length,
-      streakDays: streak || 0,
-      isPro: Boolean(isPro),
-      hasLevelA2: learnedWordsList.some((word) => word.level === 'A2'),
-      hasLevelB1OrB2: learnedWordsList.some((word) => word.level === 'B1' || word.level === 'B2'),
-    };
-    return ACHIEVEMENTS.map((ach) => ({
-      ...ach,
-      unlocked: Boolean(ach.check(stats)),
-    }));
-  }, [learnedWordsList, learnedIds.length, xp, streak, isPro]);
+    return ACHIEVEMENTS.map((ach) => {
+      const unlocked = Boolean(ach.check(achievementStats));
+      const prog = ach.getProgress ? ach.getProgress(achievementStats) : { current: unlocked ? 1 : 0, target: 1 };
+      return {
+        ...ach,
+        unlocked,
+        current: prog.current,
+        target: prog.target,
+        percent: Math.min(100, Math.round((prog.current / Math.max(prog.target, 1)) * 100)),
+      };
+    });
+  }, [achievementStats]);
 
   const unlockedCount = useMemo(
     () => userAchievements.filter((item) => item.unlocked).length,
     [userAchievements]
   );
+
+  const nextAchievement = useMemo(
+    () => userAchievements.find((item) => !item.unlocked) || null,
+    [userAchievements]
+  );
+
+  const filteredAchievements = useMemo(() => {
+    if (achFilter === 'unlocked') return userAchievements.filter((a) => a.unlocked);
+    if (achFilter === 'locked') return userAchievements.filter((a) => !a.unlocked);
+    return userAchievements;
+  }, [userAchievements, achFilter]);
+
+  const levelProgressSummary = useMemo(() => {
+    return LEVELS.map((lvl) => {
+      const totalInLevel = vocabulary.filter((w) => w.level === lvl).length;
+      const learnedInLevel = learnedWordsList.filter((w) => w.level === lvl).length;
+      const percent = totalInLevel > 0 ? Math.min(100, Math.round((learnedInLevel / totalInLevel) * 100)) : 0;
+      return { level: lvl, learned: learnedInLevel, total: totalInLevel, percent };
+    });
+  }, [vocabulary, learnedWordsList]);
+
+  const filteredDictionaryWords = useMemo(() => {
+    const query = dictSearch.trim().toLowerCase();
+    return learnedWordsList.filter((w) => {
+      const matchesLevel = dictLevelFilter === 'ALL' || w.level === dictLevelFilter;
+      if (!matchesLevel) return false;
+      if (!query) return true;
+      return (
+        (w.word || '').toLowerCase().includes(query) ||
+        (w.translation || '').toLowerCase().includes(query) ||
+        (w.article || '').toLowerCase().includes(query)
+      );
+    });
+  }, [learnedWordsList, dictSearch, dictLevelFilter]);
+
+  const handleStartLearnedQuizFromProfile = () => {
+    if (learnedWordsList.length === 0) return;
+    setPracticeLevelFilter(dictLevelFilter);
+    setPracticeAllLearnedMode(true);
+    setReviewLearnedInModule(false);
+    setMode('quiz');
+    setCurrentIndex(0);
+    setIsFlipped(false);
+    setQuizAnswer(null);
+    setShowProfileModal(false);
+  };
 
   const shareText = `🇩🇪 Мій прогрес у deutsch mit Dmytro:\n✨ ${xp} XP балів\n📚 Вивчено слів: ${learnedIds.length}\n🔥 Серія: ${streak} дн.\n🏅 Досягнень: ${unlockedCount}/${userAchievements.length}`;
 
@@ -530,7 +602,7 @@ export default function App() {
   };
 
   const currentPlanObj = PLANS.find((p) => p.id === selectedPlan) || PLANS[1];
-  const hasMoreWordsInPro = !isPro && allCategoryWords.length > availableModuleWords.length;
+  const hasMoreWordsInPro = !isPro && !practiceAllLearnedMode && allCategoryWords.length > availableModuleWords.length;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col">
@@ -577,7 +649,7 @@ export default function App() {
               <div className="flex items-center gap-1 bg-slate-100 px-2.5 py-1 rounded-full text-xs font-medium text-slate-700">
                 <button
                   type="button"
-                  onClick={() => setShowProfileModal(true)}
+                  onClick={() => { setProfileTab('overview'); setShowProfileModal(true); }}
                   className="flex items-center gap-1.5 hover:text-amber-700 transition text-left"
                   title="Відкрити кабінет учня"
                 >
@@ -614,7 +686,7 @@ export default function App() {
 
           <div className="grid grid-cols-4 gap-2.5">
             {LEVELS.map((lvl) => {
-              const active = selectedLevel === lvl;
+              const active = !practiceAllLearnedMode && selectedLevel === lvl;
               return (
                 <button
                   key={lvl}
@@ -633,7 +705,7 @@ export default function App() {
             <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-2.5">2. Обери ціль та категорію</h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               {CATEGORIES.map((cat) => {
-                const active = selectedCategory === cat.id;
+                const active = !practiceAllLearnedMode && selectedCategory === cat.id;
                 const catWordsCount = vocabulary.filter((w) => w.level === selectedLevel && w.category === cat.id).length;
                 return (
                   <button
@@ -683,13 +755,18 @@ export default function App() {
               </button>
             </div>
 
-            {reviewLearnedInModule && (
+            {(reviewLearnedInModule || practiceAllLearnedMode) && (
               <button
                 type="button"
-                onClick={() => { setReviewLearnedInModule(false); setCurrentIndex(0); setIsFlipped(false); }}
+                onClick={() => {
+                  setReviewLearnedInModule(false);
+                  setPracticeAllLearnedMode(false);
+                  setCurrentIndex(0);
+                  setIsFlipped(false);
+                }}
                 className="px-3 py-2 rounded-xl bg-amber-100 text-amber-900 text-xs font-bold hover:bg-amber-200 transition"
               >
-                До нових слів ({unlearnedCategoryWords.length})
+                Повернутися до нових слів
               </button>
             )}
           </div>
@@ -698,7 +775,11 @@ export default function App() {
             {loading && <Loader2 className="w-4 h-4 animate-spin text-amber-600" />}
             {filteredWords.length > 0 ? (
               <span>
-                {reviewLearnedInModule ? 'Повторення: слово ' : 'Нове слово '}
+                {practiceAllLearnedMode
+                  ? `Тренування словника${practiceLevelFilter !== 'ALL' ? ` (${practiceLevelFilter})` : ''}: `
+                  : reviewLearnedInModule
+                    ? 'Повторення: слово '
+                    : 'Нове слово '}
                 <strong className="text-slate-900">{currentIndex + 1}</strong> з {filteredWords.length}
                 {hasMoreWordsInPro && (
                   <button onClick={() => setShowPaywall(true)} className="ml-1.5 text-amber-700 font-semibold hover:underline">
@@ -751,7 +832,7 @@ export default function App() {
               {user && (
                 <button
                   type="button"
-                  onClick={() => setShowProfileModal(true)}
+                  onClick={() => { setProfileTab('overview'); setShowProfileModal(true); }}
                   className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs sm:text-sm transition"
                 >
                   Кабінет учня
@@ -769,7 +850,7 @@ export default function App() {
             >
               <div className="flex items-center justify-between">
                 <span className="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600">
-                  {selectedLevel} • {CATEGORIES.find((c) => c.id === selectedCategory)?.label}
+                  {currentWord.level} • {CATEGORIES.find((c) => c.id === currentWord.category)?.label}
                 </span>
                 <button
                   onClick={(e) => {
@@ -899,20 +980,22 @@ export default function App() {
 
       {showProfileModal && user && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl relative space-y-6 max-h-[90vh] overflow-y-auto">
-            <button onClick={() => setShowProfileModal(false)} className="absolute top-5 right-5 p-2 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200"><X className="w-4 h-4" /></button>
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-7 shadow-2xl relative flex flex-col max-h-[90vh]">
+            <button onClick={() => setShowProfileModal(false)} className="absolute top-5 right-5 p-2 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200">
+              <X className="w-4 h-4" />
+            </button>
 
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pr-8">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pr-9 pb-4 border-b border-slate-100">
               <div>
-                <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full mb-1.5">
+                <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full mb-1">
                   <User className="w-3.5 h-3.5" /> Кабінет учня
                 </div>
-                <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 break-all">{user.email}</h3>
-                <p className="text-xs text-slate-500 font-medium mt-0.5">{getRank()}</p>
+                <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 break-all">{user.email}</h3>
+                <p className="text-xs text-slate-500 font-medium">{getRank()}</p>
               </div>
               {isPro ? (
                 <div className="flex flex-col items-start sm:items-end gap-1 self-start">
-                  <span className="inline-flex items-center gap-1.5 bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-full text-xs font-bold">
+                  <span className="inline-flex items-center gap-1.5 bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-xs font-bold">
                     <Crown className="w-3.5 h-3.5" /> Активний PRO
                   </span>
                   <span className="text-[11px] font-semibold text-emerald-700 px-1">
@@ -930,105 +1013,275 @@ export default function App() {
               )}
             </div>
 
-            <div className="grid grid-cols-3 gap-3 text-center">
-              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3.5">
-                <div className="text-2xl font-extrabold text-amber-900">{xp}</div>
-                <div className="text-[11px] font-semibold text-amber-700 uppercase">Балів XP</div>
-              </div>
-              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3.5">
-                <div className="text-2xl font-extrabold text-emerald-900">{learnedIds.length}</div>
-                <div className="text-[11px] font-semibold text-emerald-700 uppercase">Вивчено слів</div>
-              </div>
-              <div className="bg-orange-50 border border-orange-200 rounded-2xl p-3.5">
-                <div className="text-2xl font-extrabold text-orange-900">{streak} 🔥</div>
-                <div className="text-[11px] font-semibold text-orange-700 uppercase">Днів серії</div>
-              </div>
+            <div className="grid grid-cols-3 gap-1.5 bg-slate-100 p-1 rounded-xl my-4 shrink-0">
+              <button
+                type="button"
+                onClick={() => setProfileTab('overview')}
+                className={`py-2 px-2 rounded-lg text-xs font-bold transition ${
+                  profileTab === 'overview' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Огляд
+              </button>
+              <button
+                type="button"
+                onClick={() => setProfileTab('achievements')}
+                className={`py-2 px-2 rounded-lg text-xs font-bold transition ${
+                  profileTab === 'achievements' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Досягнення ({unlockedCount}/{userAchievements.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setProfileTab('dictionary')}
+                className={`py-2 px-2 rounded-lg text-xs font-bold transition ${
+                  profileTab === 'dictionary' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Мій словник ({learnedWordsList.length})
+              </button>
             </div>
 
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h4 className="text-sm font-bold text-slate-900">Досягнення</h4>
-                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900">
-                  {unlockedCount} з {userAchievements.length}
-                </span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-60 overflow-y-auto pr-1">
-                {userAchievements.map((ach) => (
-                  <div
-                    key={ach.id}
-                    className={`flex items-center gap-3 p-3 rounded-xl border text-left ${
-                      ach.unlocked ? 'bg-amber-50/80 border-amber-200 text-slate-900' : 'bg-slate-50 border-slate-200 text-slate-400 opacity-65'
-                    }`}
-                  >
-                    <span className="text-xl shrink-0">{ach.unlocked ? ach.icon : '🔒'}</span>
-                    <div className="min-w-0">
-                      <div className="text-xs font-bold truncate">{ach.title}</div>
-                      <div className="text-[11px] leading-snug">{ach.desc}</div>
+            <div className="overflow-y-auto flex-1 pr-1 space-y-5">
+              {profileTab === 'overview' && (
+                <>
+                  <div className="grid grid-cols-3 gap-3 text-center">
+                    <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3.5">
+                      <div className="text-2xl font-extrabold text-amber-900">{xp}</div>
+                      <div className="text-[11px] font-semibold text-amber-700 uppercase">Балів XP</div>
+                    </div>
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3.5">
+                      <div className="text-2xl font-extrabold text-emerald-900">{learnedIds.length}</div>
+                      <div className="text-[11px] font-semibold text-emerald-700 uppercase">Вивчено слів</div>
+                    </div>
+                    <div className="bg-orange-50 border border-orange-200 rounded-2xl p-3.5">
+                      <div className="text-2xl font-extrabold text-orange-900">{streak} 🔥</div>
+                      <div className="text-[11px] font-semibold text-orange-700 uppercase">Днів серії</div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
 
-            <div className="space-y-2.5">
-              <div className="flex items-center justify-between">
-                <h4 className="text-sm font-bold text-slate-900">Вивчені слова (для повторення)</h4>
-                <span className="text-xs text-slate-500 font-semibold">{learnedWordsList.length}</span>
-              </div>
-              {learnedWordsList.length === 0 ? (
-                <p className="text-xs text-slate-400 bg-slate-50 border border-slate-200 rounded-2xl p-4 text-center">
-                  Ти ще не додав вивчених слів. Натискай «Знаю це слово» або проходь тести, щоб вони з’явилися тут.
-                </p>
-              ) : (
-                <div className="max-h-56 overflow-y-auto divide-y divide-slate-100 border border-slate-200 rounded-2xl bg-slate-50/60">
-                  {learnedWordsList.map((w) => (
-                    <div key={w.id} className="flex items-center justify-between gap-3 px-4 py-2.5 text-xs">
-                      <div className="min-w-0">
-                        <span className="font-bold text-slate-900">
-                          {w.article ? `${w.article} ` : ''}{w.word}
+                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">Прогрес за рівнями A1–B2</h4>
+                      <span className="text-xs font-bold text-slate-700">
+                        {learnedWordsList.length} / {vocabulary.length} слів
+                      </span>
+                    </div>
+                    <div className="space-y-2.5">
+                      {levelProgressSummary.map((item) => (
+                        <div key={item.level} className="space-y-1">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-bold text-slate-800">Рівень {item.level}</span>
+                            <span className="text-slate-500 font-medium">
+                              {item.learned} з {item.total} ({item.percent}%)
+                            </span>
+                          </div>
+                          <div className="w-full h-2 rounded-full bg-slate-200 overflow-hidden">
+                            <div
+                              className="h-full bg-amber-500 rounded-full transition-all"
+                              style={{ width: `${item.percent}%` }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {nextAchievement && (
+                    <div className="bg-amber-50/70 border border-amber-200 rounded-2xl p-4 space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-bold text-amber-900">
+                          Наступна нагорода: {nextAchievement.icon} {nextAchievement.title}
                         </span>
-                        <span className="text-slate-500 ml-2">— {w.translation}</span>
+                        <span className="font-bold text-amber-800">
+                          {nextAchievement.current} / {nextAchievement.target}
+                        </span>
                       </div>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => speakGerman(`${w.article} ${w.word}`)}
-                          className="p-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 transition"
-                          title="Повторити вимову"
-                        >
-                          <Volume2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (isLocked(w.level, w.category)) {
-                              setShowProfileModal(false);
-                              setShowPaywall(true);
-                              return;
-                            }
-                            setSelectedLevel(w.level);
-                            setSelectedCategory(w.category);
-                            setReviewLearnedInModule(true);
-                            setMode('cards');
-                            setCurrentIndex(0);
-                            setIsFlipped(false);
-                            setShowProfileModal(false);
-                          }}
-                          className="px-2.5 py-1 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-[10px] font-bold text-slate-700 transition"
-                        >
-                          Повторити
-                        </button>
-                        <span className="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-[10px] font-bold text-slate-600">
-                          {w.level}
+                      <div className="w-full h-2 rounded-full bg-amber-200/70 overflow-hidden">
+                        <div
+                          className="h-full bg-amber-500 rounded-full transition-all"
+                          style={{ width: `${nextAchievement.percent}%` }}
+                        />
+                      </div>
+                      <p className="text-[11px] text-amber-800">{nextAchievement.desc}</p>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {profileTab === 'achievements' && (
+                <div className="space-y-4">
+                  {nextAchievement ? (
+                    <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3.5 space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-bold text-amber-950">
+                          Найближче досягнення: {nextAchievement.icon} {nextAchievement.title}
                         </span>
+                        <span className="font-bold text-amber-800">
+                          {nextAchievement.current} / {nextAchievement.target} ({nextAchievement.percent}%)
+                        </span>
+                      </div>
+                      <div className="w-full h-2 rounded-full bg-amber-200 overflow-hidden">
+                        <div
+                          className="h-full bg-amber-500 rounded-full transition-all"
+                          style={{ width: `${nextAchievement.percent}%` }}
+                        />
                       </div>
                     </div>
-                  ))}
+                  ) : (
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3 text-center text-xs font-bold text-emerald-800">
+                      Усі 20 досягнень відкрито!
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-2">
+                    {[
+                      { id: 'all', label: `Усі (${userAchievements.length})` },
+                      { id: 'unlocked', label: `Відкриті (${unlockedCount})` },
+                      { id: 'locked', label: `Закриті (${userAchievements.length - unlockedCount})` },
+                    ].map((tab) => (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setAchFilter(tab.id)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-bold transition ${
+                          achFilter === tab.id
+                            ? 'bg-slate-900 text-white'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {filteredAchievements.map((ach) => (
+                      <div
+                        key={ach.id}
+                        className={`flex items-center gap-3 p-3 rounded-xl border text-left ${
+                          ach.unlocked
+                            ? 'bg-amber-50/80 border-amber-200 text-slate-900'
+                            : 'bg-slate-50 border-slate-200 text-slate-400 opacity-70'
+                        }`}
+                      >
+                        <span className="text-xl shrink-0">{ach.unlocked ? ach.icon : '🔒'}</span>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs font-bold truncate">{ach.title}</div>
+                          <div className="text-[11px] leading-snug">{ach.desc}</div>
+                          {!ach.unlocked && ach.target > 1 && (
+                            <div className="text-[10px] font-semibold text-slate-500 mt-1">
+                              Прогрес: {ach.current} / {ach.target}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {profileTab === 'dictionary' && (
+                <div className="space-y-3">
+                  {learnedWordsList.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleStartLearnedQuizFromProfile}
+                      className="w-full py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition shadow-xs"
+                    >
+                      <BrainCircuit className="w-4 h-4" />
+                      <span>
+                        Тренувати лише вивчені (Тест{dictLevelFilter !== 'ALL' ? ` • ${dictLevelFilter}` : ''})
+                      </span>
+                    </button>
+                  )}
+
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <div className="relative flex-1">
+                      <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        value={dictSearch}
+                        onChange={(e) => setDictSearch(e.target.value)}
+                        placeholder="Пошук слова або перекладу..."
+                        className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-amber-400"
+                      />
+                    </div>
+                    <div className="flex items-center gap-1 overflow-x-auto">
+                      {['ALL', ...LEVELS].map((lvl) => (
+                        <button
+                          key={lvl}
+                          type="button"
+                          onClick={() => setDictLevelFilter(lvl)}
+                          className={`px-2.5 py-2 rounded-xl text-xs font-bold transition shrink-0 ${
+                            dictLevelFilter === lvl
+                              ? 'bg-slate-900 text-white'
+                              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                          }`}
+                        >
+                          {lvl === 'ALL' ? 'Усі' : lvl}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {learnedWordsList.length === 0 ? (
+                    <p className="text-xs text-slate-400 bg-slate-50 border border-slate-200 rounded-2xl p-6 text-center">
+                      Ти ще не додав вивчених слів. Натискай «Знаю це слово» або проходь тести, щоб вони з’явилися тут.
+                    </p>
+                  ) : filteredDictionaryWords.length === 0 ? (
+                    <p className="text-xs text-slate-400 bg-slate-50 border border-slate-200 rounded-2xl p-6 text-center">
+                      За твоїм запитом слів не знайдено.
+                    </p>
+                  ) : (
+                    <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl bg-slate-50/60">
+                      {filteredDictionaryWords.map((w) => (
+                        <div key={w.id} className="flex items-center justify-between gap-3 px-4 py-2.5 text-xs">
+                          <div className="min-w-0">
+                            <span className="font-bold text-slate-900">
+                              {w.article ? `${w.article} ` : ''}{w.word}
+                            </span>
+                            <span className="text-slate-500 ml-2">— {w.translation}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => speakGerman(`${w.article} ${w.word}`)}
+                              className="p-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 transition"
+                              title="Повторити вимову"
+                            >
+                              <Volume2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPracticeAllLearnedMode(false);
+                                setSelectedLevel(w.level);
+                                setSelectedCategory(w.category);
+                                setReviewLearnedInModule(true);
+                                setMode('cards');
+                                setCurrentIndex(0);
+                                setIsFlipped(false);
+                                setShowProfileModal(false);
+                              }}
+                              className="px-2.5 py-1 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-[10px] font-bold text-slate-700 transition"
+                            >
+                              Повторити
+                            </button>
+                            <span className="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-[10px] font-bold text-slate-600">
+                              {w.level}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
 
-            <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-3">
+            <div className="pt-3 mt-4 border-t border-slate-100 flex items-center justify-between gap-3 shrink-0">
               <button
                 type="button"
                 onClick={handleLogout}
