@@ -1,54 +1,22 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { createClient } from '@supabase/supabase-js';
 import {
   Volume2, Flame, Trophy, Lock, CheckCircle2, XCircle,
   Share2, Sparkles, BookOpen, BrainCircuit, ArrowRight,
-  RotateCcw, Crown, Check, Copy, X
+  RotateCcw, Crown, Check, Copy, X, Loader2
 } from 'lucide-react';
 
-const VOCABULARY_DATA = [
-  // A1 - Розмовна
+const SUPABASE_URL = 'https://vdjduptyloghojeqaglw.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_L9Gw77mlbgOdzYt4-a6nEA_ZqeNxiui';
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const FALLBACK_DATA = [
   { id: 1, level: 'A1', category: 'colloquial', article: 'der', word: 'Kumpel', plural: 'die Kumpels', translation: 'приятель, друзяка', example: 'Mein Kumpel kommt heute Abend vorbei.', exampleUa: 'Мій приятель завітає сьогодні ввечері.' },
-  { id: 2, level: 'A1', category: 'colloquial', article: '', word: 'quatschen', plural: '', translation: 'базікати, теревенити', example: 'Wir haben stundenlang im Café gequatscht.', exampleUa: 'Ми годинами теревенили в кав’ярні.' },
-  { id: 3, level: 'A1', category: 'colloquial', article: 'das', word: 'Handy', plural: 'die Handys', translation: 'мобільний телефон', example: 'Wo liegt mein Handy schon wieder?', exampleUa: 'Де знову лежить мій телефон?' },
-  { id: 4, level: 'A1', category: 'colloquial', article: '', word: 'lecker', plural: '', translation: 'смачний', example: 'Der Kuchen schmeckt wirklich lecker!', exampleUa: 'Пиріг смакує справді смачно!' },
-  // A1 - Для іспитів
-  { id: 5, level: 'A1', category: 'exam', article: 'die', word: 'Anmeldung', plural: 'die Anmeldungen', translation: 'реєстрація, прописка', example: 'Für den Kurs braucht man eine Anmeldung.', exampleUa: 'Для курсу потрібна реєстрація.' },
-  { id: 6, level: 'A1', category: 'exam', article: 'der', word: 'Termin', plural: 'die Termine', translation: 'запис, призначена зустріч', example: 'Ich möchte einen Termin beim Arzt vereinbaren.', exampleUa: 'Я хочу домовитися про прийом у лікаря.' },
-  { id: 7, level: 'A1', category: 'exam', article: '', word: 'buchstabieren', plural: '', translation: 'вимовляти по літерах', example: 'Können Sie Ihren Nachnamen bitte buchstabieren?', exampleUa: 'Чи можете ви, будь ласка, назвати своє прізвище по літерах?' },
-  // A1 - Офіційна
-  { id: 8, level: 'A1', category: 'official', article: 'der', word: 'Ausweis', plural: 'die Ausweise', translation: 'посвідчення особи', example: 'Zeigen Sie bitte Ihren Ausweis an der Kasse.', exampleUa: 'Покажіть, будь ласка, ваше посвідчення на касі.' },
-  { id: 9, level: 'A1', category: 'official', article: 'die', word: 'Unterschrift', plural: 'die Unterschriften', translation: 'підпис', example: 'Hier fehlt noch Ihre Unterschrift.', exampleUa: 'Тут ще бракує вашого підпису.' },
-
-  // A2 - Розмовна
-  { id: 10, level: 'A2', category: 'colloquial', article: '', word: 'abhängen', plural: '', translation: 'залежати; тусуватися', example: 'Das hängt vom Wetter ab.', exampleUa: 'Це залежить від погоди.' },
-  { id: 11, level: 'A2', category: 'colloquial', article: 'die', word: 'Lust', plural: '', translation: 'бажання, охота', example: 'Hast du heute Lust auf Kino?', exampleUa: 'Маєш сьогодні бажання піти в кіно?' },
-  { id: 12, level: 'A2', category: 'colloquial', article: '', word: 'echt', plural: '', translation: 'справді, реально', example: 'Bist du dir da echt sicher?', exampleUa: 'Ти в цьому реально впевнений?' },
-  // A2 - Для іспитів
-  { id: 13, level: 'A2', category: 'exam', article: 'die', word: 'Erfahrung', plural: 'die Erfahrungen', translation: 'досвід', example: 'Er hat schon viel Erfahrung im Beruf.', exampleUa: 'Він уже має великий досвід у професії.' },
-  { id: 14, level: 'A2', category: 'exam', article: '', word: 'sich entscheiden', plural: '', translation: 'вирішувати, приймати рішення', example: 'Ich habe mich für diesen Job entschieden.', exampleUa: 'Я зупинив свій вибір на цій роботі.' },
-  // A2 - Офіційна
-  { id: 15, level: 'A2', category: 'official', article: 'der', word: 'Antrag', plural: 'die Anträge', translation: 'заява, клопотання', example: 'Sie müssen einen Antrag auf Urlaub stellen.', exampleUa: 'Ви повинні подати заяву на відпустку.' },
-  { id: 16, level: 'A2', category: 'official', article: 'die', word: 'Gebühr', plural: 'die Gebühren', translation: 'збір, мито, плата', example: 'Die Gebühr beträgt 25 Euro.', exampleUa: 'Збір становить 25 євро.' },
-
-  // B1 - Розмовна
-  { id: 17, level: 'B1', category: 'colloquial', article: '', word: 'sich aufregen', plural: '', translation: 'нервувати, обурюватися', example: 'Reg dich nicht wegen jeder Kleinigkeit auf!', exampleUa: 'Не нервуй через кожну дрібницю!' },
-  { id: 18, level: 'B1', category: 'colloquial', article: 'der', word: 'Kram', plural: '', translation: 'мотлох, речі, справи', example: 'Pack deinen Kram zusammen, wir gehen.', exampleUa: 'Збирай свої манатки, ми йдемо.' },
-  // B1 - Для іспитів
-  { id: 19, level: 'B1', category: 'exam', article: 'der', word: 'Vorteil', plural: 'die Vorteile', translation: 'перевага', example: 'Ein großer Vorteil ist die flexible Arbeitszeit.', exampleUa: 'Великою перевагою є гнучкий робочий графік.' },
-  { id: 20, level: 'B1', category: 'exam', article: '', word: 'vermeiden', plural: '', translation: 'уникати', example: 'Man sollte unnötigen Stress vermeiden.', exampleUa: 'Слід уникати зайвого стресу.' },
-  // B1 - Офіційна
-  { id: 21, level: 'B1', category: 'official', article: 'die', word: 'Bescheinigung', plural: 'die Bescheinigungen', translation: 'довідка, посвідчення', example: 'Wir benötigen eine ärztliche Bescheinigung.', exampleUa: 'Нам потрібна медична довідка.' },
-  { id: 22, level: 'B1', category: 'official', article: '', word: 'kündigen', plural: '', translation: 'звільнятися, розривати договір', example: 'Er hat seinen Vertrag fristgerecht gekündigt.', exampleUa: 'Він вчасно розірвав свій договір.' },
-
-  // B2 - Розмовна
-  { id: 23, level: 'B2', category: 'colloquial', article: '', word: 'ausrasten', plural: '', translation: 'вийти з себе, зірватися', example: 'Als er das hörte, ist er komplett ausgerastet.', exampleUa: 'Коли він це почув, то повністю вийшов із себе.' },
-  { id: 24, level: 'B2', category: 'colloquial', article: '', word: 'auf die Nerven gehen', plural: '', translation: 'діяти на нерви', example: 'Diese ständige Warterei geht mir auf die Nerven.', exampleUa: 'Це постійне очікування діє мені на нерви.' },
-  // B2 - Для іспитів
-  { id: 25, level: 'B2', category: 'exam', article: 'die', word: 'Herausforderung', plural: 'die Herausforderungen', translation: 'виклик, складне завдання', example: 'Der Umzug ins Ausland war eine große Herausforderung.', exampleUa: 'Переїзд за кордон став великим викликом.' },
-  { id: 26, level: 'B2', category: 'exam', article: '', word: 'berücksichtigen', plural: '', translation: 'враховувати, брати до уваги', example: 'Man muss alle Aspekte dieses Problems berücksichtigen.', exampleUa: 'Потрібно врахувати всі аспекти цієї проблеми.' },
-  // B2 - Офіційна
-  { id: 27, level: 'B2', category: 'official', article: 'die', word: 'Voraussetzung', plural: 'die Voraussetzungen', translation: 'передумова, вимога', example: 'Gute Deutschkenntnisse sind eine wichtige Voraussetzung.', exampleUa: 'Добре знання німецької є важливою вимогою.' },
-  { id: 28, level: 'B2', category: 'official', article: '', word: 'gewährleisten', plural: '', translation: 'гарантувати, забезпечувати', example: 'Die Firma gewährleistet höchste Qualität.', exampleUa: 'Компанія гарантує найвищу якість.' }
+  { id: 2, level: 'A1', category: 'exam', article: 'die', word: 'Anmeldung', plural: 'die Anmeldungen', translation: 'реєстрація, прописка', example: 'Für den Kurs braucht man eine Anmeldung.', exampleUa: 'Для курсу потрібна реєстрація.' },
+  { id: 3, level: 'A1', category: 'official', article: 'der', word: 'Ausweis', plural: 'die Ausweise', translation: 'посвідчення особи', example: 'Zeigen Sie bitte Ihren Ausweis an der Kasse.', exampleUa: 'Покажіть, будь ласка, ваше посвідчення на касі.' },
+  { id: 4, level: 'A2', category: 'colloquial', article: 'die', word: 'Lust', plural: '', translation: 'бажання, охота', example: 'Hast du heute Lust auf Kino?', exampleUa: 'Маєш сьогодні бажання піти в кіно?' },
+  { id: 5, level: 'B1', category: 'exam', article: 'der', word: 'Vorteil', plural: 'die Vorteile', translation: 'перевага', example: 'Ein großer Vorteil ist die flexible Arbeitszeit.', exampleUa: 'Великою перевагою є гнучкий робочий графік.' },
+  { id: 6, level: 'B2', category: 'official', article: 'die', word: 'Voraussetzung', plural: 'die Voraussetzungen', translation: 'передумова, вимога', example: 'Gute Deutschkenntnisse sind eine wichtige Voraussetzung.', exampleUa: 'Добре знання німецької є важливою вимогою.' }
 ];
 
 const LEVELS = ['A1', 'A2', 'B1', 'B2'];
@@ -65,9 +33,12 @@ const PLANS = [
 ];
 
 export default function App() {
+  const [vocabulary, setVocabulary] = useState(FALLBACK_DATA);
+  const [loading, setLoading] = useState(true);
+
   const [selectedLevel, setSelectedLevel] = useState('A1');
   const [selectedCategory, setSelectedCategory] = useState('colloquial');
-  const [mode, setMode] = useState('cards'); // 'cards' | 'quiz'
+  const [mode, setMode] = useState('cards');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
 
@@ -81,9 +52,35 @@ export default function App() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Quiz state
   const [quizAnswer, setQuizAnswer] = useState(null);
   const [quizOptions, setQuizOptions] = useState([]);
+
+  useEffect(() => {
+    async function fetchWords() {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('vocabulary')
+        .select('*')
+        .order('id', { ascending: true });
+
+      if (!error && data && data.length > 0) {
+        const formatted = data.map((row) => ({
+          id: row.id,
+          level: row.level,
+          category: row.category,
+          article: row.article || '',
+          word: row.word,
+          plural: row.plural || '',
+          translation: row.translation,
+          example: row.example,
+          exampleUa: row.example_ua
+        }));
+        setVocabulary(formatted);
+      }
+      setLoading(false);
+    }
+    fetchWords();
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('dmd_xp', xp);
@@ -112,22 +109,24 @@ export default function App() {
   };
 
   const filteredWords = useMemo(() => {
-    return VOCABULARY_DATA.filter(
+    const list = vocabulary.filter(
       (item) => item.level === selectedLevel && item.category === selectedCategory
     );
-  }, [selectedLevel, selectedCategory]);
+    return list.length > 0 ? list : vocabulary;
+  }, [vocabulary, selectedLevel, selectedCategory]);
 
   const currentWord = filteredWords[currentIndex] || filteredWords[0];
 
   useEffect(() => {
     if (!currentWord) return;
-    const others = VOCABULARY_DATA.filter((w) => w.id !== currentWord.id)
+    const others = vocabulary
+      .filter((w) => w.id !== currentWord.id)
       .sort(() => 0.5 - Math.random())
       .slice(0, 3);
     const options = [...others, currentWord].sort(() => 0.5 - Math.random());
     setQuizOptions(options);
     setQuizAnswer(null);
-  }, [currentWord, mode]);
+  }, [currentWord, mode, vocabulary]);
 
   const speakGerman = (text) => {
     if (!('speechSynthesis' in window)) return;
@@ -185,7 +184,6 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-16">
-      {/* Header */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
         <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -196,7 +194,9 @@ export default function App() {
               <h1 className="font-bold text-base sm:text-lg leading-tight tracking-tight">
                 deutsch mit <span className="text-amber-600">Dmytro</span>
               </h1>
-              <p className="text-[11px] text-slate-500 hidden sm:block">Лексичний тренажер A1–B2</p>
+              <p className="text-[11px] text-slate-500 hidden sm:block">
+                База слів: {vocabulary.length} шт. • Рівні A1–B2
+              </p>
             </div>
           </div>
 
@@ -237,12 +237,9 @@ export default function App() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 pt-6 space-y-6">
-        {/* Level Selector */}
         <section className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div>
-              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">1. Обери свій рівень</h2>
-            </div>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">1. Обери свій рівень</h2>
             <span className="text-xs text-slate-500 font-medium">
               Статус: <strong className="text-slate-800">{getRank()}</strong>
             </span>
@@ -269,7 +266,6 @@ export default function App() {
             })}
           </div>
 
-          {/* Category Selector */}
           <div className="pt-2">
             <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-2.5">2. Обери ціль та категорію</h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -305,7 +301,6 @@ export default function App() {
           </div>
         </section>
 
-        {/* Mode Switcher & Progress */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="inline-flex bg-slate-200/70 p-1 rounded-xl">
             <button
@@ -326,12 +321,14 @@ export default function App() {
             </button>
           </div>
 
-          <div className="text-sm font-medium text-slate-500">
-            Слово <span className="text-slate-900 font-bold">{currentIndex + 1}</span> з {filteredWords.length}
+          <div className="flex items-center gap-2 text-sm font-medium text-slate-500">
+            {loading && <Loader2 className="w-4 h-4 animate-spin text-amber-600" />}
+            <span>
+              Слово <span className="text-slate-900 font-bold">{currentIndex + 1}</span> з {filteredWords.length}
+            </span>
           </div>
         </div>
 
-        {/* Learning Area */}
         {currentWord && mode === 'cards' && (
           <section className="space-y-4">
             <div
@@ -368,7 +365,7 @@ export default function App() {
                 )}
 
                 {isFlipped ? (
-                  <div className="pt-6 mt-6 border-t border-slate-100 space-y-3 animate-fadeIn">
+                  <div className="pt-6 mt-6 border-t border-slate-100 space-y-3">
                     <p className="text-2xl font-bold text-amber-600">{currentWord.translation}</p>
                     <div className="bg-slate-50 p-4 rounded-2xl max-w-lg mx-auto text-left space-y-1">
                       <div className="flex items-center justify-between gap-2">
@@ -421,7 +418,6 @@ export default function App() {
           </section>
         )}
 
-        {/* Quiz Mode */}
         {currentWord && mode === 'quiz' && (
           <section className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
             <div className="flex items-center justify-between">
@@ -481,10 +477,9 @@ export default function App() {
         )}
       </main>
 
-      {/* Paywall Modal (Subscriptions) */}
       {showPaywall && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative space-y-6 animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative space-y-6">
             <button
               onClick={() => setShowPaywall(false)}
               className="absolute top-5 right-5 p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600"
@@ -502,7 +497,6 @@ export default function App() {
               </p>
             </div>
 
-            {/* Subscription Plans */}
             <div className="grid grid-cols-3 gap-2.5">
               {PLANS.map((plan) => {
                 const active = selectedPlan === plan.id;
@@ -570,7 +564,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Share Modal */}
       {showShareModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl relative space-y-5">
