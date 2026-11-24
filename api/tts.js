@@ -1,3 +1,5 @@
+import { EdgeTTS } from 'edge-tts-universal';
+
 export default async function handler(req, res) {
   const { text = '', voice = 'de-DE-KatjaNeural' } = req.query;
   const cleanText = String(text).trim().slice(0, 300);
@@ -7,18 +9,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    const endpoint = `https://tts.travisvn.com/api/tts?t=${encodeURIComponent(cleanText)}&v=${encodeURIComponent(voice)}&r=-5%25`;
-    const response = await fetch(endpoint, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`TTS error: ${response.status}`);
-    }
-
-    const arrayBuffer = await response.arrayBuffer();
+    const tts = new EdgeTTS(cleanText, voice, { rate: '-5%' });
+    const result = await tts.synthesize();
+    const arrayBuffer = await result.audio.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
     res.setHeader('Content-Type', 'audio/mpeg');
@@ -27,6 +20,6 @@ export default async function handler(req, res) {
     res.setHeader('Cache-Control', 'public, max-age=86400');
     return res.status(200).send(buffer);
   } catch (err) {
-    return res.status(502).json({ error: 'TTS unavailable' });
+    return res.status(502).json({ error: err.message || 'TTS failed' });
   }
 }
