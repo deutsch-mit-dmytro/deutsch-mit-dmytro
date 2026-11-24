@@ -3,12 +3,13 @@ import { createClient } from '@supabase/supabase-js';
 import {
   Volume2, Flame, Trophy, CheckCircle2, XCircle,
   Share2, Sparkles, BookOpen, BrainCircuit, ArrowRight,
-  RotateCcw, Crown, Check, Copy, X, Loader2, LogOut, User, ShieldCheck, FileText, ExternalLink, Search, Keyboard
+  RotateCcw, Crown, Check, Copy, X, Loader2, LogOut, User, ShieldCheck, FileText, ExternalLink, Search, Keyboard, Compass
 } from 'lucide-react';
 
 const SUPABASE_URL = 'https://vdjduptyloghojeqaglw.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_L9Gw77mlbgOdzYt4-a6nEA_ZqeNxiui';
 const MONO_JAR_URL = 'https://send.monobank.ua/jar/6yGqswy7kR';
+const LEVEL_TEST_URL = 'https://sites.google.com/view/deutschmitdmytro/full-page-embed';
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const FREE_WORDS_LIMIT = 5;
@@ -127,6 +128,7 @@ export default function App() {
   const [authError, setAuthError] = useState('');
 
   const [legalModal, setLegalModal] = useState(null);
+  const [showLevelTestModal, setShowLevelTestModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileTab, setProfileTab] = useState('overview');
   const [achFilter, setAchFilter] = useState('all');
@@ -173,10 +175,9 @@ export default function App() {
   const [quizAnswer, setQuizAnswer] = useState(null);
   const [quizOptions, setQuizOptions] = useState([]);
 
-  // Стан для режиму «Правопис (Spelling)»
   const [selectedArticle, setSelectedArticle] = useState('');
   const [spellingInput, setSpellingInput] = useState('');
-  const [spellingResult, setSpellingResult] = useState(null); // null | { articleOk, wordOk, allOk }
+  const [spellingResult, setSpellingResult] = useState(null);
   const spellingInputRef = useRef(null);
 
   const touchDailyStreak = () => {
@@ -558,7 +559,6 @@ export default function App() {
     const typedWord = spellingInput.trim();
 
     const articleOk = !needsArticle || selectedArticle.toLowerCase() === expectedArticle;
-    // Перевіряємо точний регістр (іменники з великої літери — вимога іспитів Goethe / telc)
     const wordOk = typedWord === expectedWord;
     const allOk = articleOk && wordOk;
 
@@ -749,8 +749,18 @@ export default function App() {
 
       <main className="max-w-4xl w-full mx-auto px-4 pt-6 pb-12 space-y-6 flex-1">
         <section className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">1. Обери свій рівень</h2>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">1. Обери свій рівень</h2>
+              <button
+                type="button"
+                onClick={() => setShowLevelTestModal(true)}
+                className="inline-flex items-center gap-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 px-3 py-1 rounded-full text-xs font-bold transition"
+              >
+                <Compass className="w-3.5 h-3.5" />
+                <span>Визначити рівень</span>
+              </button>
+            </div>
             <span className="text-xs text-slate-500 font-medium">Статус: <strong className="text-slate-800">{getRank()}</strong></span>
           </div>
 
@@ -1225,6 +1235,45 @@ export default function App() {
           </div>
         </div>
       </footer>
+
+      {showLevelTestModal && (
+        <div className="fixed inset-0 bg-slate-900/65 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4">
+          <div className="bg-white rounded-3xl max-w-4xl w-full h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+            <div className="px-4 sm:px-6 py-3.5 border-b border-slate-200 flex items-center justify-between gap-2 shrink-0">
+              <div className="flex items-center gap-2">
+                <Compass className="w-5 h-5 text-amber-600" />
+                <h3 className="font-extrabold text-sm sm:text-base text-slate-900">Тест на визначення рівня німецької</h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <a
+                  href={LEVEL_TEST_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 transition"
+                >
+                  <span className="hidden sm:inline">Відкрити в новій вкладці</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setShowLevelTestModal(false)}
+                  className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 bg-slate-50 relative">
+              <iframe
+                src={LEVEL_TEST_URL}
+                title="Тест на визначення рівня німецької — deutsch mit Dmytro"
+                className="w-full h-full border-0"
+                allow="clipboard-write"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {showProfileModal && user && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
