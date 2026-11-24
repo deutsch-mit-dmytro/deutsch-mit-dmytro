@@ -22,7 +22,7 @@ const PRIVACY_TEXT = [
 
 const OFFER_TEXT = [
   { title: '1. Предмет договору', body: 'Виконавець (Горішняк Дмитро Володимирович) надає Користувачеві доступ до інтерактивного тренажера німецької мови deutsch mit Dmytro на умовах обраного тарифу PRO.' },
-  { title: '2. Порядок надання доступу', body: 'Ознайомчий доступ (перші 5 слів у кожному рівні A1–B2 — усього 20 слів) надається безкоштовно. Повний доступ до всієї бази слів рівнів A1–B2 активується після оплати на 1, 3 або 6 місяців.' },
+  { title: '2. Порядок надання доступу', body: 'Ознайомчий доступ (перші 5 слів у кожній категорії всіх рівнів A1–B2 — усього 60 слів) надається безкоштовно. Повний доступ до всієї бази слів рівнів A1–B2 активується після оплати на 1, 3 або 6 місяців.' },
   { title: '3. Повернення коштів', body: 'Оскільки цифровий доступ надається миттєво у повному обсязі, повернення коштів можливе протягом 14 днів лише у разі технічної неможливості надання доступу з вини Виконавця. Контакт: sirobabadima9@gmail.com.' }
 ];
 
@@ -381,7 +381,7 @@ export default function App() {
     setTimeout(() => setXpGain(null), 1500);
   };
 
-  // Усі 4 рівні A1–B2 відкриті для ознайомчого доступу (по 5 слів у кожному рівні = 20 слів)
+  // Усі 4 рівні та 3 категорії відкриті (4 × 3 × 5 = 60 безкоштовних слів)
   const isLocked = () => false;
 
   const handleSelectModule = (lvl, cat) => {
@@ -398,23 +398,19 @@ export default function App() {
     return list.length > 0 ? list : vocabulary;
   }, [vocabulary, selectedLevel, selectedCategory]);
 
-  // Для безкоштовного тарифу обмежуємо вибірку першими 5 словами рівня (разом 20 слів для A1–B2)
-  const availableLevelWords = useMemo(() => {
-    if (isPro) return allCategoryWords;
-    const levelPool = vocabulary.filter((item) => item.level === selectedLevel);
-    const freeIds = new Set(levelPool.slice(0, FREE_WORDS_LIMIT).map((w) => w.id));
-    const inSelectedCat = allCategoryWords.filter((w) => freeIds.has(w.id));
-    return inSelectedCat.length > 0 ? inSelectedCat : allCategoryWords.slice(0, FREE_WORDS_LIMIT);
-  }, [vocabulary, allCategoryWords, selectedLevel, isPro]);
+  // Перші 5 слів у кожній категорії кожного рівня (4 × 3 × 5 = 60 слів)
+  const availableModuleWords = useMemo(() => {
+    return isPro ? allCategoryWords : allCategoryWords.slice(0, FREE_WORDS_LIMIT);
+  }, [allCategoryWords, isPro]);
 
   const unlearnedCategoryWords = useMemo(
-    () => availableLevelWords.filter((item) => !learnedIds.includes(item.id)),
-    [availableLevelWords, learnedIds]
+    () => availableModuleWords.filter((item) => !learnedIds.includes(item.id)),
+    [availableModuleWords, learnedIds]
   );
 
   const learnedCategoryWords = useMemo(
-    () => availableLevelWords.filter((item) => learnedIds.includes(item.id)),
-    [availableLevelWords, learnedIds]
+    () => availableModuleWords.filter((item) => learnedIds.includes(item.id)),
+    [availableModuleWords, learnedIds]
   );
 
   const filteredWords = useMemo(() => {
@@ -431,7 +427,7 @@ export default function App() {
   const goToNextWord = () => {
     if (filteredWords.length === 0) return;
     const nextIndex = currentIndex + 1;
-    if (!isPro && !reviewLearnedInModule && nextIndex >= filteredWords.length && allCategoryWords.length > filteredWords.length) {
+    if (!isPro && !reviewLearnedInModule && nextIndex >= filteredWords.length && allCategoryWords.length > availableModuleWords.length) {
       setShowPaywall(true);
       return;
     }
@@ -534,7 +530,7 @@ export default function App() {
   };
 
   const currentPlanObj = PLANS.find((p) => p.id === selectedPlan) || PLANS[1];
-  const hasMoreWordsInPro = !isPro && allCategoryWords.length > availableLevelWords.length;
+  const hasMoreWordsInPro = !isPro && allCategoryWords.length > availableModuleWords.length;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col">
@@ -653,7 +649,7 @@ export default function App() {
                         <div className="font-semibold text-sm">{cat.label}</div>
                         <div className="text-[11px] text-slate-400">
                           {!isPro
-                            ? `До ${FREE_WORDS_LIMIT} безкоштовних слів рівня ${selectedLevel}`
+                            ? `Перші ${FREE_WORDS_LIMIT} слів безкоштовно`
                             : `Рівень ${selectedLevel} (${catWordsCount} сл.)`}
                         </div>
                       </div>
@@ -724,12 +720,12 @@ export default function App() {
             <div className="space-y-1">
               <h3 className="text-xl font-extrabold text-slate-900">
                 {hasMoreWordsInPro
-                  ? `Ознайомчі слова рівня ${selectedLevel} пройдено!`
+                  ? 'Ознайомчі 5 слів цієї категорії пройдено!'
                   : 'Усі слова цієї категорії вже вивчені!'}
               </h3>
               <p className="text-sm text-slate-600 max-w-md mx-auto">
                 {hasMoreWordsInPro
-                  ? `Ти вже вивчив безкоштовні слова цього рівня (5 слів на кожен рівень A1–B2, разом 20 слів). Відкрий PRO, щоб отримати доступ до всіх ${allCategoryWords.length} слів категорії.`
+                  ? `Ти вже вивчив усі 5 безкоштовних слів у цій категорії (загалом доступно 60 безкоштовних слів по всіх рівнях і категоріях). Відкрий PRO, щоб отримати доступ до всіх ${allCategoryWords.length} слів категорії.`
                   : 'Вивчені слова вже збережені у твоєму кабінеті. Можеш повторити їх тут або відкрити повний список у кабінеті учня.'}
               </p>
             </div>
@@ -1149,7 +1145,7 @@ export default function App() {
             <div className="space-y-1.5">
               <div className="inline-flex items-center gap-1.5 bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-xs font-bold"><Crown className="w-3.5 h-3.5" /> Повний абонемент PRO</div>
               <h3 className="text-2xl font-extrabold">Відкрий усі слова та рівні A1–B2</h3>
-              <p className="text-sm text-slate-600">Безкоштовно доступні перші 5 слів у кожному рівні A1–B2 (усього 20 слів). З підпискою відкривається вся база слів без обмежень.</p>
+              <p className="text-sm text-slate-600">Безкоштовно доступні перші 5 слів у кожній категорії всіх рівнів A1–B2 (усього 60 слів). З підпискою відкривається вся база слів без обмежень.</p>
             </div>
 
             <div className="grid grid-cols-3 gap-2.5">
