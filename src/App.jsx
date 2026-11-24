@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import {
   Volume2, Flame, Trophy, Lock, CheckCircle2, XCircle,
   Share2, Sparkles, BookOpen, BrainCircuit, ArrowRight,
   RotateCcw, Crown, Check, Copy, X, Loader2, LogOut, User, ShieldCheck, FileText
 } from 'lucide-react';
-import { PRIVACY_TEXT, OFFER_TEXT } from './legal';
 
 const SUPABASE_URL = 'https://vdjduptyloghojeqaglw.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_L9Gw77mlbgOdzYt4-a6nEA_ZqeNxiui';
@@ -13,12 +12,25 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const FREE_WORDS_LIMIT = 5;
 
-const VOICES = [
-  { id: 'random', label: '🎲 Різні голоси' },
-  { id: 'de-DE-KatjaNeural', label: '👩 Katja' },
-  { id: 'de-DE-ConradNeural', label: '👨 Conrad' },
-  { id: 'de-DE-AmalaNeural', label: '👩 Amala' },
-  { id: 'de-DE-KillianNeural', label: '👨 Killian' }
+const VOICE_PROFILES = [
+  { id: 'random', label: '🎲 Різні голоси', pitch: 1.0, rate: 0.92, gender: 'any' },
+  { id: 'anna', label: '👩 Anna (чіткий)', pitch: 1.06, rate: 0.93, gender: 'female' },
+  { id: 'martin', label: '👨 Martin (спокійний)', pitch: 0.84, rate: 0.90, gender: 'male' },
+  { id: 'helena', label: '👩 Helena (жвавий)', pitch: 1.15, rate: 0.96, gender: 'female' },
+  { id: 'markus', label: '👨 Markus (глибокий)', pitch: 0.76, rate: 0.88, gender: 'male' }
+];
+
+const PRIVACY_TEXT = [
+  { title: '1. Загальні положення', body: 'Ця Політика конфіденційності визначає порядок обробки персональних даних користувачів платформи deutsch mit Dmytro, володільцем якої є Горішняк Дмитро Володимирович.' },
+  { title: '2. Які дані збираються', body: 'Для створення акаунта та збереження навчального прогресу збираються лише email, зашифрований хеш пароля та статистика навчання (бали XP, вивчені слова, статус підписки).' },
+  { title: '3. Платіжні дані', body: 'Сервіс не зберігає дані банківських карток. Оплата відбувається на захищеній сторінці сертифікованого платіжного провайдера.' },
+  { title: '4. Захист та видалення даних', body: 'Дані зберігаються у захищеній базі Supabase (HTTPS/TLS, Row Level Security) згідно із законодавством України та GDPR. Запит на видалення даних: sirobabadima9@gmail.com.' }
+];
+
+const OFFER_TEXT = [
+  { title: '1. Предмет договору', body: 'Виконавець (Горішняк Дмитро Володимирович) надає Користувачеві доступ до інтерактивного тренажера німецької мови deutsch mit Dmytro на умовах обраного тарифу PRO.' },
+  { title: '2. Порядок надання доступу', body: 'Ознайомчий доступ (перші 5 слів у відкритих категоріях A1 та розмовної лексики A2) надається безкоштовно. Повний доступ до рівнів A1–B2 активується після оплати на 1, 3 або 6 місяців.' },
+  { title: '3. Повернення коштів', body: 'Оскільки цифровий доступ надається миттєво у повному обсязі, повернення коштів можливе протягом 14 днів лише у разі технічної неможливості надання доступу з вини Виконавця. Контакт: sirobabadima9@gmail.com.' }
 ];
 
 const FALLBACK_DATA = [
@@ -64,7 +76,6 @@ export default function App() {
   const [selectedCategory, setSelectedCategory] = useState('colloquial');
   const [selectedVoice, setSelectedVoice] = useState('random');
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const audioRef = useRef(null);
 
   const [mode, setMode] = useState('cards');
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -87,27 +98,24 @@ export default function App() {
   useEffect(() => {
     async function fetchWords() {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('vocabulary')
-        .select('*')
-        .order('id', { ascending: true });
-
+      const { data, error } = await supabase.from('vocabulary').select('*').order('id', { ascending: true });
       if (!error && data && data.length > 0) {
         setVocabulary(data.map((row) => ({
-          id: row.id,
-          level: row.level,
-          category: row.category,
-          article: row.article || '',
-          word: row.word,
-          plural: row.plural || '',
-          translation: row.translation,
-          example: row.example,
-          exampleUa: row.example_ua
+          id: row.id, level: row.level, category: row.category,
+          article: row.article || '', word: row.word, plural: row.plural || '',
+          translation: row.translation, example: row.example, exampleUa: row.example_ua
         })));
       }
       setLoading(false);
     }
     fetchWords();
+  }, []);
+
+  useEffect(() => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.getVoices();
+      window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+    }
   }, []);
 
   const syncUserProfile = async (authUser) => {
@@ -127,14 +135,11 @@ export default function App() {
       setIsPro(proActive);
 
       await supabase.from('profiles').update({
-        xp: mergedXp,
-        learned_ids: mergedLearned,
-        updated_at: new Date().toISOString()
+        xp: mergedXp, learned_ids: mergedLearned, updated_at: new Date().toISOString()
       }).eq('id', authUser.id);
     } else {
       await supabase.from('profiles').insert({
-        id: authUser.id,
-        email: authUser.email,
+        id: authUser.id, email: authUser.email,
         xp: Number(localStorage.getItem('dmd_xp')) || 0,
         streak: Number(localStorage.getItem('dmd_streak')) || 1,
         learned_ids: JSON.parse(localStorage.getItem('dmd_learned') || '[]'),
@@ -179,41 +184,37 @@ export default function App() {
     }
   }, [xp, streak, learnedIds, isPro, user]);
 
-  // Жива нейромережева озвучка з вибором голосу та резервом
   const speakGerman = (text) => {
     const cleanText = (text || '').trim();
-    if (!cleanText) return;
+    if (!cleanText || !('speechSynthesis' in window)) return;
 
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
+    const synth = window.speechSynthesis;
+    if (synth.speaking) synth.cancel();
+    synth.resume();
+
+    const specificProfiles = VOICE_PROFILES.filter((p) => p.id !== 'random');
+    const profile = selectedVoice === 'random'
+      ? specificProfiles[Math.floor(Math.random() * specificProfiles.length)]
+      : specificProfiles.find((p) => p.id === selectedVoice) || specificProfiles[0];
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = 'de-DE';
+    utterance.pitch = profile.pitch;
+    utterance.rate = profile.rate;
+
+    const deVoices = synth.getVoices().filter((v) => v.lang.toLowerCase().startsWith('de'));
+    if (deVoices.length > 0) {
+      const maleVoice = deVoices.find((v) => /martin|markus|viktor|stefan|male|hans/i.test(v.name));
+      const femaleVoice = deVoices.find((v) => /anna|helena|petra|marlene|female|katja/i.test(v.name));
+      if (profile.gender === 'male' && maleVoice) utterance.voice = maleVoice;
+      else if (profile.gender === 'female' && femaleVoice) utterance.voice = femaleVoice;
+      else utterance.voice = deVoices[0];
     }
 
-    const neuralVoices = ['de-DE-KatjaNeural', 'de-DE-ConradNeural', 'de-DE-AmalaNeural', 'de-DE-KillianNeural'];
-    const chosenVoice = selectedVoice === 'random'
-      ? neuralVoices[Math.floor(Math.random() * neuralVoices.length)]
-      : selectedVoice;
-
     setIsSpeaking(true);
-    const url = `https://tts.travisvn.com/api/tts?t=${encodeURIComponent(cleanText)}&v=${encodeURIComponent(chosenVoice)}&r=-5%25`;
-    const audio = new Audio(url);
-    audioRef.current = audio;
-
-    audio.onended = () => setIsSpeaking(false);
-    audio.onerror = () => {
-      setIsSpeaking(false);
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(cleanText);
-        u.lang = 'de-DE';
-        u.rate = 0.92;
-        window.speechSynthesis.speak(u);
-      }
-    };
-
-    audio.play().catch(() => {
-      setIsSpeaking(false);
-    });
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    synth.speak(utterance);
   };
 
   const openAuth = (targetMode = 'login') => {
@@ -480,7 +481,6 @@ export default function App() {
           </div>
         </section>
 
-        {/* Панель режимів та вибору живого голосу */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="inline-flex bg-slate-200/70 p-1 rounded-xl">
             <button
@@ -506,9 +506,8 @@ export default function App() {
               value={selectedVoice}
               onChange={(e) => setSelectedVoice(e.target.value)}
               className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-none focus:border-amber-400"
-              title="Обери голос диктора"
             >
-              {VOICES.map((v) => (
+              {VOICE_PROFILES.map((v) => (
                 <option key={v.id} value={v.id}>{v.label}</option>
               ))}
             </select>
@@ -545,7 +544,6 @@ export default function App() {
                   className={`p-3 rounded-full transition ${
                     isSpeaking ? 'bg-amber-500 text-white scale-105' : 'bg-amber-100 hover:bg-amber-200 text-amber-800'
                   }`}
-                  title="Прослухати вимову"
                 >
                   <Volume2 className="w-5 h-5" />
                 </button>
@@ -675,14 +673,12 @@ export default function App() {
               </div>
             )}
 
-            <div className="space-y-1">
-              <h3 className="text-2xl font-extrabold text-slate-900">
-                {authMode === 'login' && 'З поверненням!'}
-                {authMode === 'register' && 'Створити акаунт'}
-                {authMode === 'forgot' && 'Відновлення пароля'}
-                {authMode === 'update_password' && 'Новий пароль'}
-              </h3>
-            </div>
+            <h3 className="text-2xl font-extrabold text-slate-900">
+              {authMode === 'login' && 'З поверненням!'}
+              {authMode === 'register' && 'Створити акаунт'}
+              {authMode === 'forgot' && 'Відновлення пароля'}
+              {authMode === 'update_password' && 'Новий пароль'}
+            </h3>
 
             {authMessage ? (
               <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-center space-y-2">
