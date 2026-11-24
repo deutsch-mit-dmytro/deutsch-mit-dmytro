@@ -8,6 +8,7 @@
     "build": "vite build"
   },
   "dependencies": {
+    "edge-tts-universal": "^1.0.3",
     "@supabase/supabase-js": "^2.46.1",
     "lucide-react": "^0.460.0",
     "react": "^18.3.1",
