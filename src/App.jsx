@@ -84,6 +84,15 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.getVoices();
+      window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.getVoices();
+      };
+    }
+  }, []);
+
+  useEffect(() => {
     localStorage.setItem('dmd_xp', xp);
     localStorage.setItem('dmd_streak', streak);
     localStorage.setItem('dmd_learned', JSON.stringify(learnedIds));
@@ -137,12 +146,26 @@ export default function App() {
   }, [currentWord, mode, vocabulary]);
 
   const speakGerman = (text) => {
-    if (!('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
+    if (!text || !('speechSynthesis' in window)) return;
+    const synth = window.speechSynthesis;
+    if (synth.speaking) {
+      synth.cancel();
+    }
+    synth.resume();
+
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'de-DE';
     utterance.rate = 0.92;
-    window.speechSynthesis.speak(utterance);
+
+    const voices = synth.getVoices();
+    const germanVoice =
+      voices.find((v) => v.lang === 'de-DE') ||
+      voices.find((v) => v.lang.startsWith('de'));
+    if (germanVoice) {
+      utterance.voice = germanVoice;
+    }
+
+    synth.speak(utterance);
   };
 
   const getArticleColor = (article) => {
