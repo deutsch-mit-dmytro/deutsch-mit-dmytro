@@ -43,6 +43,7 @@ export default function App() {
   const [isFlipped, setIsFlipped] = useState(false);
 
   const [xp, setXp] = useState(() => Number(localStorage.getItem('dmd_xp')) || 0);
+  const [xpGain, setXpGain] = useState(null);
   const [streak, setStreak] = useState(() => Number(localStorage.getItem('dmd_streak')) || 1);
   const [learnedIds, setLearnedIds] = useState(() => JSON.parse(localStorage.getItem('dmd_learned') || '[]'));
   const [isPro, setIsPro] = useState(() => localStorage.getItem('dmd_pro') === 'true');
@@ -89,6 +90,12 @@ export default function App() {
     localStorage.setItem('dmd_pro', isPro);
   }, [xp, streak, learnedIds, isPro]);
 
+  const addXp = (points) => {
+    setXp((prev) => prev + points);
+    setXpGain(`+${points} XP`);
+    setTimeout(() => setXpGain(null), 1500);
+  };
+
   const isLocked = (lvl, cat) => {
     if (isPro) return false;
     if (lvl === 'A1') return false;
@@ -116,6 +123,7 @@ export default function App() {
   }, [vocabulary, selectedLevel, selectedCategory]);
 
   const currentWord = filteredWords[currentIndex] || filteredWords[0];
+  const isCurrentLearned = currentWord ? learnedIds.includes(currentWord.id) : false;
 
   useEffect(() => {
     if (!currentWord) return;
@@ -145,11 +153,11 @@ export default function App() {
   };
 
   const handleMarkLearned = () => {
-    if (!learnedIds.includes(currentWord.id)) {
-      setLearnedIds([...learnedIds, currentWord.id]);
-      setXp((prev) => prev + 15);
+    if (!isCurrentLearned) {
+      setLearnedIds((prev) => [...prev, currentWord.id]);
+      addXp(15);
     } else {
-      setXp((prev) => prev + 5);
+      addXp(5);
     }
     setIsFlipped(false);
     setCurrentIndex((prev) => (prev + 1) % filteredWords.length);
@@ -159,9 +167,9 @@ export default function App() {
     if (quizAnswer) return;
     setQuizAnswer(option.id);
     if (option.id === currentWord.id) {
-      setXp((prev) => prev + 20);
+      addXp(20);
       if (!learnedIds.includes(currentWord.id)) {
-        setLearnedIds([...learnedIds, currentWord.id]);
+        setLearnedIds((prev) => [...prev, currentWord.id]);
       }
       speakGerman(currentWord.word);
     }
@@ -201,9 +209,14 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="flex items-center gap-1.5 bg-amber-50 text-amber-700 px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold border border-amber-200">
+            <div className="relative flex items-center gap-1.5 bg-amber-50 text-amber-700 px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold border border-amber-200">
               <Trophy className="w-4 h-4 text-amber-500" />
               <span>{xp} XP</span>
+              {xpGain && (
+                <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm whitespace-nowrap">
+                  {xpGain}
+                </span>
+              )}
             </div>
 
             <div className="flex items-center gap-1 bg-orange-50 text-orange-700 px-2.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold border border-orange-200">
@@ -389,7 +402,7 @@ export default function App() {
               </div>
 
               <div className="flex justify-center">
-                {learnedIds.includes(currentWord.id) && (
+                {isCurrentLearned && (
                   <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600">
                     <CheckCircle2 className="w-3.5 h-3.5" /> Вивчено
                   </span>
@@ -411,7 +424,9 @@ export default function App() {
                 onClick={handleMarkLearned}
                 className="flex-1 py-3.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition flex items-center justify-center gap-2 shadow-sm"
               >
-                <span>Знаю це слово (+15 XP)</span>
+                <span>
+                  {isCurrentLearned ? 'Закріпити слово (+5 XP)' : 'Знаю це слово (+15 XP)'}
+                </span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
