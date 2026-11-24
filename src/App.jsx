@@ -87,9 +87,11 @@ export default function App() {
   const [authError, setAuthError] = useState('');
 
   const [legalModal, setLegalModal] = useState(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   const [selectedLevel, setSelectedLevel] = useState('A1');
   const [selectedCategory, setSelectedCategory] = useState('colloquial');
+  const [reviewLearnedInModule, setReviewLearnedInModule] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const audioRef = useRef(null);
 
@@ -287,6 +289,7 @@ export default function App() {
     await supabase.auth.signOut();
     setUser(null);
     setIsPro(false);
+    setShowProfileModal(false);
     localStorage.removeItem('dmd_pro');
   };
 
@@ -307,6 +310,7 @@ export default function App() {
     if (isLocked(lvl, cat)) { setShowPaywall(true); return; }
     setSelectedLevel(lvl);
     setSelectedCategory(cat);
+    setReviewLearnedInModule(false);
     setCurrentIndex(0);
     setIsFlipped(false);
     setQuizAnswer(null);
@@ -317,13 +321,35 @@ export default function App() {
     return list.length > 0 ? list : vocabulary;
   }, [vocabulary, selectedLevel, selectedCategory]);
 
+  const unlearnedCategoryWords = useMemo(
+    () => allCategoryWords.filter((item) => !learnedIds.includes(item.id)),
+    [allCategoryWords, learnedIds]
+  );
+
+  const learnedCategoryWords = useMemo(
+    () => allCategoryWords.filter((item) => learnedIds.includes(item.id)),
+    [allCategoryWords, learnedIds]
+  );
+
+  const activePoolWords = useMemo(() => {
+    if (reviewLearnedInModule) return learnedCategoryWords;
+    return unlearnedCategoryWords;
+  }, [reviewLearnedInModule, learnedCategoryWords, unlearnedCategoryWords]);
+
   const filteredWords = useMemo(() => {
-    return isPro ? allCategoryWords : allCategoryWords.slice(0, FREE_WORDS_LIMIT);
-  }, [allCategoryWords, isPro]);
+    return isPro ? activePoolWords : activePoolWords.slice(0, FREE_WORDS_LIMIT);
+  }, [activePoolWords, isPro]);
+
+  useEffect(() => {
+    if (currentIndex >= filteredWords.length) {
+      setCurrentIndex(0);
+    }
+  }, [currentIndex, filteredWords.length]);
 
   const goToNextWord = () => {
+    if (filteredWords.length === 0) return;
     const nextIndex = currentIndex + 1;
-    if (!isPro && nextIndex >= filteredWords.length && allCategoryWords.length > FREE_WORDS_LIMIT) {
+    if (!isPro && !reviewLearnedInModule && nextIndex >= filteredWords.length && unlearnedCategoryWords.length > FREE_WORDS_LIMIT) {
       setShowPaywall(true);
       return;
     }
@@ -331,7 +357,7 @@ export default function App() {
     setCurrentIndex(nextIndex % filteredWords.length);
   };
 
-  const currentWord = filteredWords[currentIndex] || filteredWords[0];
+  const currentWord = filteredWords[currentIndex] || null;
   const isCurrentLearned = currentWord ? learnedIds.includes(currentWord.id) : false;
 
   useEffect(() => {
@@ -349,17 +375,25 @@ export default function App() {
   };
 
   const handleMarkLearned = () => {
+    if (!currentWord) return;
     if (!isCurrentLearned) {
-      setLearnedIds((prev) => [...prev, currentWord.id]);
+      setLearnedIds((prev) => (prev.includes(currentWord.id) ? prev : [...prev, currentWord.id]));
       addXp(15);
     } else {
       addXp(5);
     }
-    goToNextWord();
+    setIsFlipped(false);
+    setCurrentIndex((prev) => {
+      const nextLen = reviewLearnedInModule
+        ? learnedCategoryWords.length
+        : Math.max(unlearnedCategoryWords.length - (isCurrentLearned ? 0 : 1), 0);
+      if (nextLen <= 0) return 0;
+      return (prev + 1) % nextLen;
+    });
   };
 
   const handleQuizChoice = (option) => {
-    if (quizAnswer) return;
+    if (quizAnswer || !currentWord) return;
     setQuizAnswer(option.id);
     if (option.id === currentWord.id) {
       addXp(20);
@@ -375,8 +409,12 @@ export default function App() {
     return 'Легенда deutsch mit Dmytro';
   };
 
+  const learnedWordsList = useMemo(
+    () => vocabulary.filter((word) => learnedIds.includes(word.id)),
+    [vocabulary, learnedIds]
+  );
+
   const userAchievements = useMemo(() => {
-    const learnedWordsList = vocabulary.filter((word) => learnedIds.includes(word.id));
     const stats = {
       xp: xp || 0,
       learnedCount: learnedIds.length,
@@ -389,7 +427,7 @@ export default function App() {
       ...ach,
       unlocked: Boolean(ach.check(stats)),
     }));
-  }, [vocabulary, learnedIds, xp, streak, isPro]);
+  }, [learnedWordsList, learnedIds.length, xp, streak, isPro]);
 
   const unlockedCount = useMemo(
     () => userAchievements.filter((item) => item.unlocked).length,
@@ -445,7 +483,7 @@ export default function App() {
               <span>{streak}</span>
             </div>
 
-            <button onClick={() => setShowShareModal(true)} className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
+            <button onClick={() => setShowShareModal(true)} className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 transition" title="Поділитися прогресом">
               <Share2 className="w-4 h-4" />
             </button>
 
@@ -455,9 +493,17 @@ export default function App() {
                 <span>Увійти</span>
               </button>
             ) : (
-              <div className="flex items-center gap-1.5 bg-slate-100 px-2.5 py-1 rounded-full text-xs font-medium text-slate-700">
-                <span className="max-w-[90px] sm:max-w-[140px] truncate">{user.email}</span>
-                <button onClick={handleLogout} className="p-1 rounded-full hover:bg-slate-200 text-slate-500 hover:text-rose-600">
+              <div className="flex items-center gap-1 bg-slate-100 px-2.5 py-1 rounded-full text-xs font-medium text-slate-700">
+                <button
+                  type="button"
+                  onClick={() => setShowProfileModal(true)}
+                  className="flex items-center gap-1.5 hover:text-amber-700 transition text-left"
+                  title="Відкрити кабінет учня"
+                >
+                  <User className="w-3.5 h-3.5 text-slate-600 shrink-0" />
+                  <span className="max-w-[90px] sm:max-w-[140px] truncate underline decoration-slate-300 underline-offset-2">{user.email}</span>
+                </button>
+                <button onClick={handleLogout} className="p-1 rounded-full hover:bg-slate-200 text-slate-500 hover:text-rose-600" title="Вийти">
                   <LogOut className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -536,37 +582,88 @@ export default function App() {
         </section>
 
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="inline-flex bg-slate-200/70 p-1 rounded-xl">
-            <button
-              onClick={() => setMode('cards')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition ${
-                mode === 'cards' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <BookOpen className="w-4 h-4" /> Картки слів
-            </button>
-            <button
-              onClick={() => setMode('quiz')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition ${
-                mode === 'quiz' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <BrainCircuit className="w-4 h-4" /> Тест (+20 XP)
-            </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex bg-slate-200/70 p-1 rounded-xl">
+              <button
+                onClick={() => setMode('cards')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                  mode === 'cards' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <BookOpen className="w-4 h-4" /> Картки слів
+              </button>
+              <button
+                onClick={() => setMode('quiz')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                  mode === 'quiz' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <BrainCircuit className="w-4 h-4" /> Тест (+20 XP)
+              </button>
+            </div>
+
+            {reviewLearnedInModule && (
+              <button
+                type="button"
+                onClick={() => { setReviewLearnedInModule(false); setCurrentIndex(0); setIsFlipped(false); }}
+                className="px-3 py-2 rounded-xl bg-amber-100 text-amber-900 text-xs font-bold hover:bg-amber-200 transition"
+              >
+                До нових слів ({unlearnedCategoryWords.length})
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-slate-500">
             {loading && <Loader2 className="w-4 h-4 animate-spin text-amber-600" />}
-            <span>
-              Слово <strong className="text-slate-900">{currentIndex + 1}</strong> з {filteredWords.length}
-              {!isPro && allCategoryWords.length > FREE_WORDS_LIMIT && (
-                <button onClick={() => setShowPaywall(true)} className="ml-1.5 text-amber-700 font-semibold hover:underline">
-                  (усього {allCategoryWords.length} у PRO)
-                </button>
-              )}
-            </span>
+            {filteredWords.length > 0 ? (
+              <span>
+                {reviewLearnedInModule ? 'Повторення: слово ' : 'Нове слово '}
+                <strong className="text-slate-900">{currentIndex + 1}</strong> з {filteredWords.length}
+                {!isPro && !reviewLearnedInModule && unlearnedCategoryWords.length > FREE_WORDS_LIMIT && (
+                  <button onClick={() => setShowPaywall(true)} className="ml-1.5 text-amber-700 font-semibold hover:underline">
+                    (усього нових {unlearnedCategoryWords.length} у PRO)
+                  </button>
+                )}
+              </span>
+            ) : (
+              <span>Нових слів у категорії: <strong className="text-slate-900">0</strong></span>
+            )}
           </div>
         </div>
+
+        {!currentWord && (
+          <section className="bg-white border border-slate-200 rounded-3xl p-8 text-center space-y-4 shadow-sm">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto">
+              <CheckCircle2 className="w-6 h-6" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-xl font-extrabold text-slate-900">Усі слова цієї категорії вже вивчені!</h3>
+              <p className="text-sm text-slate-600 max-w-md mx-auto">
+                Вивчені слова вже збережені у твоєму кабінеті. Можеш повторити їх тут або відкрити повний список у кабінеті учня.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
+              {learnedCategoryWords.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => { setReviewLearnedInModule(true); setCurrentIndex(0); setIsFlipped(false); }}
+                  className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs sm:text-sm transition"
+                >
+                  Повторити вивчені ({learnedCategoryWords.length})
+                </button>
+              )}
+              {user && (
+                <button
+                  type="button"
+                  onClick={() => setShowProfileModal(true)}
+                  className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm transition"
+                >
+                  Відкрити кабінет учня
+                </button>
+              )}
+            </div>
+          </section>
+        )}
 
         {currentWord && mode === 'cards' && (
           <section className="space-y-4">
@@ -703,6 +800,152 @@ export default function App() {
           </div>
         </div>
       </footer>
+
+      {showProfileModal && user && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl relative space-y-6 max-h-[90vh] overflow-y-auto">
+            <button onClick={() => setShowProfileModal(false)} className="absolute top-5 right-5 p-2 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200"><X className="w-4 h-4" /></button>
+
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pr-8">
+              <div>
+                <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full mb-1.5">
+                  <User className="w-3.5 h-3.5" /> Кабінет учня
+                </div>
+                <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 break-all">{user.email}</h3>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">{getRank()}</p>
+              </div>
+              {isPro ? (
+                <span className="inline-flex items-center gap-1.5 bg-emerald-100 text-emerald-800 px-3 py-1.5 rounded-full text-xs font-bold self-start">
+                  <Crown className="w-3.5 h-3.5" /> Активний PRO
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => { setShowProfileModal(false); setProCheckMsg(''); setShowPaywall(true); }}
+                  className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white px-3.5 py-2 rounded-xl text-xs font-bold self-start"
+                >
+                  <Crown className="w-3.5 h-3.5 text-amber-400" /> Отримати PRO
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-3 gap-3 text-center">
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3.5">
+                <div className="text-2xl font-extrabold text-amber-900">{xp}</div>
+                <div className="text-[11px] font-semibold text-amber-700 uppercase">Балів XP</div>
+              </div>
+              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3.5">
+                <div className="text-2xl font-extrabold text-emerald-900">{learnedIds.length}</div>
+                <div className="text-[11px] font-semibold text-emerald-700 uppercase">Вивчено слів</div>
+              </div>
+              <div className="bg-orange-50 border border-orange-200 rounded-2xl p-3.5">
+                <div className="text-2xl font-extrabold text-orange-900">{streak} 🔥</div>
+                <div className="text-[11px] font-semibold text-orange-700 uppercase">Днів серії</div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-bold text-slate-900">Досягнення</h4>
+                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900">
+                  {unlockedCount} з {userAchievements.length}
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-60 overflow-y-auto pr-1">
+                {userAchievements.map((ach) => (
+                  <div
+                    key={ach.id}
+                    className={`flex items-center gap-3 p-3 rounded-xl border text-left ${
+                      ach.unlocked ? 'bg-amber-50/80 border-amber-200 text-slate-900' : 'bg-slate-50 border-slate-200 text-slate-400 opacity-65'
+                    }`}
+                  >
+                    <span className="text-xl shrink-0">{ach.unlocked ? ach.icon : '🔒'}</span>
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold truncate">{ach.title}</div>
+                      <div className="text-[11px] leading-snug">{ach.desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-bold text-slate-900">Вивчені слова (для повторення)</h4>
+                <span className="text-xs text-slate-500 font-semibold">{learnedWordsList.length}</span>
+              </div>
+              {learnedWordsList.length === 0 ? (
+                <p className="text-xs text-slate-400 bg-slate-50 border border-slate-200 rounded-2xl p-4 text-center">
+                  Ти ще не додав вивчених слів. Натискай «Знаю це слово» або проходь тести, щоб вони з’явилися тут.
+                </p>
+              ) : (
+                <div className="max-h-56 overflow-y-auto divide-y divide-slate-100 border border-slate-200 rounded-2xl bg-slate-50/60">
+                  {learnedWordsList.map((w) => (
+                    <div key={w.id} className="flex items-center justify-between gap-3 px-4 py-2.5 text-xs">
+                      <div className="min-w-0">
+                        <span className="font-bold text-slate-900">
+                          {w.article ? `${w.article} ` : ''}{w.word}
+                        </span>
+                        <span className="text-slate-500 ml-2">— {w.translation}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => speakGerman(`${w.article} ${w.word}`)}
+                          className="p-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 transition"
+                          title="Повторити вимову"
+                        >
+                          <Volume2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (isLocked(w.level, w.category)) {
+                              setShowProfileModal(false);
+                              setShowPaywall(true);
+                              return;
+                            }
+                            setSelectedLevel(w.level);
+                            setSelectedCategory(w.category);
+                            setReviewLearnedInModule(true);
+                            setMode('cards');
+                            setCurrentIndex(0);
+                            setIsFlipped(false);
+                            setShowProfileModal(false);
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-[10px] font-bold text-slate-700 transition"
+                        >
+                          Повторити
+                        </button>
+                        <span className="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-[10px] font-bold text-slate-600">
+                          {w.level}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-rose-600 hover:text-rose-700 px-3 py-2 rounded-xl hover:bg-rose-50 transition"
+              >
+                <LogOut className="w-3.5 h-3.5" /> Вийти з акаунта
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowProfileModal(false)}
+                className="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition"
+              >
+                Закрити
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showAuthModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
