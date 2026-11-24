@@ -2,21 +2,45 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_KEY;
 
-const MODELS = [
-  'gemini-3.8-flash',
-  'gemini-3.8-flash-lite',
-  'gemini-3.8-pro',
-];
-
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-async function generateWithRetry(prompt) {
+async function getAvailableModels() {
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_API_KEY}`
+  );
+  const json = await res.json();
+  if (!json.models) {
+    throw new Error('Не вдалося отримати список моделей: ' + JSON.stringify(json));
+  }
+
+  // Відбираємо лише текстові моделі Gemini, що підтримують generateContent
+  const valid = json.models
+    .filter(
+      (m) =>
+        m.supportedGenerationMethods?.includes('generateContent') &&
+        m.name.includes('gemini') &&
+        !m.name.includes('image') &&
+        !m.name.includes('audio') &&
+        !m.name.includes('tts') &&
+        !m.name.includes('robotics') &&
+        !m.name.includes('computer')
+    )
+    .map((m) => m.name.replace('models/', ''));
+
+  // Ставимо легкі та швидкі flash-моделі на початок черги
+  valid.sort((a, b) => (a.includes('flash') ? -1 : 1));
+  console.log('Доступні для твого ключа моделі:', valid.join(', '));
+  return valid;
+}
+
+async function generateWithAutoModels(prompt) {
+  const models = await getAvailableModels();
   let lastError = null;
 
-  for (let attempt = 1; attempt <= 6; attempt++) {
-    for (const model of MODELS) {
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    for (const model of models) {
       try {
-        console.log(`Коло ${attempt}/6: пробую модель ${model}...`);
+        console.log(`Спроба ${attempt}/4: тестую модель ${model}...`);
         const res = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
           {
@@ -42,11 +66,11 @@ async function generateWithRetry(prompt) {
         lastError = err.message;
       }
     }
-    console.log('Сервери перевантажені, чекаю 10 секунд перед наступним колом...');
+    console.log('Усі моделі тимчасово зайняті, чекаю 10 секунд...');
     await sleep(10000);
   }
 
-  throw new Error('Не вдалося отримати відповідь від Gemini після 6 спроб: ' + lastError);
+  throw new Error('Не вдалося отримати відповідь від жодної моделі: ' + lastError);
 }
 
 async function run() {
@@ -75,7 +99,7 @@ async function run() {
 - "example": природне речення-приклад німецькою
 - "example_ua": переклад прикладу українською`;
 
-  const rawText = await generateWithRetry(prompt);
+  const rawText = await generateWithAutoModels(prompt);
   const newWords = JSON.parse(rawText);
 
   // 3. Записуємо нові слова у Supabase (ігноруючи можливі дублікати)
