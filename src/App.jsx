@@ -48,6 +48,29 @@ const PLANS = [
   { id: '6m', months: 6, title: '6 місяців', price: 913, oldPrice: 1014, discount: '-10%', perMonth: 152 }
 ];
 
+const ACHIEVEMENTS = [
+  { id: 'first_step', icon: '🚀', title: 'Перший крок', desc: 'Почати навчання на платформі', check: (s) => s.streakDays >= 1 || s.learnedCount >= 1 },
+  { id: 'words_10', icon: '📖', title: 'Перша десятка', desc: 'Вивчити 10 німецьких слів', check: (s) => s.learnedCount >= 10 },
+  { id: 'words_25', icon: '🧠', title: 'Впевнений словник', desc: 'Вивчити 25 німецьких слів', check: (s) => s.learnedCount >= 25 },
+  { id: 'words_50', icon: '📚', title: 'Пів сотні в активі', desc: 'Вивчити 50 німецьких слів', check: (s) => s.learnedCount >= 50 },
+  { id: 'words_100', icon: '💯', title: 'Сотня слів', desc: 'Вивчити 100 німецьких слів', check: (s) => s.learnedCount >= 100 },
+  { id: 'words_200', icon: '🎓', title: 'Словниковий запас PRO', desc: 'Вивчити 200 німецьких слів', check: (s) => s.learnedCount >= 200 },
+  { id: 'words_250', icon: '👑', title: 'Повна база', desc: 'Вивчити 250+ слів із бази', check: (s) => s.learnedCount >= 250 },
+  { id: 'xp_100', icon: '⚡', title: 'Розминка', desc: 'Набрати 100 балів XP', check: (s) => s.xp >= 100 },
+  { id: 'xp_300', icon: '✨', title: 'Перші 300 XP', desc: 'Набрати 300 балів XP', check: (s) => s.xp >= 300 },
+  { id: 'xp_500', icon: '🔥', title: 'Пів тисячі балів', desc: 'Набрати 500 балів XP', check: (s) => s.xp >= 500 },
+  { id: 'xp_1000', icon: '🏆', title: 'Тисячник', desc: 'Набрати 1 000 балів XP', check: (s) => s.xp >= 1000 },
+  { id: 'xp_2500', icon: '💎', title: 'Марафонець XP', desc: 'Набрати 2 500 балів XP', check: (s) => s.xp >= 2500 },
+  { id: 'xp_5000', icon: '🇩🇪', title: 'Легенда deutsch mit Dmytro', desc: 'Набрати 5 000 балів XP', check: (s) => s.xp >= 5000 },
+  { id: 'streak_3', icon: '🕯️', title: 'Три дні поспіль', desc: 'Тримати серію 3 дні', check: (s) => s.streakDays >= 3 },
+  { id: 'streak_7', icon: '📅', title: 'Тиждень без пропусків', desc: 'Тримати серію 7 днів поспіль', check: (s) => s.streakDays >= 7 },
+  { id: 'streak_14', icon: '💪', title: 'Два тижні дисципліни', desc: 'Тримати серію 14 днів поспіль', check: (s) => s.streakDays >= 14 },
+  { id: 'streak_30', icon: '🏅', title: 'Місяць німецької', desc: 'Тримати серію 30 днів поспіль', check: (s) => s.streakDays >= 30 },
+  { id: 'level_a2', icon: '🎯', title: 'Знавець A2', desc: 'Вивчити перше слово рівня A2', check: (s) => s.hasLevelA2 },
+  { id: 'level_b', icon: '🚀', title: 'Рівень B1–B2 у грі', desc: 'Вивчити перше слово рівня B1 або B2', check: (s) => s.hasLevelB1OrB2 },
+  { id: 'pro_member', icon: '👑', title: 'Учень PRO', desc: 'Активувати повний абонемент PRO', check: (s) => s.isPro },
+];
+
 export default function App() {
   const [vocabulary, setVocabulary] = useState(FALLBACK_DATA);
   const [loading, setLoading] = useState(true);
@@ -352,7 +375,28 @@ export default function App() {
     return 'Легенда deutsch mit Dmytro';
   };
 
-  const shareText = `🇩🇪 Мій прогрес у deutsch mit Dmytro:\n✨ ${xp} XP балів\n📚 Вивчено слів: ${learnedIds.length}\n🔥 Серія: ${streak} дн.`;
+  const userAchievements = useMemo(() => {
+    const learnedWordsList = vocabulary.filter((word) => learnedIds.includes(word.id));
+    const stats = {
+      xp: xp || 0,
+      learnedCount: learnedIds.length,
+      streakDays: streak || 0,
+      isPro: Boolean(isPro),
+      hasLevelA2: learnedWordsList.some((word) => word.level === 'A2'),
+      hasLevelB1OrB2: learnedWordsList.some((word) => word.level === 'B1' || word.level === 'B2'),
+    };
+    return ACHIEVEMENTS.map((ach) => ({
+      ...ach,
+      unlocked: Boolean(ach.check(stats)),
+    }));
+  }, [vocabulary, learnedIds, xp, streak, isPro]);
+
+  const unlockedCount = useMemo(
+    () => userAchievements.filter((item) => item.unlocked).length,
+    [userAchievements]
+  );
+
+  const shareText = `🇩🇪 Мій прогрес у deutsch mit Dmytro:\n✨ ${xp} XP балів\n📚 Вивчено слів: ${learnedIds.length}\n🔥 Серія: ${streak} дн.\n🏅 Досягнень: ${unlockedCount}/${userAchievements.length}`;
 
   const handleCopyShare = () => {
     navigator.clipboard.writeText(shareText);
@@ -821,7 +865,7 @@ export default function App() {
 
       {showShareModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl relative space-y-5">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl relative space-y-5 max-h-[90vh] overflow-y-auto">
             <button onClick={() => setShowShareModal(false)} className="absolute top-5 right-5 p-2 rounded-full bg-slate-100"><X className="w-4 h-4" /></button>
             <h3 className="text-xl font-extrabold">Поділитися прогресом</h3>
             <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-amber-900 text-white p-6 rounded-2xl space-y-4">
@@ -832,6 +876,32 @@ export default function App() {
                 <div className="bg-white/10 rounded-xl p-2.5"><div className="text-xl font-extrabold">{streak} 🔥</div><div className="text-[10px] uppercase">Днів</div></div>
               </div>
             </div>
+
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-bold text-slate-900">Досягнення</h4>
+                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900">
+                  {unlockedCount} з {userAchievements.length}
+                </span>
+              </div>
+              <div className="grid grid-cols-1 gap-2 max-h-56 overflow-y-auto pr-1">
+                {userAchievements.map((ach) => (
+                  <div
+                    key={ach.id}
+                    className={`flex items-center gap-3 p-2.5 rounded-xl border text-left ${
+                      ach.unlocked ? 'bg-amber-50/80 border-amber-200 text-slate-900' : 'bg-slate-50 border-slate-200 text-slate-400 opacity-65'
+                    }`}
+                  >
+                    <span className="text-xl shrink-0">{ach.unlocked ? ach.icon : '🔒'}</span>
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold truncate">{ach.title}</div>
+                      <div className="text-[11px] leading-snug">{ach.desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <button onClick={handleCopyShare} className="w-full py-3 rounded-xl bg-amber-500 text-slate-950 font-bold text-sm flex items-center justify-center gap-2">
               {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
               {copied ? 'Скопійовано!' : 'Скопіювати результат'}
