@@ -19,9 +19,10 @@ import {
   ExternalLink,
   Copy,
   Check,
-  X
+  X,
+  FileText
 } from 'lucide-react';
-import wordsData from './words.json';
+import { LEGAL_INFO } from './src/legal';
 
 const SUPABASE_URL = 'https://vdjduptyloghojeqaglw.supabase.co';
 const SUPABASE_ANON_KEY =
@@ -38,25 +39,28 @@ const CATEGORIES = [
 ];
 
 export default function App() {
+  const [words, setWords] = useState([]);
+  const [loadingWords, setLoadingWords] = useState(true);
+
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
   const [xp, setXp] = useState(() => Number(localStorage.getItem('dmd_xp') || 370));
 
   const [selectedLevel, setSelectedLevel] = useState('A1');
   const [selectedCategory, setSelectedCategory] = useState('casual');
-  const [mode, setMode] = useState('cards'); // 'cards' | 'quiz'
+  const [mode, setMode] = useState('cards');
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
 
-  // Quiz state
   const [quizAnswer, setQuizAnswer] = useState(null);
   const [quizOptions, setQuizOptions] = useState([]);
 
-  // Modals
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showProModal, setShowProModal] = useState(false);
-  const [authMode, setAuthMode] = useState('login'); // 'login' | 'signup'
+  const [showLegalModal, setShowLegalModal] = useState(false);
+
+  const [authMode, setAuthMode] = useState('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');
@@ -69,7 +73,18 @@ export default function App() {
     return new Date(profile.pro_until) > new Date();
   }, [profile]);
 
-  // Auth listener
+  // Завантаження слів із public/words.json
+  useEffect(() => {
+    fetch('/words.json')
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => {
+        setWords(Array.isArray(data) ? data : []);
+      })
+      .catch(() => setWords([]))
+      .finally(() => setLoadingWords(false));
+  }, []);
+
+  // Авторизація Supabase
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -121,18 +136,15 @@ export default function App() {
     }
   }
 
-  // Filter words
   const filteredWords = useMemo(() => {
-    const all = Array.isArray(wordsData) ? wordsData : [];
-    const list = all.filter(
+    const list = words.filter(
       (w) =>
         (w.level || 'A1').toUpperCase() === selectedLevel &&
         (w.category || 'casual').toLowerCase() === selectedCategory
     );
-    return list.length > 0 ? list : all.slice(0, 20);
-  }, [selectedLevel, selectedCategory]);
+    return list.length > 0 ? list : words.slice(0, 20);
+  }, [words, selectedLevel, selectedCategory]);
 
-  // Limit free users to 10 words per set
   const accessibleWords = useMemo(() => {
     if (isPro) return filteredWords;
     return filteredWords.slice(0, 10);
@@ -146,10 +158,9 @@ export default function App() {
     setQuizAnswer(null);
   }, [selectedLevel, selectedCategory, mode]);
 
-  // Generate quiz options
   useEffect(() => {
     if (mode !== 'quiz' || !currentWord) return;
-    const pool = (Array.isArray(wordsData) ? wordsData : []).filter(
+    const pool = words.filter(
       (w) => w.translation && w.translation !== currentWord.translation
     );
     const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, 3);
@@ -158,7 +169,7 @@ export default function App() {
     );
     setQuizOptions(opts);
     setQuizAnswer(null);
-  }, [currentIndex, mode, currentWord]);
+  }, [currentIndex, mode, currentWord, words]);
 
   function speakGerman(text) {
     if (!text || typeof window === 'undefined' || !window.speechSynthesis) return;
@@ -241,7 +252,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-16">
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-16 flex flex-col">
       {/* Header */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
         <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between gap-2">
@@ -254,7 +265,7 @@ export default function App() {
                 deutsch <span className="text-amber-600">mit Dmytro</span>
               </div>
               <div className="text-xs text-slate-500">
-                База слів: {Array.isArray(wordsData) ? wordsData.length : 0} шт. · A1–B2
+                База слів: {words.length} шт. · A1–B2
               </div>
             </div>
           </div>
@@ -314,7 +325,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 pt-6 space-y-6">
+      <main className="max-w-4xl w-full mx-auto px-4 pt-6 space-y-6 flex-1">
         {/* Controls Card */}
         <section className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-5">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -407,7 +418,7 @@ export default function App() {
           </div>
 
           <div className="text-xs text-slate-500 font-medium">
-            Слово <strong className="text-slate-900">{currentIndex + 1}</strong> з{' '}
+            Слово <strong className="text-slate-900">{accessibleWords.length ? currentIndex + 1 : 0}</strong> з{' '}
             <strong className="text-slate-900">{accessibleWords.length}</strong>
             {!isPro && filteredWords.length > 10 && (
               <button
@@ -420,164 +431,206 @@ export default function App() {
           </div>
         </div>
 
-        {/* Flashcard or Quiz */}
-        {currentWord && mode === 'cards' && (
-          <div className="space-y-4">
-            <div
-              onClick={() => setIsFlipped(!isFlipped)}
-              className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-10 min-h-[290px] flex flex-col justify-between cursor-pointer hover:border-slate-300 transition select-none"
-            >
-              <div className="flex items-center justify-between">
-                <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold">
-                  {selectedLevel} ·{' '}
-                  {CATEGORIES.find((c) => c.id === selectedCategory)?.label || 'Розмовна'}
-                </span>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    speakGerman(
-                      currentWord.article
-                        ? `${currentWord.article} ${currentWord.german}`
-                        : currentWord.german
-                    );
-                  }}
-                  className="w-10 h-10 rounded-full bg-amber-50 text-amber-600 hover:bg-amber-100 flex items-center justify-center transition"
-                  title="Прослухати вимову"
+        {/* Loading or Flashcard / Quiz */}
+        {loadingWords ? (
+          <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center text-sm text-slate-500">
+            Завантаження бази слів...
+          </div>
+        ) : (
+          <>
+            {currentWord && mode === 'cards' && (
+              <div className="space-y-4">
+                <div
+                  onClick={() => setIsFlipped(!isFlipped)}
+                  className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-10 min-h-[290px] flex flex-col justify-between cursor-pointer hover:border-slate-300 transition select-none"
                 >
-                  <Volume2 className="w-5 h-5" />
-                </button>
-              </div>
-
-              {!isFlipped ? (
-                <div className="text-center my-auto py-6 space-y-2">
-                  {currentWord.article && (
-                    <span className="inline-block px-3 py-0.5 rounded-full bg-sky-50 text-sky-600 text-xs font-bold">
-                      {currentWord.article}
+                  <div className="flex items-center justify-between">
+                    <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold">
+                      {selectedLevel} ·{' '}
+                      {CATEGORIES.find((c) => c.id === selectedCategory)?.label || 'Розмовна'}
                     </span>
-                  )}
-                  <h2 className="text-3xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">
-                    {currentWord.german}
-                  </h2>
-                  {currentWord.plural && (
-                    <p className="text-sm text-slate-400">Множина: {currentWord.plural}</p>
-                  )}
-                </div>
-              ) : (
-                <div className="text-center my-auto py-4 space-y-4">
-                  <div className="text-2xl sm:text-3xl font-extrabold text-emerald-700">
-                    {currentWord.translation}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        speakGerman(
+                          currentWord.article
+                            ? `${currentWord.article} ${currentWord.german}`
+                            : currentWord.german
+                        );
+                      }}
+                      className="w-10 h-10 rounded-full bg-amber-50 text-amber-600 hover:bg-amber-100 flex items-center justify-center transition"
+                      title="Прослухати вимову"
+                    >
+                      <Volume2 className="w-5 h-5" />
+                    </button>
                   </div>
-                  {currentWord.example && (
-                    <div className="bg-slate-50 rounded-2xl p-4 max-w-lg mx-auto border border-slate-100 space-y-1">
-                      <div className="text-sm font-semibold text-slate-800">
-                        «{currentWord.example}»
+
+                  {!isFlipped ? (
+                    <div className="text-center my-auto py-6 space-y-2">
+                      {currentWord.article && (
+                        <span className="inline-block px-3 py-0.5 rounded-full bg-sky-50 text-sky-600 text-xs font-bold">
+                          {currentWord.article}
+                        </span>
+                      )}
+                      <h2 className="text-3xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">
+                        {currentWord.german}
+                      </h2>
+                      {currentWord.plural && (
+                        <p className="text-sm text-slate-400">Множина: {currentWord.plural}</p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center my-auto py-4 space-y-4">
+                      <div className="text-2xl sm:text-3xl font-extrabold text-emerald-700">
+                        {currentWord.translation}
                       </div>
-                      {currentWord.exampleTranslation && (
-                        <div className="text-xs text-slate-500">
-                          {currentWord.exampleTranslation}
+                      {currentWord.example && (
+                        <div className="bg-slate-50 rounded-2xl p-4 max-w-lg mx-auto border border-slate-100 space-y-1">
+                          <div className="text-sm font-semibold text-slate-800">
+                            «{currentWord.example}»
+                          </div>
+                          {currentWord.exampleTranslation && (
+                            <div className="text-xs text-slate-500">
+                              {currentWord.exampleTranslation}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
                   )}
+
+                  <div className="text-center text-xs text-slate-400 flex items-center justify-center gap-1.5">
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Натисни на картку, щоб перевернути</span>
+                  </div>
                 </div>
-              )}
 
-              <div className="text-center text-xs text-slate-400 flex items-center justify-center gap-1.5">
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Натисни на картку, щоб перевернути</span>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between gap-3">
-              <button
-                onClick={handlePrev}
-                className="flex-1 py-3 px-4 rounded-xl bg-white border border-slate-200 font-bold text-sm text-slate-700 hover:bg-slate-50 flex items-center justify-center gap-1.5 transition"
-              >
-                <ChevronLeft className="w-4 h-4" />
-                <span>Назад</span>
-              </button>
-              <button
-                onClick={handleNext}
-                className="flex-1 py-3 px-4 rounded-xl bg-slate-900 text-white font-bold text-sm hover:bg-slate-800 flex items-center justify-center gap-1.5 transition"
-              >
-                <span>Наступне слово</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {currentWord && mode === 'quiz' && (
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                Обери правильний переклад
-              </span>
-              <button
-                onClick={() => speakGerman(currentWord.german)}
-                className="p-2 rounded-full bg-amber-50 text-amber-600 hover:bg-amber-100 transition"
-              >
-                <Volume2 className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="text-center py-4">
-              {currentWord.article && (
-                <span className="text-xs font-bold text-sky-600 block mb-1">
-                  {currentWord.article}
-                </span>
-              )}
-              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900">
-                {currentWord.german}
-              </h2>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {quizOptions.map((opt, idx) => {
-                const isPicked = quizAnswer === opt;
-                const isCorrect = opt === currentWord.translation;
-                let style = 'bg-white border-slate-200 hover:border-slate-400 text-slate-800';
-                if (quizAnswer !== null) {
-                  if (isCorrect) {
-                    style = 'bg-emerald-50 border-emerald-500 text-emerald-800 font-bold';
-                  } else if (isPicked) {
-                    style = 'bg-red-50 border-red-400 text-red-700';
-                  } else {
-                    style = 'bg-slate-50 border-slate-200 text-slate-400';
-                  }
-                }
-                return (
+                <div className="flex items-center justify-between gap-3">
                   <button
-                    key={idx}
-                    onClick={() => handleQuizPick(opt)}
-                    className={`p-4 rounded-xl border text-left text-sm font-medium flex items-center justify-between transition ${style}`}
+                    onClick={handlePrev}
+                    className="flex-1 py-3 px-4 rounded-xl bg-white border border-slate-200 font-bold text-sm text-slate-700 hover:bg-slate-50 flex items-center justify-center gap-1.5 transition"
                   >
-                    <span>{opt}</span>
-                    {quizAnswer !== null && isCorrect && (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    )}
-                    {quizAnswer !== null && isPicked && !isCorrect && (
-                      <XCircle className="w-4 h-4 text-red-500 shrink-0" />
-                    )}
+                    <ChevronLeft className="w-4 h-4" />
+                    <span>Назад</span>
                   </button>
-                );
-              })}
-            </div>
-
-            {quizAnswer !== null && (
-              <div className="pt-2 flex justify-end">
-                <button
-                  onClick={handleNext}
-                  className="py-2.5 px-5 rounded-xl bg-slate-900 text-white text-sm font-bold hover:bg-slate-800 flex items-center gap-1.5 transition"
-                >
-                  <span>Далі</span>
-                  <ChevronRight className="w-4 h-4" />
-                </button>
+                  <button
+                    onClick={handleNext}
+                    className="flex-1 py-3 px-4 rounded-xl bg-slate-900 text-white font-bold text-sm hover:bg-slate-800 flex items-center justify-center gap-1.5 transition"
+                  >
+                    <span>Наступне слово</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             )}
-          </div>
+
+            {currentWord && mode === 'quiz' && (
+              <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                    Обери правильний переклад
+                  </span>
+                  <button
+                    onClick={() => speakGerman(currentWord.german)}
+                    className="p-2 rounded-full bg-amber-50 text-amber-600 hover:bg-amber-100 transition"
+                  >
+                    <Volume2 className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="text-center py-4">
+                  {currentWord.article && (
+                    <span className="text-xs font-bold text-sky-600 block mb-1">
+                      {currentWord.article}
+                    </span>
+                  )}
+                  <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900">
+                    {currentWord.german}
+                  </h2>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {quizOptions.map((opt, idx) => {
+                    const isPicked = quizAnswer === opt;
+                    const isCorrect = opt === currentWord.translation;
+                    let style = 'bg-white border-slate-200 hover:border-slate-400 text-slate-800';
+                    if (quizAnswer !== null) {
+                      if (isCorrect) {
+                        style = 'bg-emerald-50 border-emerald-500 text-emerald-800 font-bold';
+                      } else if (isPicked) {
+                        style = 'bg-red-50 border-red-400 text-red-700';
+                      } else {
+                        style = 'bg-slate-50 border-slate-200 text-slate-400';
+                      }
+                    }
+                    return (
+                      <button
+                        key={idx}
+                        onClick={() => handleQuizPick(opt)}
+                        className={`p-4 rounded-xl border text-left text-sm font-medium flex items-center justify-between transition ${style}`}
+                      >
+                        <span>{opt}</span>
+                        {quizAnswer !== null && isCorrect && (
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                        )}
+                        {quizAnswer !== null && isPicked && !isCorrect && (
+                          <XCircle className="w-4 h-4 text-red-500 shrink-0" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {quizAnswer !== null && (
+                  <div className="pt-2 flex justify-end">
+                    <button
+                      onClick={handleNext}
+                      className="py-2.5 px-5 rounded-xl bg-slate-900 text-white text-sm font-bold hover:bg-slate-800 flex items-center gap-1.5 transition"
+                    >
+                      <span>Далі</span>
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </>
         )}
       </main>
+
+      {/* Footer */}
+      <footer className="max-w-4xl w-full mx-auto px-4 pt-10 text-center text-xs text-slate-400 flex flex-wrap items-center justify-center gap-4">
+        <span>© {new Date().getFullYear()} deutsch mit Dmytro</span>
+        <button
+          onClick={() => setShowLegalModal(true)}
+          className="inline-flex items-center gap-1 hover:text-slate-600 underline"
+        >
+          <FileText className="w-3.5 h-3.5" />
+          <span>Умови та оферта</span>
+        </button>
+      </footer>
+
+      {/* Legal Modal */}
+      {showLegalModal && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-xl max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-base text-slate-900">Правова інформація</h3>
+              <button
+                onClick={() => setShowLegalModal(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="text-xs text-slate-600 whitespace-pre-line leading-relaxed">
+              {typeof LEGAL_INFO === 'string'
+                ? LEGAL_INFO
+                : JSON.stringify(LEGAL_INFO, null, 2)}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Auth Modal */}
       {showAuthModal && (
