@@ -12,14 +12,6 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const FREE_WORDS_LIMIT = 5;
 
-const VOICE_PROFILES = [
-  { id: 'random', label: '🎲 Різні голоси' },
-  { id: 'de-DE-KatjaNeural', label: '👩 Katja (чіткий)' },
-  { id: 'de-DE-ConradNeural', label: '👨 Conrad (спокійний)' },
-  { id: 'de-DE-AmalaNeural', label: '👩 Amala (жвавий)' },
-  { id: 'de-DE-KillianNeural', label: '👨 Killian (глибокий)' }
-];
-
 const PRIVACY_TEXT = [
   { title: '1. Загальні положення', body: 'Ця Політика конфіденційності визначає порядок обробки персональних даних користувачів платформи deutsch mit Dmytro, володільцем якої є Горішняк Дмитро Володимирович.' },
   { title: '2. Які дані збираються', body: 'Для створення акаунта та збереження навчального прогресу збираються лише email, зашифрований хеш пароля та статистика навчання (бали XP, вивчені слова, статус підписки).' },
@@ -74,7 +66,6 @@ export default function App() {
 
   const [selectedLevel, setSelectedLevel] = useState('A1');
   const [selectedCategory, setSelectedCategory] = useState('colloquial');
-  const [selectedVoice, setSelectedVoice] = useState('random');
   const [isSpeaking, setIsSpeaking] = useState(false);
   const audioRef = useRef(null);
 
@@ -187,13 +178,8 @@ export default function App() {
       audioRef.current = null;
     }
 
-    const specificVoices = VOICE_PROFILES.filter((v) => v.id !== 'random');
-    const chosen = selectedVoice === 'random'
-      ? specificVoices[Math.floor(Math.random() * specificVoices.length)].id
-      : selectedVoice;
-
     setIsSpeaking(true);
-    const audio = new Audio(`/api/tts?text=${encodeURIComponent(cleanText)}&voice=${encodeURIComponent(chosen)}`);
+    const audio = new Audio(`/api/tts?text=${encodeURIComponent(cleanText)}&voice=de-DE-KatjaNeural`);
     audioRef.current = audio;
 
     audio.onended = () => setIsSpeaking(false);
@@ -495,28 +481,16 @@ export default function App() {
             </button>
           </div>
 
-          <div className="flex items-center gap-2.5">
-            <select
-              value={selectedVoice}
-              onChange={(e) => setSelectedVoice(e.target.value)}
-              className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-none focus:border-amber-400"
-            >
-              {VOICE_PROFILES.map((v) => (
-                <option key={v.id} value={v.id}>{v.label}</option>
-              ))}
-            </select>
-
-            <div className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-slate-500">
-              {loading && <Loader2 className="w-4 h-4 animate-spin text-amber-600" />}
-              <span>
-                <strong className="text-slate-900">{currentIndex + 1}</strong> / {filteredWords.length}
-                {!isPro && allCategoryWords.length > FREE_WORDS_LIMIT && (
-                  <button onClick={() => setShowPaywall(true)} className="ml-1.5 text-amber-700 font-semibold hover:underline">
-                    (усього {allCategoryWords.length} у PRO)
-                  </button>
-                )}
-              </span>
-            </div>
+          <div className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-slate-500">
+            {loading && <Loader2 className="w-4 h-4 animate-spin text-amber-600" />}
+            <span>
+              Слово <strong className="text-slate-900">{currentIndex + 1}</strong> з {filteredWords.length}
+              {!isPro && allCategoryWords.length > FREE_WORDS_LIMIT && (
+                <button onClick={() => setShowPaywall(true)} className="ml-1.5 text-amber-700 font-semibold hover:underline">
+                  (усього {allCategoryWords.length} у PRO)
+                </button>
+              )}
+            </span>
           </div>
         </div>
 
@@ -538,6 +512,7 @@ export default function App() {
                   className={`p-3 rounded-full transition ${
                     isSpeaking ? 'bg-amber-500 text-white scale-105' : 'bg-amber-100 hover:bg-amber-200 text-amber-800'
                   }`}
+                  title="Прослухати вимову"
                 >
                   <Volume2 className="w-5 h-5" />
                 </button>
