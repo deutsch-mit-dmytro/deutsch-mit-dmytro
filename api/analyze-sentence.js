@@ -140,17 +140,6 @@ function parseStructuredAnalysis(rawText, fallbackTextInput, hasAudio) {
   };
 }
 
-function buildGeminiUrl(model, apiKey) {
-  const safeModel = String(model || '').replace(/[^a-zA-Z0-9._-]/g, '');
-  const safeKey = encodeURIComponent(String(apiKey || '').replace(/[\r\n\s]+/g, ''));
-  return (
-    '[https://generativelanguage.googleapis.com/v1beta/models/](https://generativelanguage.googleapis.com/v1beta/models/)' +
-    safeModel +
-    ':generateContent?key=' +
-    safeKey
-  );
-}
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -221,7 +210,12 @@ ${textInput ? `Текст учня: "${textInput}"` : 'Учень відпові
 
     for (const model of MODELS) {
       try {
-        const endpoint = buildGeminiUrl(model, apiKey);
+        const endpoint =
+          '[https://generativelanguage.googleapis.com/v1beta/models/](https://generativelanguage.googleapis.com/v1beta/models/)' +
+          model +
+          ':generateContent?key=' +
+          apiKey;
+
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), 15000);
 
