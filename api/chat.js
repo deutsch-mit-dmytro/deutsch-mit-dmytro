@@ -37,52 +37,84 @@ ${isTestActive && forbiddenWord ? `- ЗАБОРОНЕНЕ СЛОВО ЗАРАЗ 
 - Якщо учень прямо або завуальовано питає переклад, артикль, значення чи написання слова "${forbiddenWord}" або "${forbiddenTranslation}" — КАТЕГОРИЧНО НЕ ВІДПОВІДАЙ на це слово! Ввічливо скажи, що під час тесту не підказуєш поточне слово, і порадь натиснути кнопку «Підказка» від кота ${petName}.` : ''}
 `.trim();
 
-    const contents = messages.slice(-8).map((msg) => ({
-      role: msg.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: String(msg.text || '') }],
-    }));
+    const contents = messages
+      .filter((msg) => msg && String(msg.text || '').trim().length > 0)
+      .slice(-8)
+      .map((msg) => ({
+        role: msg.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: String(msg.text).trim() }],
+      }));
+
+    if (contents.length === 0) {
+      return res.status(400).json({ error: 'Порожнє повідомлення' });
+    }
 
     const models = [
-      'gemini-2.5-flash-lite',
-      'gemini-2.5-flash',
-      'gemini-2.0-flash-lite',
-      'gemini-2.0-flash',
+      'gemini-3.8-flash',
+      'gemini-3.8-flash-lite',
     ];
 
-    let lastErrorMessage = 'Помилка звернення до Gemini API';
-    let lastStatus = 500;
+    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    let lastErrorMessage = 'Сервіс тимчасово перевантажений. Спробуй ще раз за кілька секунд.';
+    let lastStatus = 503;
 
     for (const model of models) {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            system_instruction: {
-              parts: [{ text: systemInstruction }],
-            },
-            contents,
-            generationConfig: {
-              temperature: 0.5,
-              maxOutputTokens: 350,
-            },
-          }),
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                system_instruction: {
+                  parts: [{ text: systemInstruction }],
+                },
+                contents,
+                generationConfig: {
+                  temperature: 0.5,
+                  maxOutputTokens: 350,
+                },
+              }),
+            }
+          );
+
+          const data = await response.json().catch(() => ({}));
+
+          if (response.ok) {
+            const reply =
+              data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ||
+              'Вибач, зараз не вдалося сформувати відповідь. Спробуй переформулювати питання.';
+
+            return res.status(200).json({ reply, modelUsed: model });
+          }
+
+          lastStatus = response.status;
+          const apiMessage = data?.error?.message || lastErrorMessage;
+          lastErrorMessage = apiMessage;
+
+          const isTransientOverload =
+            response.status === 429 ||
+            response.status === 503 ||
+            /high demand|overloaded|try again later|quota|rate limit/i.test(apiMessage);
+
+          if (isTransientOverload && attempt === 0) {
+            await sleep(700);
+            continue;
+          }
+
+          break;
+        } catch (fetchErr) {
+          lastStatus = 502;
+          lastErrorMessage = 'Помилка зʼєднання з Gemini API';
+          if (attempt === 0) {
+            await sleep(500);
+            continue;
+          }
+          break;
         }
-      );
-
-      const data = await response.json();
-
-      if (response.ok) {
-        const reply =
-          data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ||
-          'Вибач, зараз не вдалося сформувати відповідь. Спробуй переформулювати питання.';
-
-        return res.status(200).json({ reply, modelUsed: model });
       }
-
-      lastStatus = response.status;
-      lastErrorMessage = data?.error?.message || lastErrorMessage;
     }
 
     return res.status(lastStatus).json({ error: lastErrorMessage });
