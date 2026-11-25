@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import {
   Volume2, Flame, Trophy, CheckCircle2, XCircle,
   Share2, Sparkles, BookOpen, BrainCircuit, ArrowRight,
-  RotateCcw, Crown, Check, Copy, X, Loader2, LogOut, User, ShieldCheck, FileText, ExternalLink, Search, Keyboard, Compass, Camera, Pencil
+  RotateCcw, Crown, Check, Copy, X, Loader2, LogOut, User, ShieldCheck, FileText, ExternalLink, Search, Keyboard, Compass, Camera, Pencil, Coins, Lightbulb, ShoppingBag, Heart
 } from 'lucide-react';
 
 const SUPABASE_URL = 'https://vdjduptyloghojeqaglw.supabase.co';
@@ -16,7 +16,7 @@ const FREE_WORDS_LIMIT = 5;
 
 const PRIVACY_TEXT = [
   { title: '1. Загальні положення', body: 'Ця Політика конфіденційності визначає порядок обробки персональних даних користувачів платформи deutsch mit Dmytro, володільцем якої є Горішняк Дмитро Володимирович.' },
-  { title: '2. Які дані збираються', body: 'Для створення акаунта та збереження навчального прогресу збираються лише email, ім’я профілю, фото аватара, зашифрований хеш пароля та статистика навчання (бали XP, вивчені слова, статус підписки).' },
+  { title: '2. Які дані збираються', body: 'Для створення акаунта та збереження навчального прогресу збираються лише email, ім’я профілю, фото аватара, зашифрований хеш пароля та статистика навчання (бали XP, монети, прогрес улюбленця, вивчені слова, статус підписки).' },
   { title: '3. Платіжні дані', body: 'Сервіс не зберігає дані банківських карток. Оплата відбувається на захищеній сторінці сертифікованого платіжного провайдера.' },
   { title: '4. Захист та видалення даних', body: 'Дані зберігаються у захищеній базі Supabase (HTTPS/TLS, Row Level Security) згідно із законодавством України та GDPR. Запит на видалення даних: sirobabadima9@gmail.com.' }
 ];
@@ -52,6 +52,40 @@ const PLANS = [
   { id: '6m', months: 6, title: '6 місяців', price: 913, oldPrice: 1014, discount: '-10%', perMonth: 152 }
 ];
 
+const CAT_STAGES = [
+  { level: 1, minXp: 0, title: 'Кошеня-початківець', emoji: '🐱', badge: 'Рівень 1' },
+  { level: 2, minXp: 100, title: 'Допитливий мурчик', emoji: '😺', badge: 'Рівень 2' },
+  { level: 3, minXp: 300, title: 'Кіт-словничок', emoji: '😸', badge: 'Рівень 3' },
+  { level: 4, minXp: 650, title: 'Берлінський поліглот', emoji: '😼', badge: 'Рівень 4' },
+  { level: 5, minXp: 1200, title: 'Магістр deutsch mit Dmytro', emoji: '🦁', badge: 'Рівень 5' }
+];
+
+const SHOP_ITEMS = [
+  { id: 'milk', type: 'food', icon: '🥛', name: 'Тепле молочко', desc: '+20% ситості, +15 досвіду кота', price: 25, hunger: 20, petXp: 15 },
+  { id: 'brezel', type: 'food', icon: '🥨', name: 'Німецький брецель', desc: '+35% ситості, +30 досвіду кота', price: 50, hunger: 35, petXp: 30 },
+  { id: 'salmon', type: 'food', icon: '🍣', name: 'Філе лосося', desc: '+60% ситості, +55 досвіду кота', price: 90, hunger: 60, petXp: 55 },
+  { id: 'cake', type: 'food', icon: '🍰', name: 'Шварцвальдський торт', desc: '100% ситості, +90 досвіду кота', price: 140, hunger: 100, petXp: 90 },
+  { id: 'yarn', type: 'toy', icon: '🧶', name: 'Клубок вовни', desc: '+15% ситості, +45 досвіду кота', price: 65, hunger: 15, petXp: 45 },
+  { id: 'laser', type: 'toy', icon: '🔦', name: 'Лазерна указка', desc: '+10% ситості, +80 досвіду кота', price: 110, hunger: 10, petXp: 80 },
+  { id: 'acc_scarf', type: 'accessory', icon: '🧣', name: 'Шарф Німеччини', desc: 'Стильний аксесуар на кота', price: 180, petXp: 50 },
+  { id: 'acc_glasses', type: 'accessory', icon: '👓', name: 'Окуляри розумника', desc: 'Образ справжнього філолога', price: 320, petXp: 90 },
+  { id: 'acc_hat', type: 'accessory', icon: '🎩', name: 'Баварський капелюх', desc: 'Класика з Мюнхена', price: 500, petXp: 140 },
+  { id: 'acc_crown', type: 'accessory', icon: '👑', name: 'Корона магістра', desc: 'Найвищий статус для кота', price: 900, petXp: 250 },
+];
+
+const DEFAULT_PET = {
+  name: 'Schnurri',
+  hunger: 80,
+  xp: 0,
+  feedsCount: 0,
+  hintsUsed: 0,
+  coinsSpent: 0,
+  spellingDone: 0,
+  ownedItems: [],
+  equippedAccessory: null,
+  freeHintDate: null
+};
+
 const ACHIEVEMENTS = [
   { id: 'first_step', icon: '🚀', title: 'Перший крок', desc: 'Почати навчання на платформі', check: (s) => s.streakDays >= 1 || s.learnedCount >= 1, getProgress: (s) => ({ current: Math.min(Math.max(s.streakDays, s.learnedCount), 1), target: 1 }) },
   { id: 'words_10', icon: '📖', title: 'Перша десятка', desc: 'Вивчити 10 німецьких слів', check: (s) => s.learnedCount >= 10, getProgress: (s) => ({ current: Math.min(s.learnedCount, 10), target: 10 }) },
@@ -73,6 +107,24 @@ const ACHIEVEMENTS = [
   { id: 'level_a2', icon: '🎯', title: 'Знавець A2', desc: 'Вивчити перше слово рівня A2', check: (s) => s.hasLevelA2, getProgress: (s) => ({ current: s.hasLevelA2 ? 1 : 0, target: 1 }) },
   { id: 'level_b', icon: '🚀', title: 'Рівень B1–B2 у грі', desc: 'Вивчити перше слово рівня B1 або B2', check: (s) => s.hasLevelB1OrB2, getProgress: (s) => ({ current: s.hasLevelB1OrB2 ? 1 : 0, target: 1 }) },
   { id: 'pro_member', icon: '👑', title: 'Учень PRO', desc: 'Активувати повний абонемент PRO', check: (s) => s.isPro, getProgress: (s) => ({ current: s.isPro ? 1 : 0, target: 1 }) },
+
+  // Нові досягнення для кота, правопису, монет і підказок (16 шт.)
+  { id: 'cat_feed_1', icon: '🥛', title: 'Перший сніданок кота', desc: 'Погодувати або погратися з котом уперше', check: (s) => s.feedsCount >= 1, getProgress: (s) => ({ current: Math.min(s.feedsCount, 1), target: 1 }) },
+  { id: 'cat_feed_5', icon: '🥨', title: 'Турботливий господар', desc: 'Погодувати кота 5 разів', check: (s) => s.feedsCount >= 5, getProgress: (s) => ({ current: Math.min(s.feedsCount, 5), target: 5 }) },
+  { id: 'cat_feed_15', icon: '🍣', title: 'Шеф-кухар для кота', desc: 'Погодувати кота 15 разів', check: (s) => s.feedsCount >= 15, getProgress: (s) => ({ current: Math.min(s.feedsCount, 15), target: 15 }) },
+  { id: 'cat_full', icon: '😻', title: 'Повне муркотіння', desc: 'Довести ситість кота до 100%', check: (s) => s.catHunger >= 100, getProgress: (s) => ({ current: Math.min(s.catHunger, 100), target: 100 }) },
+  { id: 'cat_lvl_2', icon: '😺', title: 'Кіт підріс', desc: 'Прокачати кота до 2-го рівня', check: (s) => s.catLevel >= 2, getProgress: (s) => ({ current: Math.min(s.catLevel, 2), target: 2 }) },
+  { id: 'cat_lvl_3', icon: '😸', title: 'Кіт-словничок', desc: 'Прокачати кота до 3-го рівня', check: (s) => s.catLevel >= 3, getProgress: (s) => ({ current: Math.min(s.catLevel, 3), target: 3 }) },
+  { id: 'cat_lvl_5', icon: '🦁', title: 'Легендарний кіт', desc: 'Прокачати кота до 5-го рівня', check: (s) => s.catLevel >= 5, getProgress: (s) => ({ current: Math.min(s.catLevel, 5), target: 5 }) },
+  { id: 'cat_acc_1', icon: '🧣', title: 'Перша обновка', desc: 'Купити перший аксесуар для кота', check: (s) => s.accessoriesCount >= 1, getProgress: (s) => ({ current: Math.min(s.accessoriesCount, 1), target: 1 }) },
+  { id: 'cat_acc_4', icon: '🎩', title: 'Кіт-модник', desc: 'Зібрати всі 4 аксесуари для кота', check: (s) => s.accessoriesCount >= 4, getProgress: (s) => ({ current: Math.min(s.accessoriesCount, 4), target: 4 }) },
+  { id: 'coins_200', icon: '🪙', title: 'Перші 200 монет', desc: 'Мати 200 монет на балансі', check: (s) => s.coins >= 200, getProgress: (s) => ({ current: Math.min(s.coins, 200), target: 200 }) },
+  { id: 'coins_spent_300', icon: '🛍️', title: 'Щедрий власник', desc: 'Витратити 300 монет у крамничці кота', check: (s) => s.coinsSpent >= 300, getProgress: (s) => ({ current: Math.min(s.coinsSpent, 300), target: 300 }) },
+  { id: 'coins_spent_1000', icon: '🏦', title: 'VIP-клієнт крамнички', desc: 'Витратити 1 000 монет на догляд за котом', check: (s) => s.coinsSpent >= 1000, getProgress: (s) => ({ current: Math.min(s.coinsSpent, 1000), target: 1000 }) },
+  { id: 'hint_1', icon: '💡', title: 'Мяу-підказка', desc: 'Попросити підказку у кота під час вправи', check: (s) => s.hintsUsed >= 1, getProgress: (s) => ({ current: Math.min(s.hintsUsed, 1), target: 1 }) },
+  { id: 'hint_10', icon: '🔮', title: 'Робота в команді', desc: 'Використати підказку кота 10 разів', check: (s) => s.hintsUsed >= 10, getProgress: (s) => ({ current: Math.min(s.hintsUsed, 10), target: 10 }) },
+  { id: 'spell_1', icon: '✍️', title: 'Без жодної помилки', desc: 'Написати перше слово у режимі Правопис', check: (s) => s.spellingDone >= 1, getProgress: (s) => ({ current: Math.min(s.spellingDone, 1), target: 1 }) },
+  { id: 'spell_15', icon: '🎯', title: 'Майстер артиклів та умлаутів', desc: 'Правильно написати 15 слів у Правописі', check: (s) => s.spellingDone >= 15, getProgress: (s) => ({ current: Math.min(s.spellingDone, 15), target: 15 }) },
 ];
 
 const getLocalDateStr = (date = new Date()) => {
@@ -88,7 +140,6 @@ const getYesterdayDateStr = () => {
   return getLocalDateStr(d);
 };
 
-// Перевірка актуальності стріку при завантаженні (НЕ змінює lastActiveDate до першої навчальної дії сьогодні)
 const resolveStreakOnLoad = (savedStreak, savedDate) => {
   const today = getLocalDateStr();
   const yesterday = getYesterdayDateStr();
@@ -100,11 +151,9 @@ const resolveStreakOnLoad = (savedStreak, savedDate) => {
   if (savedDate === today || savedDate === yesterday) {
     return { streak: Math.max(numStreak, 1), lastActiveDate: savedDate };
   }
-  // Пропущено більше 1 дня — стрік обнуляється до 1
   return { streak: 1, lastActiveDate: null };
 };
 
-// Нарахування +1 дня під час реальної навчальної дії (вивчене слово / правильна відповідь)
 const advanceStreakOnActivity = (currentStreak, lastActiveDate) => {
   const today = getLocalDateStr();
   const yesterday = getYesterdayDateStr();
@@ -124,6 +173,53 @@ const formatProUntilDate = (isoString) => {
   const date = new Date(isoString);
   if (Number.isNaN(date.getTime())) return '';
   return `до ${date.toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric' })}`;
+};
+
+const getCatStageInfo = (petXp = 0) => {
+  let current = CAT_STAGES[0];
+  let next = null;
+  for (let i = 0; i < CAT_STAGES.length; i++) {
+    if (petXp >= CAT_STAGES[i].minXp) {
+      current = CAT_STAGES[i];
+      next = CAT_STAGES[i + 1] || null;
+    }
+  }
+  const progressPercent = next
+    ? Math.min(100, Math.round(((petXp - current.minXp) / (next.minXp - current.minXp)) * 100))
+    : 100;
+  return { current, next, progressPercent };
+};
+
+const buildCatHint = (wordObj, currentMode) => {
+  if (!wordObj) return 'Обери слово, і я підкажу!';
+  const w = (wordObj.word || '').trim();
+  const art = (wordObj.article || '').trim().toLowerCase();
+
+  if (currentMode === 'quiz') {
+    if (wordObj.example) {
+      return `Контекст із життя: «${wordObj.example}»`;
+    }
+    return `Це слово рівня ${wordObj.level}, перша літера перекладу: «${(wordObj.translation || '')[0] || ''}...»`;
+  }
+
+  const tips = [];
+  if (art === 'der') tips.push('Чоловічий рід (der)');
+  if (art === 'die') {
+    if (w.endsWith('ung') || w.endsWith('heit') || w.endsWith('keit') || w.endsWith('schaft')) {
+      tips.push('Закінчення вказує на жіночий рід (die)');
+    } else {
+      tips.push('Жіночий рід (die)');
+    }
+  }
+  if (art === 'das') tips.push('Середній рід (das)');
+
+  if (w.length >= 2) {
+    tips.push(`Починається на «${w.slice(0, 2)}...» (${w.length} літер)`);
+  }
+  if (/[äöüßÄÖÜ]/.test(w)) {
+    tips.push('У слові є умлаут або ß!');
+  }
+  return tips.join(' • ');
 };
 
 const resizeAvatarFile = (file) =>
@@ -167,7 +263,7 @@ export default function App() {
 
   const [legalModal, setLegalModal] = useState(null);
   const [showProfileDrawer, setShowProfileDrawer] = useState(false);
-  const [profileTab, setProfileTab] = useState('overview');
+  const [profileTab, setProfileTab] = useState('pet'); // 'pet' | 'overview' | 'achievements' | 'dictionary'
   const [achFilter, setAchFilter] = useState('all');
   const [dictSearch, setDictSearch] = useState('');
   const [dictLevelFilter, setDictLevelFilter] = useState('ALL');
@@ -193,7 +289,26 @@ export default function App() {
   const [isFlipped, setIsFlipped] = useState(false);
 
   const [xp, setXp] = useState(() => Number(localStorage.getItem('dmd_xp')) || 0);
+  const [coins, setCoins] = useState(() => {
+    const saved = localStorage.getItem('dmd_coins');
+    return saved !== null ? Number(saved) : (Number(localStorage.getItem('dmd_xp')) || 0);
+  });
   const [xpGain, setXpGain] = useState(null);
+
+  // Стан улюбленця-кота
+  const [pet, setPet] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('dmd_pet') || 'null');
+      return saved ? { ...DEFAULT_PET, ...saved } : DEFAULT_PET;
+    } catch {
+      return DEFAULT_PET;
+    }
+  });
+  const [isEditingPetName, setIsEditingPetName] = useState(false);
+  const [petNameDraft, setPetNameDraft] = useState('');
+  const [catReaction, setCatReaction] = useState('Мяу! Готовий вчити нові німецькі слова? 🐾');
+  const [activeHint, setActiveHint] = useState('');
+
   const [streak, setStreak] = useState(() => {
     const savedStreak = Number(localStorage.getItem('dmd_streak')) || 1;
     const savedDate = localStorage.getItem('dmd_last_active');
@@ -261,6 +376,9 @@ export default function App() {
 
     if (profile) {
       const mergedXp = Math.max(profile.xp || 0, Number(localStorage.getItem('dmd_xp')) || 0);
+      const localCoins = localStorage.getItem('dmd_coins') !== null ? Number(localStorage.getItem('dmd_coins')) : mergedXp;
+      const mergedCoins = profile.coins !== null && profile.coins !== undefined ? Math.max(profile.coins, localCoins) : mergedXp;
+
       const localLearned = JSON.parse(localStorage.getItem('dmd_learned') || '[]');
       const dbLearned = Array.isArray(profile.learned_ids) ? profile.learned_ids : [];
       const mergedLearned = Array.from(new Set([...dbLearned, ...localLearned]));
@@ -273,7 +391,23 @@ export default function App() {
       const resolvedName = profile.full_name || localStorage.getItem('dmd_full_name') || '';
       const resolvedAvatar = profile.avatar_url || localStorage.getItem('dmd_avatar_url') || '';
 
+      const dbPet = profile.pet_data && typeof profile.pet_data === 'object' ? profile.pet_data : {};
+      const localPet = JSON.parse(localStorage.getItem('dmd_pet') || '{}');
+      const mergedPet = {
+        ...DEFAULT_PET,
+        ...localPet,
+        ...dbPet,
+        xp: Math.max(dbPet.xp || 0, localPet.xp || 0),
+        feedsCount: Math.max(dbPet.feedsCount || 0, localPet.feedsCount || 0),
+        hintsUsed: Math.max(dbPet.hintsUsed || 0, localPet.hintsUsed || 0),
+        coinsSpent: Math.max(dbPet.coinsSpent || 0, localPet.coinsSpent || 0),
+        spellingDone: Math.max(dbPet.spellingDone || 0, localPet.spellingDone || 0),
+        ownedItems: Array.from(new Set([...(dbPet.ownedItems || []), ...(localPet.ownedItems || [])])),
+      };
+
       setXp(mergedXp);
+      setCoins(mergedCoins);
+      setPet(mergedPet);
       setStreak(resolved.streak);
       lastActiveDateRef.current = resolved.lastActiveDate;
       setLastActiveDate(resolved.lastActiveDate);
@@ -285,6 +419,8 @@ export default function App() {
 
       await supabase.from('profiles').update({
         xp: mergedXp,
+        coins: mergedCoins,
+        pet_data: mergedPet,
         streak: resolved.streak,
         last_active_date: resolved.lastActiveDate,
         learned_ids: mergedLearned,
@@ -296,9 +432,11 @@ export default function App() {
       return proActive;
     } else {
       const initialStreak = Number(localStorage.getItem('dmd_streak')) || 1;
+      const initialXp = Number(localStorage.getItem('dmd_xp')) || 0;
       const savedName = localStorage.getItem('dmd_full_name') || '';
       const savedAvatar = localStorage.getItem('dmd_avatar_url') || '';
       setStreak(initialStreak);
+      setCoins(initialXp);
       lastActiveDateRef.current = null;
       setLastActiveDate(null);
       setProUntil(null);
@@ -308,7 +446,9 @@ export default function App() {
         email: authUser.email,
         full_name: savedName || null,
         avatar_url: savedAvatar || null,
-        xp: Number(localStorage.getItem('dmd_xp')) || 0,
+        xp: initialXp,
+        coins: initialXp,
+        pet_data: DEFAULT_PET,
         streak: initialStreak,
         last_active_date: null,
         learned_ids: JSON.parse(localStorage.getItem('dmd_learned') || '[]'),
@@ -343,6 +483,8 @@ export default function App() {
 
   useEffect(() => {
     localStorage.setItem('dmd_xp', xp);
+    localStorage.setItem('dmd_coins', coins);
+    localStorage.setItem('dmd_pet', JSON.stringify(pet));
     localStorage.setItem('dmd_streak', streak);
     if (lastActiveDate) localStorage.setItem('dmd_last_active', lastActiveDate);
     else localStorage.removeItem('dmd_last_active');
@@ -354,13 +496,15 @@ export default function App() {
     if (user) {
       supabase.from('profiles').update({
         xp,
+        coins,
+        pet_data: pet,
         streak,
         last_active_date: lastActiveDate || null,
         learned_ids: learnedIds,
         updated_at: new Date().toISOString()
       }).eq('id', user.id).then(() => {});
     }
-  }, [xp, streak, lastActiveDate, learnedIds, isPro, proUntil, user]);
+  }, [xp, coins, pet, streak, lastActiveDate, learnedIds, isPro, proUntil, user]);
 
   const handleSaveProfileName = async (e) => {
     e.preventDefault();
@@ -512,10 +656,58 @@ export default function App() {
     localStorage.removeItem('dmd_avatar_url');
   };
 
-  const addXp = (points) => {
+  const addXpAndCoins = (points) => {
     setXp((prev) => prev + points);
-    setXpGain(`+${points} XP`);
-    setTimeout(() => setXpGain(null), 1500);
+    setCoins((prev) => prev + points);
+    setXpGain(`+${points} XP • +${points} 🪙`);
+    setTimeout(() => setXpGain(null), 1700);
+  };
+
+  const handleBuyShopItem = (item) => {
+    if (item.type === 'accessory') {
+      const alreadyOwned = (pet.ownedItems || []).includes(item.id);
+      if (alreadyOwned) {
+        const nextEq = pet.equippedAccessory === item.id ? null : item.id;
+        setPet((prev) => ({ ...prev, equippedAccessory: nextEq }));
+        setCatReaction(nextEq ? `Мур-мяу! Як мені личить ${item.name}? 😻` : 'Зняв аксесуар, відпочиваю 🐱');
+        return;
+      }
+      if (coins < item.price) return;
+      setCoins((prev) => prev - item.price);
+      setPet((prev) => ({
+        ...prev,
+        xp: (prev.xp || 0) + (item.petXp || 0),
+        coinsSpent: (prev.coinsSpent || 0) + item.price,
+        ownedItems: [...(prev.ownedItems || []), item.id],
+        equippedAccessory: item.id,
+      }));
+      setCatReaction(`Дякую за обновку «${item.name}»! Одразу приміряв 😻`);
+      return;
+    }
+
+    if (coins < item.price) return;
+    setCoins((prev) => prev - item.price);
+    setPet((prev) => ({
+      ...prev,
+      hunger: Math.min(100, (prev.hunger ?? 80) + (item.hunger || 20)),
+      xp: (prev.xp || 0) + (item.petXp || 15),
+      feedsCount: (prev.feedsCount || 0) + 1,
+      coinsSpent: (prev.coinsSpent || 0) + item.price,
+    }));
+    setCatReaction(
+      item.type === 'toy'
+        ? `Муррр! Класна гра з «${item.name}»! +${item.petXp} досвіду кота 🧶`
+        : `Ням-ням! «${item.name}» — смакота! Ситість зросла 😻`
+    );
+  };
+
+  const handleSavePetName = (e) => {
+    e.preventDefault();
+    const trimmed = petNameDraft.trim();
+    if (!trimmed) return;
+    setPet((prev) => ({ ...prev, name: trimmed }));
+    setIsEditingPetName(false);
+    setCatReaction(`Мяу! Відтепер я — ${trimmed}! 🐾`);
   };
 
   const handleSelectModule = (lvl, cat) => {
@@ -529,6 +721,7 @@ export default function App() {
     setSelectedArticle('');
     setSpellingInput('');
     setSpellingResult(null);
+    setActiveHint('');
   };
 
   const learnedWordsList = useMemo(
@@ -588,6 +781,7 @@ export default function App() {
     setSelectedArticle('');
     setSpellingInput('');
     setSpellingResult(null);
+    setActiveHint('');
     setCurrentIndex(nextIndex % filteredWords.length);
   };
 
@@ -602,7 +796,32 @@ export default function App() {
     setSelectedArticle('');
     setSpellingInput('');
     setSpellingResult(null);
+    setActiveHint('');
   }, [currentWord, mode, vocabulary]);
+
+  const todayStr = getLocalDateStr();
+  const hasFreeHintToday = (pet.hunger ?? 80) >= 70 && pet.freeHintDate !== todayStr;
+  const hintCost = hasFreeHintToday ? 0 : 10;
+
+  const handleRequestCatHint = () => {
+    if (!currentWord || activeHint) return;
+    if (hintCost > 0 && coins < hintCost) {
+      setCatReaction('Мяу... Не вистачає 10 монет на підказку. Вивчи слово на картці! 🪙');
+      return;
+    }
+    if (hintCost > 0) {
+      setCoins((prev) => prev - hintCost);
+    }
+    const hintText = buildCatHint(currentWord, mode);
+    setActiveHint(hintText);
+    setPet((prev) => ({
+      ...prev,
+      hintsUsed: (prev.hintsUsed || 0) + 1,
+      coinsSpent: (prev.coinsSpent || 0) + hintCost,
+      freeHintDate: hintCost === 0 ? todayStr : prev.freeHintDate,
+    }));
+    setCatReaction(`Лови підказку! ${hintText}`);
+  };
 
   const getArticleColor = (article) => {
     if (article === 'der') return 'text-blue-600 bg-blue-50 border-blue-200';
@@ -623,9 +842,11 @@ export default function App() {
     touchDailyStreak();
     if (!isCurrentLearned) {
       setLearnedIds((prev) => (prev.includes(currentWord.id) ? prev : [...prev, currentWord.id]));
-      addXp(15);
+      addXpAndCoins(15);
+      setCatReaction(`Super! +15 монет у скарбничку! (${pet.name} муркоче 😻)`);
     } else {
-      addXp(5);
+      addXpAndCoins(5);
+      setCatReaction('Закріпили! +5 монет за повторення 🐾');
     }
     setIsFlipped(false);
     setCurrentIndex((prev) => {
@@ -644,9 +865,12 @@ export default function App() {
     setQuizAnswer(option.id);
     if (option.id === currentWord.id) {
       touchDailyStreak();
-      addXp(20);
+      addXpAndCoins(20);
+      setCatReaction('Genau richtig! +20 монет — можемо купити смаколик 🥨');
       if (!learnedIds.includes(currentWord.id)) setLearnedIds((prev) => [...prev, currentWord.id]);
       speakGerman(currentWord.word);
+    } else {
+      setCatReaction('Мяу, нічого страшного! Запам’ятай правильний варіант 🐱');
     }
   };
 
@@ -688,10 +912,14 @@ export default function App() {
 
     if (allOk) {
       touchDailyStreak();
-      addXp(25);
+      addXpAndCoins(25);
+      setPet((prev) => ({ ...prev, spellingDone: (prev.spellingDone || 0) + 1 }));
+      setCatReaction('Perfekt! Бездоганний правопис! +25 монет 😻');
       if (!learnedIds.includes(currentWord.id)) {
         setLearnedIds((prev) => [...prev, currentWord.id]);
       }
+    } else {
+      setCatReaction('Майже! Зверни увагу на артикль і велику літеру 🐾');
     }
   };
 
@@ -702,14 +930,33 @@ export default function App() {
     return 'Легенда deutsch mit Dmytro';
   };
 
+  const catStageInfo = useMemo(() => getCatStageInfo(pet.xp || 0), [pet.xp]);
+  const equippedAccessoryObj = useMemo(
+    () => SHOP_ITEMS.find((item) => item.id === pet.equippedAccessory) || null,
+    [pet.equippedAccessory]
+  );
+
+  const ownedAccessoriesCount = useMemo(
+    () => (pet.ownedItems || []).filter((id) => id.startsWith('acc_')).length,
+    [pet.ownedItems]
+  );
+
   const achievementStats = useMemo(() => ({
     xp: xp || 0,
+    coins: coins || 0,
     learnedCount: learnedIds.length,
     streakDays: streak || 0,
     isPro: Boolean(isPro),
     hasLevelA2: learnedWordsList.some((word) => word.level === 'A2'),
     hasLevelB1OrB2: learnedWordsList.some((word) => word.level === 'B1' || word.level === 'B2'),
-  }), [xp, learnedIds.length, streak, isPro, learnedWordsList]);
+    feedsCount: pet.feedsCount || 0,
+    catHunger: pet.hunger ?? 80,
+    catLevel: catStageInfo.current.level,
+    accessoriesCount: ownedAccessoriesCount,
+    coinsSpent: pet.coinsSpent || 0,
+    hintsUsed: pet.hintsUsed || 0,
+    spellingDone: pet.spellingDone || 0,
+  }), [xp, coins, learnedIds.length, streak, isPro, learnedWordsList, pet, catStageInfo.current.level, ownedAccessoriesCount]);
 
   const userAchievements = useMemo(() => {
     return ACHIEVEMENTS.map((ach) => {
@@ -776,10 +1023,12 @@ export default function App() {
     setShowProfileDrawer(false);
   };
 
-  const openProfileDrawer = (tab = 'overview') => {
+  const openProfileDrawer = (tab = 'pet') => {
     setProfileTab(tab);
     setNameDraft(fullName);
+    setPetNameDraft(pet.name || 'Schnurri');
     setIsEditingName(false);
+    setIsEditingPetName(false);
     setProfileSavedMsg('');
     setShowProfileDrawer(true);
   };
@@ -787,7 +1036,7 @@ export default function App() {
   const displayUserName = fullName.trim() || (user?.email ? user.email.split('@')[0] : 'Учень');
   const userInitial = displayUserName.charAt(0).toUpperCase();
 
-  const shareText = `🇩🇪 Мій прогрес у deutsch mit Dmytro:\n✨ ${xp} XP балів\n📚 Вивчено слів: ${learnedIds.length}\n🔥 Серія: ${streak} дн.\n🏅 Досягнень: ${unlockedCount}/${userAchievements.length}`;
+  const shareText = `🇩🇪 Мій прогрес у deutsch mit Dmytro:\n✨ ${xp} XP балів • 🪙 ${coins} монет\n📚 Вивчено слів: ${learnedIds.length}\n🔥 Серія: ${streak} дн.\n🐱 Кіт ${pet.name}: ${catStageInfo.current.title}\n🏅 Досягнень: ${unlockedCount}/${userAchievements.length}`;
 
   const handleCopyShare = () => {
     navigator.clipboard.writeText(shareText);
@@ -822,15 +1071,26 @@ export default function App() {
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 sm:gap-2.5">
-            <div className="relative flex items-center gap-1 bg-amber-50 text-amber-700 px-2.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold border border-amber-200">
-              <Trophy className="w-3.5 h-3.5 text-amber-500" />
-              <span>{xp}</span>
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Баланс монет для кота */}
+            <button
+              type="button"
+              onClick={() => user ? openProfileDrawer('pet') : openAuth('login')}
+              className="relative flex items-center gap-1 bg-amber-50 hover:bg-amber-100 text-amber-800 px-2.5 py-1.5 rounded-full text-xs sm:text-sm font-bold border border-amber-200 transition"
+              title="Монети для догляду за котом"
+            >
+              <Coins className="w-3.5 h-3.5 text-amber-500" />
+              <span>{coins}</span>
               {xpGain && (
-                <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm whitespace-nowrap">
+                <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm whitespace-nowrap z-40">
                   {xpGain}
                 </span>
               )}
+            </button>
+
+            <div className="hidden md:flex items-center gap-1 bg-slate-100 text-slate-700 px-2.5 py-1.5 rounded-full text-xs font-semibold">
+              <Trophy className="w-3.5 h-3.5 text-amber-500" />
+              <span>{xp} XP</span>
             </div>
 
             <div className="flex items-center gap-1 bg-orange-50 text-orange-700 px-2.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold border border-orange-200">
@@ -838,7 +1098,7 @@ export default function App() {
               <span>{streak}</span>
             </div>
 
-            <button onClick={() => setShowShareModal(true)} className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 transition" title="Поділитися прогресом">
+            <button onClick={() => setShowShareModal(true)} className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 transition hidden sm:inline-flex" title="Поділитися прогресом">
               <Share2 className="w-4 h-4" />
             </button>
 
@@ -850,9 +1110,9 @@ export default function App() {
             ) : (
               <button
                 type="button"
-                onClick={() => openProfileDrawer('overview')}
-                className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 pl-1.5 pr-3 py-1 rounded-full text-xs font-semibold text-slate-800 transition"
-                title="Відкрити кабінет учня"
+                onClick={() => openProfileDrawer('pet')}
+                className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 pl-1.5 pr-2.5 py-1 rounded-full text-xs font-semibold text-slate-800 transition"
+                title="Відкрити кабінет і кота"
               >
                 {avatarUrl ? (
                   <img src={avatarUrl} alt={displayUserName} className="w-6 h-6 rounded-full object-cover border border-slate-300 shrink-0" />
@@ -861,19 +1121,19 @@ export default function App() {
                     {userInitial}
                   </span>
                 )}
-                <span className="max-w-[85px] sm:max-w-[130px] truncate">{displayUserName}</span>
+                <span className="max-w-[75px] sm:max-w-[115px] truncate">{displayUserName}</span>
+                <span className="text-sm leading-none">{catStageInfo.current.emoji}</span>
               </button>
             )}
 
             {!isPro ? (
-              <button onClick={() => { setProCheckMsg(''); setShowPaywall(true); }} className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white px-3 py-1.5 rounded-full text-xs sm:text-sm font-semibold transition shadow-sm">
+              <button onClick={() => { setProCheckMsg(''); setShowPaywall(true); }} className="flex items-center gap-1 bg-slate-900 hover:bg-slate-800 text-white px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-semibold transition shadow-sm">
                 <Crown className="w-3.5 h-3.5 text-amber-400" />
-                <span className="hidden sm:inline">Абонемент</span>
-                <span className="sm:hidden">PRO</span>
+                <span className="hidden sm:inline">PRO</span>
               </button>
             ) : (
-              <span className="flex items-center gap-1 bg-emerald-100 text-emerald-800 px-2.5 py-1.5 rounded-full text-xs font-bold">
-                <Crown className="w-3.5 h-3.5" /> PRO
+              <span className="flex items-center gap-1 bg-emerald-100 text-emerald-800 px-2 py-1.5 rounded-full text-xs font-bold">
+                <Crown className="w-3.5 h-3.5" />
               </span>
             )}
           </div>
@@ -881,6 +1141,59 @@ export default function App() {
       </header>
 
       <main className="max-w-4xl w-full mx-auto px-4 pt-6 pb-12 space-y-6 flex-1">
+        {/* Міні-панель кота-помічника */}
+        <section className="bg-white px-4 py-3 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <button
+              type="button"
+              onClick={() => user ? openProfileDrawer('pet') : openAuth('login')}
+              className="relative w-11 h-11 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-2xl shrink-0 hover:scale-105 transition"
+              title="Перейти до кота"
+            >
+              <span>{catStageInfo.current.emoji}</span>
+              {equippedAccessoryObj && (
+                <span className="absolute -top-1.5 -right-1.5 text-sm bg-white rounded-full px-0.5 shadow-xs">
+                  {equippedAccessoryObj.icon}
+                </span>
+              )}
+            </button>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-extrabold text-slate-900">{pet.name}</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900">
+                  {catStageInfo.current.badge}
+                </span>
+                <span className="text-[11px] font-semibold text-rose-600 flex items-center gap-0.5">
+                  <Heart className="w-3 h-3 fill-rose-500 text-rose-500" /> {pet.hunger ?? 80}%
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 truncate mt-0.5">{catReaction}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {currentWord && (mode === 'quiz' || mode === 'spelling') && (
+              <button
+                type="button"
+                onClick={handleRequestCatHint}
+                disabled={Boolean(activeHint)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 disabled:opacity-50 text-amber-950 text-xs font-bold transition"
+              >
+                <Lightbulb className="w-3.5 h-3.5 text-amber-600" />
+                <span>{hintCost === 0 ? 'Підказка (0 🪙)' : `Підказка (${hintCost} 🪙)`}</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => user ? openProfileDrawer('pet') : openAuth('login')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition"
+            >
+              <ShoppingBag className="w-3.5 h-3.5 text-amber-400" />
+              <span>Погодувати</span>
+            </button>
+          </div>
+        </section>
+
         <section className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2.5">
@@ -966,7 +1279,7 @@ export default function App() {
                   mode === 'quiz' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <BrainCircuit className="w-4 h-4" /> Тест (+20 XP)
+                <BrainCircuit className="w-4 h-4" /> Тест (+20)
               </button>
               <button
                 onClick={() => setMode('spelling')}
@@ -974,7 +1287,7 @@ export default function App() {
                   mode === 'spelling' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <Keyboard className="w-4 h-4" /> Правопис (+25 XP)
+                <Keyboard className="w-4 h-4" /> Правопис (+25)
               </button>
             </div>
 
@@ -1055,10 +1368,10 @@ export default function App() {
               {user && (
                 <button
                   type="button"
-                  onClick={() => openProfileDrawer('overview')}
+                  onClick={() => openProfileDrawer('dictionary')}
                   className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs sm:text-sm transition"
                 >
-                  Кабінет учня
+                  Мій словник
                 </button>
               )}
             </div>
@@ -1136,7 +1449,7 @@ export default function App() {
                 <RotateCcw className="w-4 h-4" /> Повторити пізніше
               </button>
               <button onClick={handleMarkLearned} className="flex-1 py-3.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition flex items-center justify-center gap-2 shadow-sm">
-                <span>{isCurrentLearned ? 'Закріпити слово (+5 XP)' : 'Знаю це слово (+15 XP)'}</span>
+                <span>{isCurrentLearned ? 'Закріпити (+5 🪙)' : 'Знаю (+15 🪙)'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -1145,12 +1458,29 @@ export default function App() {
 
         {currentWord && mode === 'quiz' && (
           <section className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Обери правильний переклад</span>
-              <button onClick={() => speakGerman(`${currentWord.article} ${currentWord.word}`)} className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-full hover:bg-amber-100">
-                <Volume2 className="w-4 h-4" /> Озвучити
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleRequestCatHint}
+                  disabled={Boolean(activeHint)}
+                  className="flex items-center gap-1 text-xs font-bold text-amber-800 bg-amber-100 px-3 py-1.5 rounded-full hover:bg-amber-200 disabled:opacity-50"
+                >
+                  <Lightbulb className="w-3.5 h-3.5" /> {hintCost === 0 ? 'Підказка' : `${hintCost} 🪙`}
+                </button>
+                <button onClick={() => speakGerman(`${currentWord.article} ${currentWord.word}`)} className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-full hover:bg-amber-100">
+                  <Volume2 className="w-4 h-4" /> Озвучити
+                </button>
+              </div>
             </div>
+
+            {activeHint && (
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-2.5 text-xs text-amber-950 font-medium flex items-center gap-2">
+                <span>{catStageInfo.current.emoji}</span>
+                <span>{activeHint}</span>
+              </div>
+            )}
 
             <div className="text-center py-4">
               <h3 className="text-3xl sm:text-4xl font-extrabold text-slate-900">
@@ -1195,14 +1525,31 @@ export default function App() {
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
                 {currentNeedsArticle ? 'Обери артикль і напиши слово німецькою' : 'Напиши слово німецькою'}
               </span>
-              <button
-                type="button"
-                onClick={() => speakGerman(`${currentWord.article} ${currentWord.word}`)}
-                className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-full hover:bg-amber-100 shrink-0"
-              >
-                <Volume2 className="w-4 h-4" /> Озвучити
-              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleRequestCatHint}
+                  disabled={Boolean(activeHint) || Boolean(spellingResult)}
+                  className="flex items-center gap-1 text-xs font-bold text-amber-800 bg-amber-100 px-3 py-1.5 rounded-full hover:bg-amber-200 disabled:opacity-50"
+                >
+                  <Lightbulb className="w-3.5 h-3.5" /> {hintCost === 0 ? 'Підказка' : `${hintCost} 🪙`}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => speakGerman(`${currentWord.article} ${currentWord.word}`)}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-full hover:bg-amber-100"
+                >
+                  <Volume2 className="w-4 h-4" /> Озвучити
+                </button>
+              </div>
             </div>
+
+            {activeHint && (
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-2.5 text-xs text-amber-950 font-medium flex items-center gap-2 max-w-lg mx-auto">
+                <span>{catStageInfo.current.emoji}</span>
+                <span>{activeHint}</span>
+              </div>
+            )}
 
             <div className="text-center py-3 space-y-1.5">
               <span className="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-500">
@@ -1299,7 +1646,7 @@ export default function App() {
                       {spellingResult.allOk ? (
                         <>
                           <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                          <span>Ідеально! +25 XP</span>
+                          <span>Ідеально! +25 XP • +25 🪙</span>
                         </>
                       ) : (
                         <>
@@ -1388,17 +1735,17 @@ export default function App() {
               showProfileDrawer ? 'translate-x-0' : 'translate-x-full'
             }`}
           >
-            <div className="p-5 sm:p-6 border-b border-slate-100 flex items-start justify-between gap-3 shrink-0 bg-gradient-to-br from-slate-50 to-amber-50/40">
+            <div className="p-5 border-b border-slate-100 flex items-start justify-between gap-3 shrink-0 bg-gradient-to-br from-slate-50 to-amber-50/40">
               <div className="flex items-center gap-3.5 min-w-0 flex-1">
                 <div className="relative shrink-0">
                   {avatarUrl ? (
                     <img
                       src={avatarUrl}
                       alt={displayUserName}
-                      className="w-16 h-16 rounded-2xl object-cover border-2 border-white shadow-md"
+                      className="w-14 h-14 rounded-2xl object-cover border-2 border-white shadow-md"
                     />
                   ) : (
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 via-red-500 to-slate-900 text-white text-2xl font-extrabold flex items-center justify-center shadow-md">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 via-red-500 to-slate-900 text-white text-xl font-extrabold flex items-center justify-center shadow-md">
                       {userInitial}
                     </div>
                   )}
@@ -1406,10 +1753,10 @@ export default function App() {
                     type="button"
                     onClick={() => avatarInputRef.current?.click()}
                     disabled={savingProfile}
-                    className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-full bg-slate-900 hover:bg-slate-800 text-white flex items-center justify-center shadow-md transition"
+                    className="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full bg-slate-900 hover:bg-slate-800 text-white flex items-center justify-center shadow-md transition"
                     title="Змінити фото"
                   >
-                    <Camera className="w-3.5 h-3.5" />
+                    <Camera className="w-3 h-3" />
                   </button>
                   <input
                     ref={avatarInputRef}
@@ -1423,7 +1770,7 @@ export default function App() {
                 <div className="min-w-0 flex-1">
                   {!isEditingName ? (
                     <div className="flex items-center gap-1.5">
-                      <h3 className="text-lg font-extrabold text-slate-900 truncate">{displayUserName}</h3>
+                      <h3 className="text-base sm:text-lg font-extrabold text-slate-900 truncate">{displayUserName}</h3>
                       <button
                         type="button"
                         onClick={() => { setNameDraft(fullName); setIsEditingName(true); }}
@@ -1448,7 +1795,6 @@ export default function App() {
                         type="submit"
                         disabled={savingProfile}
                         className="p-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 shrink-0"
-                        title="Зберегти"
                       >
                         <Check className="w-3.5 h-3.5" />
                       </button>
@@ -1456,7 +1802,6 @@ export default function App() {
                         type="button"
                         onClick={() => setIsEditingName(false)}
                         className="p-1.5 rounded-lg bg-slate-200 text-slate-600 hover:bg-slate-300 shrink-0"
-                        title="Скасувати"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
@@ -1464,9 +1809,9 @@ export default function App() {
                   )}
 
                   <p className="text-xs text-slate-500 truncate">{user.email}</p>
-                  <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                  <div className="flex flex-wrap items-center gap-2 mt-1">
                     {isPro ? (
-                      <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full text-[11px] font-bold">
+                      <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full text-[11px] font-bold">
                         <Crown className="w-3 h-3" /> PRO {formatProUntilDate(proUntil)}
                       </span>
                     ) : (
@@ -1489,7 +1834,7 @@ export default function App() {
                     )}
                   </div>
                   {profileSavedMsg && (
-                    <p className="text-[11px] font-semibold text-emerald-600 mt-1">{profileSavedMsg}</p>
+                    <p className="text-[11px] font-semibold text-emerald-600 mt-0.5">{profileSavedMsg}</p>
                   )}
                 </div>
               </div>
@@ -1503,12 +1848,22 @@ export default function App() {
               </button>
             </div>
 
+            {/* 4 вкладки висувного кабінету */}
             <div className="px-5 pt-3 pb-2 shrink-0">
-              <div className="grid grid-cols-3 gap-1.5 bg-slate-100 p-1 rounded-xl">
+              <div className="grid grid-cols-4 gap-1 bg-slate-100 p-1 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => setProfileTab('pet')}
+                  className={`py-2 px-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition ${
+                    profileTab === 'pet' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  🐱 Кіт
+                </button>
                 <button
                   type="button"
                   onClick={() => setProfileTab('overview')}
-                  className={`py-2 px-2 rounded-lg text-xs font-bold transition ${
+                  className={`py-2 px-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition ${
                     profileTab === 'overview' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -1517,7 +1872,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setProfileTab('achievements')}
-                  className={`py-2 px-2 rounded-lg text-xs font-bold transition ${
+                  className={`py-2 px-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition ${
                     profileTab === 'achievements' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -1526,7 +1881,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setProfileTab('dictionary')}
-                  className={`py-2 px-2 rounded-lg text-xs font-bold transition ${
+                  className={`py-2 px-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition ${
                     profileTab === 'dictionary' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -1536,6 +1891,153 @@ export default function App() {
             </div>
 
             <div className="overflow-y-auto flex-1 px-5 py-3 space-y-5">
+              {profileTab === 'pet' && (
+                <div className="space-y-4">
+                  {/* Картка кота */}
+                  <div className="bg-gradient-to-br from-amber-50 via-orange-50/70 to-white border-2 border-amber-200 rounded-3xl p-5 text-center space-y-3 relative">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="px-2.5 py-1 rounded-full bg-amber-200/70 text-amber-950 font-extrabold">
+                        {catStageInfo.current.badge} • {catStageInfo.current.title}
+                      </span>
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white border border-amber-200 font-extrabold text-amber-900">
+                        <Coins className="w-3.5 h-3.5 text-amber-500" /> {coins}
+                      </span>
+                    </div>
+
+                    <div className="relative w-24 h-24 mx-auto rounded-3xl bg-white border-2 border-amber-200 shadow-sm flex items-center justify-center text-6xl select-none">
+                      <span>{catStageInfo.current.emoji}</span>
+                      {equippedAccessoryObj && (
+                        <span className="absolute -top-3 -right-3 text-3xl bg-amber-50 border border-amber-200 rounded-2xl p-1 shadow-xs">
+                          {equippedAccessoryObj.icon}
+                        </span>
+                      )}
+                    </div>
+
+                    <div>
+                      {!isEditingPetName ? (
+                        <div className="inline-flex items-center gap-1.5">
+                          <h4 className="text-xl font-extrabold text-slate-900">{pet.name}</h4>
+                          <button
+                            type="button"
+                            onClick={() => { setPetNameDraft(pet.name); setIsEditingPetName(true); }}
+                            className="p-1 rounded-lg text-slate-400 hover:text-amber-700 hover:bg-amber-100"
+                            title="Перейменувати кота"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <form onSubmit={handleSavePetName} className="inline-flex items-center gap-1.5">
+                          <input
+                            type="text"
+                            maxLength={25}
+                            autoFocus
+                            value={petNameDraft}
+                            onChange={(e) => setPetNameDraft(e.target.value)}
+                            className="px-2.5 py-1 rounded-lg border border-amber-400 bg-white text-sm font-bold text-slate-900"
+                          />
+                          <button type="submit" className="p-1.5 rounded-lg bg-emerald-600 text-white">
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                          <button type="button" onClick={() => setIsEditingPetName(false)} className="p-1.5 rounded-lg bg-slate-200 text-slate-600">
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </form>
+                      )}
+                      <p className="text-xs text-slate-600 mt-1">{catReaction}</p>
+                    </div>
+
+                    {/* Шкали ситості та росту кота */}
+                    <div className="grid grid-cols-2 gap-3 text-left pt-1">
+                      <div className="bg-white/90 p-3 rounded-2xl border border-rose-100 space-y-1.5">
+                        <div className="flex items-center justify-between text-[11px] font-bold">
+                          <span className="text-rose-700 flex items-center gap-1">
+                            <Heart className="w-3 h-3 fill-rose-500 text-rose-500" /> Ситість
+                          </span>
+                          <span className="text-slate-700">{pet.hunger ?? 80}%</span>
+                        </div>
+                        <div className="w-full h-2 rounded-full bg-rose-100 overflow-hidden">
+                          <div
+                            className="h-full bg-rose-500 rounded-full transition-all"
+                            style={{ width: `${pet.hunger ?? 80}%` }}
+                          />
+                        </div>
+                        <p className="text-[10px] text-slate-400">
+                          {(pet.hunger ?? 80) >= 70 ? 'Від 70% — 1 підказка на день безкоштовно!' : 'Погодуй до 70% для бонусу'}
+                        </p>
+                      </div>
+
+                      <div className="bg-white/90 p-3 rounded-2xl border border-amber-100 space-y-1.5">
+                        <div className="flex items-center justify-between text-[11px] font-bold">
+                          <span className="text-amber-800">Ріст кота</span>
+                          <span className="text-slate-700">
+                            {catStageInfo.next ? `${pet.xp || 0}/${catStageInfo.next.minXp}` : 'MAX'}
+                          </span>
+                        </div>
+                        <div className="w-full h-2 rounded-full bg-amber-100 overflow-hidden">
+                          <div
+                            className="h-full bg-amber-500 rounded-full transition-all"
+                            style={{ width: `${catStageInfo.progressPercent}%` }}
+                          />
+                        </div>
+                        <p className="text-[10px] text-slate-400">
+                          {catStageInfo.next ? `До «${catStageInfo.next.title}»` : 'Максимальний рівень!'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Крамничка для кота */}
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">Крамничка смаколиків та аксесуарів</h4>
+                      <span className="text-xs font-bold text-amber-700">Твій баланс: {coins} 🪙</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-2">
+                      {SHOP_ITEMS.map((item) => {
+                        const isAccessory = item.type === 'accessory';
+                        const isOwned = isAccessory && (pet.ownedItems || []).includes(item.id);
+                        const isEquipped = isAccessory && pet.equippedAccessory === item.id;
+                        const canAfford = coins >= item.price;
+
+                        return (
+                          <div
+                            key={item.id}
+                            className="flex items-center justify-between gap-3 p-3 rounded-2xl border border-slate-200 bg-slate-50/70"
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <span className="text-2xl shrink-0">{item.icon}</span>
+                              <div className="min-w-0">
+                                <div className="text-xs font-extrabold text-slate-900 truncate">{item.name}</div>
+                                <div className="text-[11px] text-slate-500 leading-snug">{item.desc}</div>
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => handleBuyShopItem(item)}
+                              disabled={!isOwned && !canAfford}
+                              className={`shrink-0 px-3 py-2 rounded-xl text-xs font-extrabold transition ${
+                                isEquipped
+                                  ? 'bg-emerald-600 text-white'
+                                  : isOwned
+                                    ? 'bg-slate-200 hover:bg-slate-300 text-slate-800'
+                                    : canAfford
+                                      ? 'bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-xs'
+                                      : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                              }`}
+                            >
+                              {isEquipped ? 'Одягнено ✓' : isOwned ? 'Одягнути' : `${item.price} 🪙`}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {profileTab === 'overview' && (
                 <>
                   <div className="bg-slate-900 text-white rounded-2xl p-4 flex items-center justify-between gap-3">
@@ -1546,18 +2048,22 @@ export default function App() {
                     <Trophy className="w-7 h-7 text-amber-400 shrink-0" />
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2.5 text-center">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
                     <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3">
-                      <div className="text-xl sm:text-2xl font-extrabold text-amber-900">{xp}</div>
-                      <div className="text-[10px] font-semibold text-amber-700 uppercase">Балів XP</div>
+                      <div className="text-lg font-extrabold text-amber-900">{xp}</div>
+                      <div className="text-[10px] font-semibold text-amber-700 uppercase">Усього XP</div>
+                    </div>
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-3">
+                      <div className="text-lg font-extrabold text-yellow-900">{coins} 🪙</div>
+                      <div className="text-[10px] font-semibold text-yellow-700 uppercase">Монети</div>
                     </div>
                     <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3">
-                      <div className="text-xl sm:text-2xl font-extrabold text-emerald-900">{learnedIds.length}</div>
-                      <div className="text-[10px] font-semibold text-emerald-700 uppercase">Вивчено слів</div>
+                      <div className="text-lg font-extrabold text-emerald-900">{learnedIds.length}</div>
+                      <div className="text-[10px] font-semibold text-emerald-700 uppercase">Слів</div>
                     </div>
                     <div className="bg-orange-50 border border-orange-200 rounded-2xl p-3">
-                      <div className="text-xl sm:text-2xl font-extrabold text-orange-900">{streak} 🔥</div>
-                      <div className="text-[10px] font-semibold text-orange-700 uppercase">Днів серії</div>
+                      <div className="text-lg font-extrabold text-orange-900">{streak} 🔥</div>
+                      <div className="text-[10px] font-semibold text-orange-700 uppercase">Серія</div>
                     </div>
                   </div>
 
@@ -1631,7 +2137,7 @@ export default function App() {
                     </div>
                   ) : (
                     <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3 text-center text-xs font-bold text-emerald-800">
-                      Усі 20 досягнень відкрито!
+                      Усі {userAchievements.length} досягнень відкрито!
                     </div>
                   )}
 
