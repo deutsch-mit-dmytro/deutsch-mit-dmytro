@@ -210,24 +210,27 @@ ${textInput ? `Текст учня: "${textInput}"` : 'Учень відпові
 
     for (const model of MODELS) {
       try {
+        const endpoint =
+          '[https://generativelanguage.googleapis.com/v1beta/models/](https://generativelanguage.googleapis.com/v1beta/models/)' +
+          encodeURIComponent(model) +
+          ':generateContent?key=' +
+          encodeURIComponent(apiKey);
+
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), 15000);
 
-        const response = await fetch(
-          `[https://generativelanguage.googleapis.com/v1beta/models/$](https://generativelanguage.googleapis.com/v1beta/models/$){model}:generateContent?key=${apiKey}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            signal: controller.signal,
-            body: JSON.stringify({
-              contents: [{ role: 'user', parts }],
-              generationConfig: {
-                temperature: 0.3,
-                maxOutputTokens: 1500,
-              },
-            }),
-          }
-        );
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts }],
+            generationConfig: {
+              temperature: 0.3,
+              maxOutputTokens: 1500,
+            },
+          }),
+        });
 
         clearTimeout(timer);
         const data = await response.json().catch(() => ({}));
