@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import {
   Volume2, Flame, Trophy, CheckCircle2, XCircle,
   Share2, Sparkles, BookOpen, BrainCircuit, ArrowRight,
-  RotateCcw, Crown, Check, Copy, X, Loader2, LogOut, User, ShieldCheck, FileText, ExternalLink, Search, Keyboard, Compass, Camera, Pencil, Coins, Lightbulb, ShoppingBag, Heart, HelpCircle, MessageCircle, Send, Mic, Square, Plus, Trash2, ClipboardList
+  RotateCcw, Crown, Check, Copy, X, Loader2, LogOut, User, ShieldCheck, FileText, ExternalLink, Search, Keyboard, Compass, Camera, Pencil, Coins, Lightbulb, ShoppingBag, Heart, HelpCircle, MessageCircle, Send, Plus, Trash2, ClipboardList
 } from 'lucide-react';
 
 const SUPABASE_URL = 'https://vdjduptyloghojeqaglw.supabase.co';
@@ -214,7 +214,7 @@ const ACHIEVEMENTS = [
   { id: 'spell_1', icon: '✍️', title: 'Без жодної помилки', desc: 'Написати перше слово у режимі Правопис', check: (s) => s.spellingDone >= 1, getProgress: (s) => ({ current: Math.min(s.spellingDone, 1), target: 1 }) },
   { id: 'spell_15', icon: '🎯', title: 'Майстер артиклів та умлаутів', desc: 'Правильно написати 15 слів у Правописі', check: (s) => s.spellingDone >= 15, getProgress: (s) => ({ current: Math.min(s.spellingDone, 15), target: 15 }) },
 
-  { id: 'sent_1', icon: '🎙️', title: 'Перше живе речення', desc: 'Скласти та перевірити перше речення німецькою', check: (s) => s.sentencesDone >= 1, getProgress: (s) => ({ current: Math.min(s.sentencesDone, 1), target: 1 }) },
+  { id: 'sent_1', icon: '✍️', title: 'Перше живе речення', desc: 'Скласти та перевірити перше речення німецькою', check: (s) => s.sentencesDone >= 1, getProgress: (s) => ({ current: Math.min(s.sentencesDone, 1), target: 1 }) },
   { id: 'sent_10', icon: '🗣️', title: 'Впевнена мова', desc: 'Скласти 10 правильних речень із ШІ-розбором', check: (s) => s.sentencesDone >= 10, getProgress: (s) => ({ current: Math.min(s.sentencesDone, 10), target: 10 }) },
 
   { id: 'custom_1', icon: '📝', title: 'Особистий нотатник', desc: 'Додати перше власне слово у приватний словник', check: (s) => s.customWordsCount >= 1, getProgress: (s) => ({ current: Math.min(s.customWordsCount, 1), target: 1 }) },
@@ -432,18 +432,6 @@ const resizeAvatarFile = (file) =>
     reader.readAsDataURL(file);
   });
 
-const blobToBase64 = (blob) =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const result = String(reader.result || '');
-      const base64 = result.includes(',') ? result.split(',')[1] : result;
-      resolve(base64);
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-
 export default function App() {
   const [vocabulary, setVocabulary] = useState(FALLBACK_DATA);
   const [loading, setLoading] = useState(true);
@@ -465,11 +453,10 @@ export default function App() {
   const [showProfileDrawer, setShowProfileDrawer] = useState(false);
   const [profileTab, setProfileTab] = useState('pet');
   const [achFilter, setAchFilter] = useState('all');
-  const [dictSubTab, setDictSubTab] = useState('base'); // 'base' | 'custom'
+  const [dictSubTab, setDictSubTab] = useState('base');
   const [dictSearch, setDictSearch] = useState('');
   const [dictLevelFilter, setDictLevelFilter] = useState('ALL');
 
-  // Приватний власний словник учня
   const [customWords, setCustomWords] = useState(() => {
     try {
       const saved = JSON.parse(localStorage.getItem('dmd_custom_words') || '[]');
@@ -497,15 +484,14 @@ export default function App() {
   const [reviewLearnedInModule, setReviewLearnedInModule] = useState(false);
   const [practiceAllLearnedMode, setPracticeAllLearnedMode] = useState(false);
   const [practiceLevelFilter, setPracticeLevelFilter] = useState('ALL');
-  const [mistakeOnlyWords, setMistakeOnlyWords] = useState(null); // масив слів для відпрацювання помилок
+  const [mistakeOnlyWords, setMistakeOnlyWords] = useState(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const audioRef = useRef(null);
 
-  const [mode, setMode] = useState('cards'); // 'cards' | 'quiz' | 'spelling' | 'sentence'
+  const [mode, setMode] = useState('cards');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
 
-  // Статистика та розбір поточної сесії Тесту / Правопису
   const [sessionResults, setSessionResults] = useState([]);
   const [showSessionSummary, setShowSessionSummary] = useState(false);
 
@@ -533,7 +519,6 @@ export default function App() {
   );
   const [activeHint, setActiveHint] = useState('');
 
-  // ШІ-помічник курсу
   const [showAiChat, setShowAiChat] = useState(false);
   const [aiMessages, setAiMessages] = useState([
     {
@@ -559,10 +544,8 @@ export default function App() {
     }
   }, [aiMessages, showAiChat]);
 
-  // Режим складання речень і розбору голосу
+  // Режим складання речень (лише текст)
   const [sentenceText, setSentenceText] = useState('');
-  const [isRecordingAudio, setIsRecordingAudio] = useState(false);
-  const [recordedAudio, setRecordedAudio] = useState(null);
   const [analyzingSentence, setAnalyzingSentence] = useState(false);
   const [sentenceAnalysis, setSentenceAnalysis] = useState(null);
   const [sentenceError, setSentenceError] = useState('');
@@ -574,8 +557,6 @@ export default function App() {
       return 0;
     }
   });
-  const mediaRecorderRef = useRef(null);
-  const audioChunksRef = useRef([]);
   const sentenceInputRef = useRef(null);
 
   const [streak, setStreak] = useState(() => {
@@ -618,10 +599,6 @@ export default function App() {
     setSentenceText('');
     setSentenceAnalysis(null);
     setSentenceError('');
-    if (recordedAudio?.url) {
-      URL.revokeObjectURL(recordedAudio.url);
-    }
-    setRecordedAudio(null);
   };
 
   const handleDismissOnboarding = () => {
@@ -1032,7 +1009,6 @@ export default function App() {
     setCatReaction(`Мяу! Відтепер я — ${trimmed}! 🐾`);
   };
 
-  // Додавання та видалення власних слів учня
   const handleAddCustomWord = (e) => {
     e.preventDefault();
     const w = newCustomWord.trim();
@@ -1150,7 +1126,6 @@ export default function App() {
     if (filteredWords.length === 0) return;
     const nextIndex = currentIndex + 1;
 
-    // Якщо учень дійшов до кінця серії в Тесті або Правописі — показуємо повний розбір сесії
     if ((mode === 'quiz' || mode === 'spelling') && nextIndex >= filteredWords.length && sessionResults.length > 0) {
       setShowSessionSummary(true);
       return;
@@ -1193,7 +1168,6 @@ export default function App() {
     resetSentenceState();
   }, [currentWord, mode, vocabulary, practiceCustomMode, customWords]);
 
-  // Прогресивна ціна підказок: 1-ша на день безкоштовна (якщо кіт ситий >=70%), далі 20, 40, 60, 80...
   const todayStr = getLocalDateStr();
   const hintsUsedToday = pet.hintsDate === todayStr ? (pet.hintsTodayCount || 0) : 0;
   const hasFreeHintToday = (pet.hunger ?? 80) >= 70 && hintsUsedToday === 0;
@@ -1292,55 +1266,6 @@ export default function App() {
     }
   };
 
-  const handleToggleAudioRecording = async () => {
-    setSentenceError('');
-    if (isRecordingAudio) {
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-        mediaRecorderRef.current.stop();
-      }
-      setIsRecordingAudio(false);
-      return;
-    }
-
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      setSentenceError('Твій браузер не підтримує запис з мікрофона. Напиши речення текстом нижче.');
-      return;
-    }
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const preferredTypes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg'];
-      const supportedType = preferredTypes.find((t) => window.MediaRecorder?.isTypeSupported?.(t)) || '';
-      const recorder = supportedType ? new MediaRecorder(stream, { mimeType: supportedType }) : new MediaRecorder(stream);
-
-      audioChunksRef.current = [];
-      recorder.ondataavailable = (event) => {
-        if (event.data && event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
-
-      recorder.onstop = () => {
-        stream.getTracks().forEach((track) => track.stop());
-        const mime = recorder.mimeType || supportedType || 'audio/webm';
-        const blob = new Blob(audioChunksRef.current, { type: mime });
-        if (recordedAudio?.url) {
-          URL.revokeObjectURL(recordedAudio.url);
-        }
-        const url = URL.createObjectURL(blob);
-        setRecordedAudio({ blob, url, mimeType: mime });
-        setSentenceAnalysis(null);
-      };
-
-      mediaRecorderRef.current = recorder;
-      recorder.start();
-      setIsRecordingAudio(true);
-      setSentenceAnalysis(null);
-    } catch {
-      setSentenceError('Немає доступу до мікрофона. Дозволь мікрофон у налаштуваннях браузера або введи речення текстом.');
-    }
-  };
-
   const handleInsertSentenceUmlaut = (char) => {
     const input = sentenceInputRef.current;
     if (!input) {
@@ -1362,8 +1287,8 @@ export default function App() {
     if (!currentWord || analyzingSentence) return;
 
     const cleanText = sentenceText.trim();
-    if (!cleanText && !recordedAudio) {
-      setSentenceError('Запиши речення голосом або напиши його у полі вище.');
+    if (!cleanText) {
+      setSentenceError('Напиши речення німецькою у полі вище перед перевіркою.');
       return;
     }
 
@@ -1377,13 +1302,6 @@ export default function App() {
     setSentenceAnalysis(null);
 
     try {
-      let audioBase64 = '';
-      let audioMimeType = '';
-      if (recordedAudio?.blob) {
-        audioBase64 = await blobToBase64(recordedAudio.blob);
-        audioMimeType = recordedAudio.mimeType || 'audio/webm';
-      }
-
       const res = await fetch('/api/analyze-sentence', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1394,8 +1312,7 @@ export default function App() {
           level: currentWord.level === 'OWN' ? 'B1' : currentWord.level,
           category: currentWord.category === 'custom' ? 'colloquial' : currentWord.category,
           textInput: cleanText,
-          audioBase64,
-          audioMimeType,
+          sentence: cleanText,
         }),
       });
 
@@ -1405,14 +1322,25 @@ export default function App() {
         return;
       }
 
-      const analysis = data.analysis;
+      const rawAnalysis = data?.analysis;
+      const analysis = rawAnalysis && typeof rawAnalysis === 'object'
+        ? rawAnalysis
+        : {
+            transcript: cleanText,
+            grammarFeedback: typeof rawAnalysis === 'string' ? rawAnalysis : (data?.feedback || data?.grammar || ''),
+            contextAdvice: data?.context || '',
+            correctedSentence: data?.correctedSentence || '',
+            usedTargetWord: data?.usedTargetWord ?? true,
+            isCorrect: data?.isCorrect ?? true,
+          };
+
       setSentenceAnalysis(analysis);
 
       const nextUsage = sentenceUsageToday + 1;
       setSentenceUsageToday(nextUsage);
       localStorage.setItem('dmd_sent_usage', JSON.stringify({ date: todayStr, count: nextUsage }));
 
-      if (analysis?.usedTargetWord && analysis?.isCorrect) {
+      if (analysis?.usedTargetWord !== false && analysis?.isCorrect !== false) {
         touchDailyStreak();
         addXpAndCoins(30);
         setPet((prev) => ({ ...prev, sentencesDone: (prev.sentencesDone || 0) + 1 }));
@@ -1831,7 +1759,7 @@ export default function App() {
               <div className="bg-white/10 rounded-2xl p-3 space-y-1">
                 <div className="font-extrabold text-emerald-300">2. Тренуйся у 4 режимах</div>
                 <p className="text-slate-300 leading-snug">
-                  Картки, тести з розбором помилок, правопис з артиклями та складання власних речень із голосом.
+                  Картки, тести з розбором помилок, правопис з артиклями та складання власних речень із ШІ.
                 </p>
               </div>
               <div className="bg-white/10 rounded-2xl p-3 space-y-1">
@@ -2028,7 +1956,7 @@ export default function App() {
                   mode === 'sentence' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <Mic className="w-4 h-4 text-rose-500" /> Речення (+30)
+                <Sparkles className="w-4 h-4 text-amber-600" /> Речення (+30)
               </button>
             </div>
 
@@ -2089,7 +2017,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* Підсумковий розбір результатів Тесту або Правопису */}
         {showSessionSummary && (mode === 'quiz' || mode === 'spelling') && (
           <section className="bg-white border-2 border-slate-900 rounded-3xl p-6 sm:p-8 shadow-lg space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
@@ -2576,7 +2503,7 @@ export default function App() {
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-extrabold border ${(LEVEL_STYLES[currentWord.level] || LEVEL_STYLES.A1).badge}`}>
-                  {currentWord.level === 'OWN' ? 'Мій словник' : currentWord.level} • Практика мовлення
+                  {currentWord.level === 'OWN' ? 'Мій словник' : currentWord.level} • Практика речень
                 </span>
                 {!isPro && (
                   <span className="text-[11px] font-semibold text-slate-500">
@@ -2621,60 +2548,10 @@ export default function App() {
             </div>
 
             <div className="max-w-lg mx-auto space-y-4">
-              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-                <div className="text-center sm:text-left">
-                  <div className="text-xs font-extrabold text-slate-900">
-                    {isRecordingAudio ? 'Йде запис голосу... Говори німецькою!' : 'Варіант А: Сказати голосом'}
-                  </div>
-                  <div className="text-[11px] text-slate-500">
-                    ШІ перевірить вимову, інтонацію та граматику
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    type="button"
-                    onClick={handleToggleAudioRecording}
-                    className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition shadow-xs ${
-                      isRecordingAudio
-                        ? 'bg-rose-600 hover:bg-rose-700 text-white animate-pulse'
-                        : 'bg-slate-900 hover:bg-slate-800 text-white'
-                    }`}
-                  >
-                    {isRecordingAudio ? (
-                      <>
-                        <Square className="w-3.5 h-3.5 fill-white" /> Зупинити запис
-                      </>
-                    ) : (
-                      <>
-                        <Mic className="w-4 h-4 text-rose-400" /> {recordedAudio ? 'Перезаписати' : 'Записати голос'}
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              {recordedAudio && (
-                <div className="bg-emerald-50/70 border border-emerald-200 rounded-2xl p-3 flex items-center justify-between gap-2">
-                  <audio controls src={recordedAudio.url} className="h-8 flex-1" />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      URL.revokeObjectURL(recordedAudio.url);
-                      setRecordedAudio(null);
-                    }}
-                    className="p-1.5 rounded-lg bg-white text-slate-500 hover:text-rose-600 border border-slate-200"
-                    title="Видалити запис"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
-
               <form onSubmit={handleAnalyzeSentence} className="space-y-3">
                 <div className="space-y-1.5">
                   <label className="block text-xs font-bold text-slate-500">
-                    Варіант Б: Або напиши речення текстом
+                    Напиши своє речення німецькою:
                   </label>
                   <textarea
                     ref={sentenceInputRef}
@@ -2716,12 +2593,12 @@ export default function App() {
                   </button>
                   <button
                     type="submit"
-                    disabled={analyzingSentence || isRecordingAudio || (!sentenceText.trim() && !recordedAudio)}
+                    disabled={analyzingSentence || !sentenceText.trim()}
                     className="flex-1 py-3 px-5 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-slate-950 font-extrabold text-sm transition shadow-sm flex items-center justify-center gap-2"
                   >
                     {analyzingSentence ? (
                       <>
-                        <Loader2 className="w-4 h-4 animate-spin" /> Перевіряю вимову та граматику...
+                        <Loader2 className="w-4 h-4 animate-spin" /> Перевіряю речення...
                       </>
                     ) : (
                       <>
@@ -2736,7 +2613,7 @@ export default function App() {
                 <div className="bg-slate-900 text-white rounded-3xl p-5 space-y-4 shadow-lg">
                   <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-3">
                     <div className="flex items-center gap-2">
-                      {sentenceAnalysis.usedTargetWord && sentenceAnalysis.isCorrect ? (
+                      {sentenceAnalysis.usedTargetWord !== false && sentenceAnalysis.isCorrect !== false ? (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-extrabold">
                           <CheckCircle2 className="w-4 h-4" /> Чудово! +30 XP • +30 🪙
                         </span>
@@ -2753,43 +2630,44 @@ export default function App() {
                         className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 text-amber-300 text-xs font-bold transition"
                         title="Послухати правильний варіант"
                       >
-                        <Volume2 className="w-3.5 h-3.5" /> Вимова
+                        <Volume2 className="w-3.5 h-3.5" /> Озвучити
                       </button>
                     )}
                   </div>
 
                   <div className="space-y-2.5 text-xs leading-relaxed">
-                    <div className="bg-white/5 rounded-2xl p-3">
-                      <div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-0.5">Що прозвучало / написано</div>
-                      <div className="text-sm font-bold text-white">«{sentenceAnalysis.transcript}»</div>
-                    </div>
+                    {sentenceAnalysis.transcript && (
+                      <div className="bg-white/5 rounded-2xl p-3">
+                        <div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-0.5">Твоє речення</div>
+                        <div className="text-sm font-bold text-white">«{sentenceAnalysis.transcript}»</div>
+                      </div>
+                    )}
 
-                    <div className="bg-white/5 rounded-2xl p-3">
-                      <div className="text-[10px] uppercase tracking-wider text-rose-300 font-bold mb-0.5">🎙️ Вимова та звучання</div>
-                      <p className="text-slate-200">{sentenceAnalysis.pronunciation}</p>
-                    </div>
+                    {sentenceAnalysis.grammarFeedback && (
+                      <div className="bg-white/5 rounded-2xl p-3">
+                        <div className="text-[10px] uppercase tracking-wider text-amber-300 font-bold mb-0.5">✍️ Граматика та слова</div>
+                        <p className="text-slate-200">{sentenceAnalysis.grammarFeedback}</p>
+                        {sentenceAnalysis.correctedSentence && (
+                          <div className="mt-2 pt-2 border-t border-white/10 flex items-center justify-between gap-2">
+                            <span className="text-emerald-300 font-bold">✓ {sentenceAnalysis.correctedSentence}</span>
+                            <button
+                              type="button"
+                              onClick={() => speakGerman(sentenceAnalysis.correctedSentence)}
+                              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white shrink-0"
+                            >
+                              <Volume2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
-                    <div className="bg-white/5 rounded-2xl p-3">
-                      <div className="text-[10px] uppercase tracking-wider text-amber-300 font-bold mb-0.5">✍️ Граматика та слова</div>
-                      <p className="text-slate-200">{sentenceAnalysis.grammarFeedback}</p>
-                      {sentenceAnalysis.correctedSentence && (
-                        <div className="mt-2 pt-2 border-t border-white/10 flex items-center justify-between gap-2">
-                          <span className="text-emerald-300 font-bold">✓ {sentenceAnalysis.correctedSentence}</span>
-                          <button
-                            type="button"
-                            onClick={() => speakGerman(sentenceAnalysis.correctedSentence)}
-                            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white shrink-0"
-                          >
-                            <Volume2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="bg-white/5 rounded-2xl p-3">
-                      <div className="text-[10px] uppercase tracking-wider text-sky-300 font-bold mb-0.5">💬 Контекст і стиль вживання</div>
-                      <p className="text-slate-200">{sentenceAnalysis.contextAdvice}</p>
-                    </div>
+                    {sentenceAnalysis.contextAdvice && (
+                      <div className="bg-white/5 rounded-2xl p-3">
+                        <div className="text-[10px] uppercase tracking-wider text-sky-300 font-bold mb-0.5">💬 Контекст і стиль вживання</div>
+                        <p className="text-slate-200">{sentenceAnalysis.contextAdvice}</p>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex justify-end pt-1">
@@ -2819,7 +2697,6 @@ export default function App() {
         </div>
       </footer>
 
-      {/* Плаваюча плашка ШІ-помічника */}
       <div className="fixed bottom-4 right-4 z-40 flex flex-col items-end">
         {showAiChat && (
           <div className="mb-3 w-[calc(100vw-2rem)] sm:w-96 bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden flex flex-col max-h-[72vh]">
@@ -2932,7 +2809,6 @@ export default function App() {
         </button>
       </div>
 
-      {/* Висувний кабінет учня (Drawer справа) */}
       {user && (
         <div
           className={`fixed inset-0 z-50 transition-opacity duration-300 ${
@@ -3417,7 +3293,6 @@ export default function App() {
 
               {profileTab === 'dictionary' && (
                 <div className="space-y-3.5">
-                  {/* Перемикач: вивчені з бази vs власний приватний словник учня */}
                   <div className="grid grid-cols-2 gap-1.5 bg-slate-100 p-1 rounded-xl">
                     <button
                       type="button"
@@ -3779,7 +3654,7 @@ export default function App() {
             <div className="space-y-1.5">
               <div className="inline-flex items-center gap-1.5 bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-xs font-bold"><Crown className="w-3.5 h-3.5" /> Повний абонемент PRO</div>
               <h3 className="text-2xl font-extrabold">Відкрий усі слова та рівні A1–B2</h3>
-              <p className="text-sm text-slate-600">Безкоштовно доступні перші 5 слів у кожній категорії всіх рівнів A1–B2 (усього 60 слів). З підпискою відкривається вся база слів, безлімітний ШІ-помічник і розбір голосу.</p>
+              <p className="text-sm text-slate-600">Безкоштовно доступні перші 5 слів у кожній категорії всіх рівнів A1–B2 (усього 60 слів). З підпискою відкривається вся база слів та безлімітний ШІ-помічник.</p>
             </div>
 
             <div className="grid grid-cols-3 gap-2.5">
