@@ -1,57 +1,4 @@
-let cachedModels = null;
-let cachedAt = 0;
-const CACHE_TTL_MS = 10 * 60 * 1000;
-
-async function getAvailableGeminiModels(apiKey) {
-  const now = Date.now();
-  if (cachedModels && now - cachedAt < CACHE_TTL_MS) {
-    return cachedModels;
-  }
-
-  const fallbackList = ['gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-2.5-flash'];
-
-  try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
-    );
-    const data = await res.json().catch(() => ({}));
-
-    if (res.ok && Array.isArray(data.models)) {
-      const supported = data.models
-        .filter(
-          (m) =>
-            Array.isArray(m.supportedGenerationMethods) &&
-            m.supportedGenerationMethods.includes('generateContent') &&
-            !/embedding|imagen|veo|aqa/i.test(m.name || '')
-        )
-        .map((m) => String(m.name).replace(/^models\//, ''));
-
-      const score = (name) => {
-        let s = 0;
-        if (name === 'gemini-3.8-flash') s += 500;
-        if (name === 'gemini-3.5-flash-lite') s += 450;
-        if (/gemini/i.test(name)) s += 100;
-        if (/flash/i.test(name)) s += 50;
-        if (!/lite/i.test(name)) s += 10;
-        const verMatch = name.match(/(\d+(?:\.\d+)?)/);
-        if (verMatch) s += parseFloat(verMatch[1]) * 20;
-        if (/exp|preview/i.test(name)) s -= 5;
-        return s;
-      };
-
-      supported.sort((a, b) => score(b) - score(a));
-
-      const merged = [...new Set([...fallbackList, ...supported])];
-      if (merged.length > 0) {
-        cachedModels = merged;
-        cachedAt = now;
-        return merged;
-      }
-    }
-  } catch (_) {}
-
-  return fallbackList;
-}
+const MODELS = ['gemini-3.8-flash', 'gemini-3.5-flash-lite'];
 
 function extractAudioFromBody(body) {
   const candidates = [
@@ -151,9 +98,9 @@ function parseStructuredAnalysis(rawText, fallbackTextInput, hasAudio) {
       : '';
 
   if (parsed && typeof parsed === 'object') {
-    const heard = cleanText(
-      parsed.heard || parsed.transcript || parsed.recognized || parsed.spoken
-    ) || defaultHeard;
+    const heard =
+      cleanText(parsed.heard || parsed.transcript || parsed.recognized || parsed.spoken) ||
+      defaultHeard;
 
     const pronunciation =
       cleanText(parsed.pronunciation || parsed.sound || parsed.speech) ||
@@ -216,6 +163,12 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Запиши голос або введи речення перед перевіркою.' });
     }
 
+    if (audioBase64 && audioBase64.length > 3_500_000) {
+      return res.status(413).json({
+        error: 'Аудіозапис занадто великий. Запиши коротше речення (до 5–7 секунд).',
+      });
+    }
+
     const parts = [];
 
     if (audioBase64) {
@@ -243,77 +196,50 @@ ${textInput ? `Текст учня: "${textInput}"` : 'Учень відпові
 
     parts.push({ text: promptText });
 
-    const models = await getAvailableGeminiModels(apiKey);
-    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
     let lastError = 'Сервіс тимчасово перевантажений. Спробуй ще раз за кілька секунд.';
     let lastStatus = 503;
 
-    for (const model of models.slice(0, 6)) {
-      for (let attempt = 0; attempt < 2; attempt++) {
-        try {
-          const response = await fetch(
-            `[https://generativelanguage.googleapis.com/v1beta/models/$](https://generativelanguage.googleapis.com/v1beta/models/$){model}:generateContent?key=${apiKey}`,
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                contents: [{ role: 'user', parts }],
-                generationConfig: {
-                  temperature: 0.3,
-                  maxOutputTokens: 2048,
-                },
-              }),
-            }
-          );
-
-          const data = await response.json().catch(() => ({}));
-
-          if (response.ok) {
-            const candidateParts = data?.candidates?.[0]?.content?.parts || [];
-            const rawText = candidateParts
-              .map((p) => (typeof p?.text === 'string' ? p.text : ''))
-              .join('\n')
-              .trim();
-
-            return res
-              .status(200)
-              .json(parseStructuredAnalysis(rawText, textInput, Boolean(audioBase64)));
+    for (const model of MODELS) {
+      try {
+        const response = await fetch(
+          `[https://generativelanguage.googleapis.com/v1beta/models/$](https://generativelanguage.googleapis.com/v1beta/models/$){model}:generateContent?key=${apiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ role: 'user', parts }],
+              generationConfig: {
+                temperature: 0.3,
+                maxOutputTokens: 1500,
+              },
+            }),
           }
+        );
 
-          lastStatus = response.status;
-          const apiMsg = data?.error?.message || lastError;
-          lastError = apiMsg;
+        const data = await response.json().catch(() => ({}));
 
-          if (/invalid argument/i.test(apiMsg) && audioBase64 && !textInput) {
-            lastError =
-              'Формат аудіо з браузера не підтримується напряму. Спробуй ввести речення текстом або перезаписати голос.';
-          }
+        if (response.ok) {
+          const candidateParts = data?.candidates?.[0]?.content?.parts || [];
+          const rawText = candidateParts
+            .map((p) => (typeof p?.text === 'string' ? p.text : ''))
+            .join('\n')
+            .trim();
 
-          if (response.status === 404 || /not found|not supported/i.test(apiMsg)) {
-            break;
-          }
-
-          if (
-            (response.status === 429 ||
-              response.status === 503 ||
-              /high demand|overloaded|try again later|quota|rate limit/i.test(apiMsg)) &&
-            attempt === 0
-          ) {
-            await sleep(700);
-            continue;
-          }
-
-          break;
-        } catch (err) {
-          lastStatus = 502;
-          lastError = 'Помилка зʼєднання з Gemini API';
-          if (attempt === 0) {
-            await sleep(500);
-            continue;
-          }
-          break;
+          return res
+            .status(200)
+            .json(parseStructuredAnalysis(rawText, textInput, Boolean(audioBase64)));
         }
+
+        lastStatus = response.status;
+        lastError = data?.error?.message || lastError;
+
+        if (/invalid argument/i.test(lastError) && audioBase64 && !textInput) {
+          lastError =
+            'Формат аудіо з браузера не підтримується напряму. Спробуй ввести речення текстом або перезаписати голос.';
+        }
+      } catch (fetchErr) {
+        lastStatus = 502;
+        lastError = 'Помилка зʼєднання з Gemini API';
       }
     }
 
