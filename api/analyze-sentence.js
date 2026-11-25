@@ -127,10 +127,13 @@ function extractAudioFromBody(body) {
 function cleanText(val) {
   return String(val || '')
     .replace(/\*\*/g, '')
+    .replace(/^```json\s*/i, '')
+    .replace(/^```\s*/i, '')
+    .replace(/\s*```$/i, '')
     .trim();
 }
 
-function parseStructuredAnalysis(rawText, fallbackTextInput) {
+function parseStructuredAnalysis(rawText, fallbackTextInput, hasAudio) {
   const cleaned = cleanText(rawText);
   let parsed = null;
 
@@ -141,19 +144,30 @@ function parseStructuredAnalysis(rawText, fallbackTextInput) {
     } catch (_) {}
   }
 
+  const defaultHeard = fallbackTextInput
+    ? fallbackTextInput
+    : hasAudio
+      ? 'Аудіо отримано, але чіткі слова не вдалося розпізнати.'
+      : '';
+
   if (parsed && typeof parsed === 'object') {
     const heard = cleanText(
-      parsed.heard || parsed.transcript || parsed.recognized || parsed.spoken || fallbackTextInput || ''
-    );
-    const pronunciation = cleanText(
-      parsed.pronunciation || parsed.sound || parsed.speech || ''
-    );
-    const grammar = cleanText(
-      parsed.grammar || parsed.words || parsed.correction || ''
-    );
-    const contextStyle = cleanText(
-      parsed.context || parsed.style || parsed.usage || parsed.example || ''
-    );
+      parsed.heard || parsed.transcript || parsed.recognized || parsed.spoken
+    ) || defaultHeard;
+
+    const pronunciation =
+      cleanText(parsed.pronunciation || parsed.sound || parsed.speech) ||
+      (hasAudio
+        ? 'Спробуй записати голос ще раз трохи гучніше й чіткіше біля мікрофона.'
+        : 'Перевірено письмовий варіант.');
+
+    const grammar =
+      cleanText(parsed.grammar || parsed.words || parsed.correction) ||
+      'Перевір порядок слів і вживання цільового слова в реченні.';
+
+    const contextStyle =
+      cleanText(parsed.context || parsed.style || parsed.usage || parsed.example) ||
+      'Використовуй слово у відповідному розмовному або офіційному контексті.';
 
     return {
       heard,
@@ -168,12 +182,12 @@ function parseStructuredAnalysis(rawText, fallbackTextInput) {
   }
 
   return {
-    heard: fallbackTextInput || '',
-    transcript: fallbackTextInput || '',
-    pronunciation: cleaned,
-    grammar: cleaned,
-    context: cleaned,
-    style: cleaned,
+    heard: defaultHeard,
+    transcript: defaultHeard,
+    pronunciation: cleaned || 'Не вдалося оцінити вимову.',
+    grammar: cleaned || 'Не вдалося перевірити граматику.',
+    context: cleaned || 'Не вдалося визначити контекст.',
+    style: cleaned || 'Не вдалося визначити стиль.',
     analysis: cleaned,
     feedback: cleaned,
   };
@@ -206,8 +220,8 @@ export default async function handler(req, res) {
 
     if (audioBase64) {
       parts.push({
-        inline_data: {
-          mime_type: audioMimeType,
+        inlineData: {
+          mimeType: audioMimeType,
           data: audioBase64,
         },
       });
@@ -239,7 +253,7 @@ ${textInput ? `Текст учня: "${textInput}"` : 'Учень відпові
       for (let attempt = 0; attempt < 2; attempt++) {
         try {
           const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+            `[https://generativelanguage.googleapis.com/v1beta/models/$](https://generativelanguage.googleapis.com/v1beta/models/$){model}:generateContent?key=${apiKey}`,
             {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -247,8 +261,7 @@ ${textInput ? `Текст учня: "${textInput}"` : 'Учень відпові
                 contents: [{ role: 'user', parts }],
                 generationConfig: {
                   temperature: 0.3,
-                  maxOutputTokens: 1200,
-                  responseMimeType: 'application/json',
+                  maxOutputTokens: 2048,
                 },
               }),
             }
@@ -257,16 +270,15 @@ ${textInput ? `Текст учня: "${textInput}"` : 'Учень відпові
           const data = await response.json().catch(() => ({}));
 
           if (response.ok) {
-            const rawText =
-              data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+            const candidateParts = data?.candidates?.[0]?.content?.parts || [];
+            const rawText = candidateParts
+              .map((p) => (typeof p?.text === 'string' ? p.text : ''))
+              .join('\n')
+              .trim();
 
-            if (!rawText) {
-              return res.status(200).json(
-                parseStructuredAnalysis('Не вдалося сформувати розбір. Спробуй ще раз.', textInput)
-              );
-            }
-
-            return res.status(200).json(parseStructuredAnalysis(rawText, textInput));
+            return res
+              .status(200)
+              .json(parseStructuredAnalysis(rawText, textInput, Boolean(audioBase64)));
           }
 
           lastStatus = response.status;
