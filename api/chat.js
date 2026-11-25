@@ -1,3 +1,55 @@
+let cachedModels = null;
+let cachedAt = 0;
+const CACHE_TTL_MS = 10 * 60 * 1000;
+
+async function getAvailableGeminiModels(apiKey) {
+  const now = Date.now();
+  if (cachedModels && now - cachedAt < CACHE_TTL_MS) {
+    return cachedModels;
+  }
+
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
+    );
+    const data = await res.json().catch(() => ({}));
+
+    if (res.ok && Array.isArray(data.models)) {
+      const supported = data.models
+        .filter(
+          (m) =>
+            Array.isArray(m.supportedGenerationMethods) &&
+            m.supportedGenerationMethods.includes('generateContent') &&
+            !/embedding|imagen|veo|aqa/i.test(m.name || '')
+        )
+        .map((m) => String(m.name).replace(/^models\//, ''));
+
+      const score = (name) => {
+        let s = 0;
+        if (/gemini/i.test(name)) s += 100;
+        if (/flash/i.test(name)) s += 50;
+        if (!/lite/i.test(name)) s += 10;
+        const verMatch = name.match(/(\d+(?:\.\d+)?)/);
+        if (verMatch) s += parseFloat(verMatch[1]) * 20;
+        if (/exp|preview/i.test(name)) s -= 5;
+        return s;
+      };
+
+      supported.sort((a, b) => score(b) - score(a));
+
+      if (supported.length > 0) {
+        cachedModels = supported;
+        cachedAt = now;
+        return supported;
+      }
+    }
+  } catch (_) {
+    // Якщо список отримати не вдалося, використаємо резервний список нижче
+  }
+
+  return ['gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-2.5-flash-lite'];
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -49,17 +101,13 @@ ${isTestActive && forbiddenWord ? `- ЗАБОРОНЕНЕ СЛОВО ЗАРАЗ 
       return res.status(400).json({ error: 'Порожнє повідомлення' });
     }
 
-    const models = [
-      'gemini-3.8-flash',
-      'gemini-3.8-flash-lite',
-    ];
-
+    const models = await getAvailableGeminiModels(apiKey);
     const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
     let lastErrorMessage = 'Сервіс тимчасово перевантажений. Спробуй ще раз за кілька секунд.';
     let lastStatus = 503;
 
-    for (const model of models) {
+    for (const model of models.slice(0, 6)) {
       for (let attempt = 0; attempt < 2; attempt++) {
         try {
           const response = await fetch(
@@ -94,13 +142,19 @@ ${isTestActive && forbiddenWord ? `- ЗАБОРОНЕНЕ СЛОВО ЗАРАЗ 
           const apiMessage = data?.error?.message || lastErrorMessage;
           lastErrorMessage = apiMessage;
 
+          const isNotFound =
+            response.status === 404 || /not found|not supported/i.test(apiMessage);
+          if (isNotFound) {
+            break;
+          }
+
           const isTransientOverload =
             response.status === 429 ||
             response.status === 503 ||
             /high demand|overloaded|try again later|quota|rate limit/i.test(apiMessage);
 
           if (isTransientOverload && attempt === 0) {
-            await sleep(700);
+            await sleep(800);
             continue;
           }
 
