@@ -142,11 +142,13 @@ function parseStructuredAnalysis(rawText, fallbackTextInput, hasAudio) {
 
 function buildGeminiUrl(model, apiKey) {
   const safeModel = String(model || '').replace(/[^a-zA-Z0-9._-]/g, '');
-  const safeKey = String(apiKey || '').trim();
-  const base = '[https://generativelanguage.googleapis.com/v1beta/models/](https://generativelanguage.googleapis.com/v1beta/models/)';
-  const url = new URL(`${base}${safeModel}:generateContent`);
-  url.searchParams.set('key', safeKey);
-  return url.toString();
+  const safeKey = encodeURIComponent(String(apiKey || '').replace(/[\r\n\s]+/g, ''));
+  return (
+    '[https://generativelanguage.googleapis.com/v1beta/models/](https://generativelanguage.googleapis.com/v1beta/models/)' +
+    safeModel +
+    ':generateContent?key=' +
+    safeKey
+  );
 }
 
 export default async function handler(req, res) {
@@ -154,7 +156,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = String(process.env.GEMINI_API_KEY || '').replace(/[\r\n\s]+/g, '');
   if (!apiKey) {
     return res.status(500).json({ error: 'GEMINI_API_KEY не налаштовано на Vercel' });
   }
