@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import {
   Volume2, Flame, Trophy, CheckCircle2, XCircle,
   Share2, Sparkles, BookOpen, BrainCircuit, ArrowRight,
-  RotateCcw, Crown, Check, Copy, X, Loader2, LogOut, User, ShieldCheck, FileText, ExternalLink, Search, Keyboard, Compass, Camera, Pencil, Coins, Lightbulb, ShoppingBag, Heart
+  RotateCcw, Crown, Check, Copy, X, Loader2, LogOut, User, ShieldCheck, FileText, ExternalLink, Search, Keyboard, Compass, Camera, Pencil, Coins, Lightbulb, ShoppingBag, Heart, HelpCircle
 } from 'lucide-react';
 
 const SUPABASE_URL = 'https://vdjduptyloghojeqaglw.supabase.co';
@@ -37,6 +37,46 @@ const FALLBACK_DATA = [
 ];
 
 const LEVELS = ['A1', 'A2', 'B1', 'B2'];
+
+const LEVEL_STYLES = {
+  A1: {
+    subtitle: 'Старт',
+    activeBtn: 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-600/20',
+    idleBtn: 'bg-emerald-50/80 text-emerald-900 border-emerald-200 hover:bg-emerald-100/80',
+    badge: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+    bar: 'bg-emerald-500',
+    activeCat: 'bg-emerald-50/70 border-emerald-400 text-slate-900 shadow-sm',
+    checkColor: 'text-emerald-600',
+  },
+  A2: {
+    subtitle: 'База',
+    activeBtn: 'bg-sky-600 text-white border-sky-600 shadow-md shadow-sky-600/20',
+    idleBtn: 'bg-sky-50/80 text-sky-900 border-sky-200 hover:bg-sky-100/80',
+    badge: 'bg-sky-100 text-sky-800 border-sky-200',
+    bar: 'bg-sky-500',
+    activeCat: 'bg-sky-50/70 border-sky-400 text-slate-900 shadow-sm',
+    checkColor: 'text-sky-600',
+  },
+  B1: {
+    subtitle: 'Середній',
+    activeBtn: 'bg-amber-500 text-slate-950 border-amber-500 shadow-md shadow-amber-500/20',
+    idleBtn: 'bg-amber-50/80 text-amber-900 border-amber-200 hover:bg-amber-100/80',
+    badge: 'bg-amber-100 text-amber-900 border-amber-200',
+    bar: 'bg-amber-500',
+    activeCat: 'bg-amber-50/80 border-amber-400 text-slate-900 shadow-sm',
+    checkColor: 'text-amber-600',
+  },
+  B2: {
+    subtitle: 'Впевнений',
+    activeBtn: 'bg-violet-600 text-white border-violet-600 shadow-md shadow-violet-600/20',
+    idleBtn: 'bg-violet-50/80 text-violet-900 border-violet-200 hover:bg-violet-100/80',
+    badge: 'bg-violet-100 text-violet-800 border-violet-200',
+    bar: 'bg-violet-500',
+    activeCat: 'bg-violet-50/70 border-violet-400 text-slate-900 shadow-sm',
+    checkColor: 'text-violet-600',
+  },
+};
+
 const CATEGORIES = [
   { id: 'colloquial', label: 'Розмовна', icon: '💬' },
   { id: 'exam', label: 'Для іспитів', icon: '🎓' },
@@ -152,7 +192,6 @@ const getDaysDiffFromToday = (dateStr) => {
   return Math.max(0, Math.floor(diffMs / 86400000));
 };
 
-// Природне зниження ситості кота: -10% за кожну добу без годування (мінімум 10%)
 const applyCatTimeDecay = (petObj) => {
   const today = getLocalDateStr();
   const base = { ...DEFAULT_PET, ...(petObj || {}) };
@@ -185,7 +224,6 @@ const applyCatTimeDecay = (petObj) => {
   };
 };
 
-// Ранкове / денне / вечірнє привітання від кота з урахуванням ситості
 const buildCatGreeting = (petObj, daysMissed = 0, hungerDropped = 0) => {
   const name = petObj?.name || 'Schnurri';
   const hunger = petObj?.hunger ?? 80;
@@ -321,6 +359,8 @@ export default function App() {
   const [vocabulary, setVocabulary] = useState(FALLBACK_DATA);
   const [loading, setLoading] = useState(true);
 
+  const [showOnboarding, setShowOnboarding] = useState(() => localStorage.getItem('dmd_hide_intro') !== 'true');
+
   const [user, setUser] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState('login');
@@ -418,6 +458,11 @@ export default function App() {
   const [spellingInput, setSpellingInput] = useState('');
   const [spellingResult, setSpellingResult] = useState(null);
   const spellingInputRef = useRef(null);
+
+  const handleDismissOnboarding = () => {
+    setShowOnboarding(false);
+    localStorage.setItem('dmd_hide_intro', 'true');
+  };
 
   const touchDailyStreak = () => {
     setStreak((prevStreak) => {
@@ -1139,6 +1184,7 @@ export default function App() {
   const currentPlanObj = PLANS.find((p) => p.id === selectedPlan) || PLANS[1];
   const hasMoreWordsInPro = !isPro && !practiceAllLearnedMode && allCategoryWords.length > availableModuleWords.length;
   const currentNeedsArticle = currentWord ? ARTICLES.includes((currentWord.article || '').toLowerCase()) : false;
+  const activeLevelTheme = LEVEL_STYLES[selectedLevel] || LEVEL_STYLES.A1;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col">
@@ -1152,11 +1198,22 @@ export default function App() {
               <h1 className="font-bold text-sm sm:text-lg leading-tight tracking-tight">
                 deutsch mit <span className="text-amber-600">Dmytro</span>
               </h1>
-              <p className="text-[11px] text-slate-500 hidden sm:block">База слів: {vocabulary.length} шт. • A1–B2</p>
+              <p className="text-[11px] text-slate-500 hidden sm:block">Інтерактивний словник-тренажер • A1–B2</p>
             </div>
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-2">
+            {!showOnboarding && (
+              <button
+                type="button"
+                onClick={() => setShowOnboarding(true)}
+                className="p-2 rounded-full bg-slate-100 hover:bg-amber-100 text-slate-600 hover:text-amber-900 transition"
+                title="Як працює тренажер?"
+              >
+                <HelpCircle className="w-4 h-4" />
+              </button>
+            )}
+
             <button
               type="button"
               onClick={() => user ? openProfileDrawer('pet') : openAuth('login')}
@@ -1225,6 +1282,71 @@ export default function App() {
       </header>
 
       <main className="max-w-4xl w-full mx-auto px-4 pt-6 pb-12 space-y-6 flex-1">
+        {/* Стартова анотація: що це за платформа та як нею користуватися */}
+        {showOnboarding && (
+          <section className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-5 sm:p-6 rounded-3xl shadow-md relative overflow-hidden space-y-4">
+            <button
+              type="button"
+              onClick={handleDismissOnboarding}
+              className="absolute top-4 right-4 p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition"
+              title="Сховати підказку"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="space-y-1.5 pr-8">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-[11px] font-bold">
+                <Sparkles className="w-3 h-3" /> Тренажер живої німецької лексики
+              </span>
+              <h2 className="text-lg sm:text-xl font-extrabold leading-snug">
+                Вчи німецькі слова для життя, роботи та іспитів без зубріння
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                Тут зібрані найпотрібніші слова рівнів <strong className="text-white">A1–B2</strong> з озвученням носія, артиклями та прикладами вживання. Перші <strong className="text-amber-300">60 слів</strong> (по 5 у кожному блоці) відкриті безкоштовно.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+              <div className="bg-white/10 rounded-2xl p-3 space-y-1">
+                <div className="font-extrabold text-amber-300">1. Обери рівень і тему</div>
+                <p className="text-slate-300 leading-snug">
+                  Від початкового A1 до впевненого B2: розмовна лексика, підготовка до іспитів або офіційна мова.
+                </p>
+              </div>
+              <div className="bg-white/10 rounded-2xl p-3 space-y-1">
+                <div className="font-extrabold text-emerald-300">2. Тренуйся у 3 режимах</div>
+                <p className="text-slate-300 leading-snug">
+                  Гортай картки з озвученням, проходь швидкі тести та тренуй правильні артиклі у «Правописі».
+                </p>
+              </div>
+              <div className="bg-white/10 rounded-2xl p-3 space-y-1">
+                <div className="font-extrabold text-sky-300">3. Заробляй монети 🪙</div>
+                <p className="text-slate-300 leading-snug">
+                  За кожне слово отримуй XP і монети — годуй кота {pet.name}, відкривай 36 ачівок і бери підказки.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+              <a
+                href={LEVEL_TEST_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-semibold text-amber-300 hover:text-amber-200 underline underline-offset-2 inline-flex items-center gap-1"
+              >
+                Не знаєш свій рівень? Пройти швидкий тест <ExternalLink className="w-3 h-3" />
+              </a>
+              <button
+                type="button"
+                onClick={handleDismissOnboarding}
+                className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs transition"
+              >
+                Зрозуміло, почати навчання
+              </button>
+            </div>
+          </section>
+        )}
+
         {/* Міні-панель кота-помічника з ранковим привітанням і шкалою ситості */}
         <section className="bg-white px-4 py-3.5 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -1286,6 +1408,7 @@ export default function App() {
           </div>
         </section>
 
+        {/* Блок вибору рівня (з кольоровим кодуванням A1–B2) та категорії */}
         <section className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2.5">
@@ -1307,15 +1430,19 @@ export default function App() {
           <div className="grid grid-cols-4 gap-2.5">
             {LEVELS.map((lvl) => {
               const active = !practiceAllLearnedMode && selectedLevel === lvl;
+              const theme = LEVEL_STYLES[lvl] || LEVEL_STYLES.A1;
               return (
                 <button
                   key={lvl}
                   onClick={() => handleSelectModule(lvl, selectedCategory)}
-                  className={`relative py-3 rounded-xl font-bold text-base transition flex items-center justify-center gap-1.5 border ${
-                    active ? 'bg-slate-900 text-white border-slate-900 shadow-md' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                  className={`relative py-2.5 px-2 rounded-xl transition flex flex-col items-center justify-center border-2 ${
+                    active ? theme.activeBtn : theme.idleBtn
                   }`}
                 >
-                  <span>{lvl}</span>
+                  <span className="font-extrabold text-base sm:text-lg leading-tight">{lvl}</span>
+                  <span className={`text-[10px] font-semibold ${active ? 'opacity-90' : 'opacity-75'}`}>
+                    {theme.subtitle}
+                  </span>
                 </button>
               );
             })}
@@ -1331,8 +1458,8 @@ export default function App() {
                   <button
                     key={cat.id}
                     onClick={() => handleSelectModule(selectedLevel, cat.id)}
-                    className={`p-3 rounded-xl border text-left transition flex items-center justify-between ${
-                      active ? 'bg-amber-50 border-amber-400 text-slate-900 shadow-sm' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                    className={`p-3 rounded-xl border-2 text-left transition flex items-center justify-between ${
+                      active ? activeLevelTheme.activeCat : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
@@ -1346,7 +1473,7 @@ export default function App() {
                         </div>
                       </div>
                     </div>
-                    {active && <CheckCircle2 className="w-4 h-4 text-amber-600" />}
+                    {active && <CheckCircle2 className={`w-4 h-4 shrink-0 ${activeLevelTheme.checkColor}`} />}
                   </button>
                 );
               })}
@@ -1477,7 +1604,7 @@ export default function App() {
               className="bg-white border-2 border-slate-200 hover:border-amber-300 rounded-3xl p-6 sm:p-10 min-h-[300px] flex flex-col justify-between cursor-pointer transition shadow-sm relative"
             >
               <div className="flex items-center justify-between">
-                <span className="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600">
+                <span className={`px-3 py-1 rounded-full text-xs font-extrabold border ${(LEVEL_STYLES[currentWord.level] || LEVEL_STYLES.A1).badge}`}>
                   {currentWord.level} • {CATEGORIES.find((c) => c.id === currentWord.category)?.label}
                 </span>
                 <button
@@ -1551,7 +1678,9 @@ export default function App() {
         {currentWord && mode === 'quiz' && (
           <section className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Обери правильний переклад</span>
+              <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-extrabold border ${(LEVEL_STYLES[currentWord.level] || LEVEL_STYLES.A1).badge}`}>
+                {currentWord.level} • Обери переклад
+              </span>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -1644,7 +1773,7 @@ export default function App() {
             )}
 
             <div className="text-center py-3 space-y-1.5">
-              <span className="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-500">
+              <span className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-extrabold border ${(LEVEL_STYLES[currentWord.level] || LEVEL_STYLES.A1).badge}`}>
                 {currentWord.level} • {CATEGORIES.find((c) => c.id === currentWord.category)?.label}
               </span>
               <h3 className="text-2xl sm:text-4xl font-extrabold text-slate-900">{currentWord.translation}</h3>
@@ -2165,22 +2294,30 @@ export default function App() {
                       </span>
                     </div>
                     <div className="space-y-2.5">
-                      {levelProgressSummary.map((item) => (
-                        <div key={item.level} className="space-y-1">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="font-bold text-slate-800">Рівень {item.level}</span>
-                            <span className="text-slate-500 font-medium">
-                              {item.learned} з {item.total} ({item.percent}%)
-                            </span>
+                      {levelProgressSummary.map((item) => {
+                        const lvlTheme = LEVEL_STYLES[item.level] || LEVEL_STYLES.A1;
+                        return (
+                          <div key={item.level} className="space-y-1">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="font-bold text-slate-800 flex items-center gap-1.5">
+                                <span className={`px-1.5 py-0.2 rounded text-[10px] font-extrabold border ${lvlTheme.badge}`}>
+                                  {item.level}
+                                </span>
+                                <span>{lvlTheme.subtitle}</span>
+                              </span>
+                              <span className="text-slate-500 font-medium">
+                                {item.learned} з {item.total} ({item.percent}%)
+                              </span>
+                            </div>
+                            <div className="w-full h-2 rounded-full bg-slate-200 overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all ${lvlTheme.bar}`}
+                                style={{ width: `${item.percent}%` }}
+                              />
+                            </div>
                           </div>
-                          <div className="w-full h-2 rounded-full bg-slate-200 overflow-hidden">
-                            <div
-                              className="h-full bg-amber-500 rounded-full transition-all"
-                              style={{ width: `${item.percent}%` }}
-                            />
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
 
@@ -2365,7 +2502,7 @@ export default function App() {
                             >
                               Повторити
                             </button>
-                            <span className="px-1.5 py-0.5 rounded-md bg-white border border-slate-200 text-[10px] font-bold text-slate-600">
+                            <span className={`px-1.5 py-0.5 rounded-md border text-[10px] font-extrabold ${(LEVEL_STYLES[w.level] || LEVEL_STYLES.A1).badge}`}>
                               {w.level}
                             </span>
                           </div>
