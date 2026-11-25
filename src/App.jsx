@@ -14,14 +14,14 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const FREE_WORDS_LIMIT = 5;
 
-const PRONUNCIATION_FIXES = {
-  ciao: 'Tschau',
-};
-
 const normalizeSpeechText = (rawText) => {
-  return (rawText || '').replace(/\bCiao\b/gi, (match) => {
-    return PRONUNCIATION_FIXES[match.toLowerCase()] || match;
-  });
+  let text = (rawText || '').trim();
+  // Замінюємо Ciao на німецький фонетичний аналог Tschau з легкою інтонацією, щоб Safari не обрізав звук "т"
+  text = text.replace(/ciao/gi, 'Tschau');
+  if (text.toLowerCase() === 'tschau') {
+    return '... Tschau!';
+  }
+  return text;
 };
 
 const PRIVACY_TEXT = [
