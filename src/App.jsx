@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import {
   Volume2, Flame, Trophy, CheckCircle2, XCircle,
   Share2, Sparkles, BookOpen, BrainCircuit, ArrowRight,
-  RotateCcw, Crown, Check, Copy, X, Loader2, LogOut, User, ShieldCheck, FileText, ExternalLink, Search, Keyboard, Compass, Camera, Pencil, Coins, Lightbulb, ShoppingBag, Heart, HelpCircle, MessageCircle, Send
+  RotateCcw, Crown, Check, Copy, X, Loader2, LogOut, User, ShieldCheck, FileText, ExternalLink, Search, Keyboard, Compass, Camera, Pencil, Coins, Lightbulb, ShoppingBag, Heart, HelpCircle, MessageCircle, Send, Mic, Square, Plus, Trash2, ClipboardList
 } from 'lucide-react';
 
 const SUPABASE_URL = 'https://vdjduptyloghojeqaglw.supabase.co';
@@ -14,6 +14,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const FREE_WORDS_LIMIT = 5;
 const FREE_DAILY_AI_LIMIT = 10;
+const FREE_DAILY_SENTENCE_LIMIT = 3;
 
 const normalizeSpeechText = (rawText) => {
   let text = (rawText || '').trim();
@@ -26,7 +27,7 @@ const normalizeSpeechText = (rawText) => {
 
 const PRIVACY_TEXT = [
   { title: '1. Загальні положення', body: 'Ця Політика конфіденційності визначає порядок обробки персональних даних користувачів платформи deutsch mit Dmytro, володільцем якої є Горішняк Дмитро Володимирович.' },
-  { title: '2. Які дані збираються', body: 'Для створення акаунта та збереження навчального прогресу збираються лише email, ім’я профілю, фото аватара, зашифрований хеш пароля та статистика навчання (бали XP, монети, прогрес улюбленця, вивчені слова, статус підписки).' },
+  { title: '2. Які дані збираються', body: 'Для створення акаунта та збереження навчального прогресу збираються лише email, ім’я профілю, фото аватара, зашифрований хеш пароля та статистика навчання (бали XP, монети, прогрес улюбленця, вивчені слова, власний словник, статус підписки).' },
   { title: '3. Платіжні дані', body: 'Сервіс не зберігає дані банківських карток. Оплата відбувається на захищеній сторінці сертифікованого платіжного провайдера.' },
   { title: '4. Захист та видалення даних', body: 'Дані зберігаються у захищеній базі Supabase (HTTPS/TLS, Row Level Security) згідно із законодавством України та GDPR. Запит на видалення даних: sirobabadima9@gmail.com.' }
 ];
@@ -85,6 +86,15 @@ const LEVEL_STYLES = {
     activeCat: 'bg-violet-50/70 border-violet-400 text-slate-900 shadow-sm',
     checkColor: 'text-violet-600',
   },
+  OWN: {
+    subtitle: 'Мій словник',
+    activeBtn: 'bg-rose-600 text-white border-rose-600',
+    idleBtn: 'bg-rose-50 text-rose-900 border-rose-200',
+    badge: 'bg-rose-100 text-rose-800 border-rose-200',
+    bar: 'bg-rose-500',
+    activeCat: 'bg-rose-50 border-rose-400 text-slate-900',
+    checkColor: 'text-rose-600',
+  },
 };
 
 const CATEGORIES = [
@@ -113,14 +123,18 @@ const CAT_STAGES = [
 const SHOP_ITEMS = [
   { id: 'milk', type: 'food', icon: '🥛', name: 'Тепле молочко', desc: '+20% ситості, +15 досвіду кота', price: 25, hunger: 20, petXp: 15 },
   { id: 'brezel', type: 'food', icon: '🥨', name: 'Німецький брецель', desc: '+35% ситості, +30 досвіду кота', price: 50, hunger: 35, petXp: 30 },
-  { id: 'salmon', type: 'food', icon: '🍣', name: 'Філе лосося', desc: '+60% ситості, +55 досвіду кота', price: 90, hunger: 60, petXp: 55 },
-  { id: 'cake', type: 'food', icon: '🍰', name: 'Шварцвальдський торт', desc: '100% ситості, +90 досвіду кота', price: 140, hunger: 100, petXp: 90 },
-  { id: 'yarn', type: 'toy', icon: '🧶', name: 'Клубок вовни', desc: '+15% ситості, +45 досвіду кота', price: 65, hunger: 15, petXp: 45 },
-  { id: 'laser', type: 'toy', icon: '🔦', name: 'Лазерна указка', desc: '+10% ситості, +80 досвіду кота', price: 110, hunger: 10, petXp: 80 },
-  { id: 'acc_scarf', type: 'accessory', icon: '🧣', name: 'Шарф Німеччини', desc: 'Стильний аксесуар на кота', price: 180, petXp: 50 },
-  { id: 'acc_glasses', type: 'accessory', icon: '👓', name: 'Окуляри розумника', desc: 'Образ справжнього філолога', price: 320, petXp: 90 },
-  { id: 'acc_hat', type: 'accessory', icon: '🎩', name: 'Баварський капелюх', desc: 'Класика з Мюнхена', price: 500, petXp: 140 },
-  { id: 'acc_crown', type: 'accessory', icon: '👑', name: 'Корона магістра', desc: 'Найвищий статус для кота', price: 900, petXp: 250 },
+  { id: 'salmon', type: 'food', icon: '🍣', name: 'Філе лосося', desc: '+60% ситості, +55 досвіду кота', price: 95, hunger: 60, petXp: 55 },
+  { id: 'cake', type: 'food', icon: '🍰', name: 'Шварцвальдський торт', desc: '100% ситості, +90 досвіду кота', price: 150, hunger: 100, petXp: 90 },
+  { id: 'yarn', type: 'toy', icon: '🧶', name: 'Клубок вовни', desc: '+15% ситості, +45 досвіду кота', price: 70, hunger: 15, petXp: 45 },
+  { id: 'laser', type: 'toy', icon: '🔦', name: 'Лазерна указка', desc: '+10% ситості, +80 досвіду кота', price: 120, hunger: 10, petXp: 80 },
+  { id: 'acc_scarf', type: 'accessory', icon: '🧣', name: 'Шарф Німеччини', desc: 'Класичний триколор на шию кота', price: 250, petXp: 60 },
+  { id: 'acc_glasses', type: 'accessory', icon: '👓', name: 'Окуляри розумника', desc: 'Образ справжнього філолога', price: 450, petXp: 100 },
+  { id: 'acc_hat', type: 'accessory', icon: '🎩', name: 'Баварський капелюх', desc: 'Традиційний стиль із Мюнхена', price: 750, petXp: 160 },
+  { id: 'acc_headphones', type: 'accessory', icon: '🎧', name: 'Навушники поліглота', desc: 'Для ідеального аудіювання Goethe/telc', price: 1100, petXp: 230 },
+  { id: 'acc_bowtie', type: 'accessory', icon: '🎀', name: 'Оксамитовий метелик', desc: 'Святковий дрес-код для іспиту C1', price: 1450, petXp: 300 },
+  { id: 'acc_robe', type: 'accessory', icon: '🎓', name: 'Академічна мантія', desc: 'Атрибут випускника університету', price: 1950, petXp: 420 },
+  { id: 'acc_crown', type: 'accessory', icon: '👑', name: 'Золота корона магістра', desc: 'Королівський статус у німецькій', price: 2600, petXp: 550 },
+  { id: 'acc_castle', type: 'accessory', icon: '🏰', name: 'Замок Нойшванштайн', desc: 'Легендарна резиденція для кота', price: 3500, petXp: 800 },
 ];
 
 const DEFAULT_PET = {
@@ -131,9 +145,12 @@ const DEFAULT_PET = {
   hintsUsed: 0,
   coinsSpent: 0,
   spellingDone: 0,
+  sentencesDone: 0,
   ownedItems: [],
   equippedAccessory: null,
   freeHintDate: null,
+  hintsDate: null,
+  hintsTodayCount: 0,
   lastFedDate: null,
   lastDecayDate: null
 };
@@ -151,17 +168,23 @@ const ACHIEVEMENTS = [
   { id: 'words_50', icon: '📚', title: 'Пів сотні в активі', desc: 'Вивчити 50 німецьких слів', check: (s) => s.learnedCount >= 50, getProgress: (s) => ({ current: Math.min(s.learnedCount, 50), target: 50 }) },
   { id: 'words_100', icon: '💯', title: 'Сотня слів', desc: 'Вивчити 100 німецьких слів', check: (s) => s.learnedCount >= 100, getProgress: (s) => ({ current: Math.min(s.learnedCount, 100), target: 100 }) },
   { id: 'words_200', icon: '🎓', title: 'Словниковий запас PRO', desc: 'Вивчити 200 німецьких слів', check: (s) => s.learnedCount >= 200, getProgress: (s) => ({ current: Math.min(s.learnedCount, 200), target: 200 }) },
-  { id: 'words_250', icon: '👑', title: 'Повна база', desc: 'Вивчити 250+ слів із бази', check: (s) => s.learnedCount >= 250, getProgress: (s) => ({ current: Math.min(s.learnedCount, 250), target: 250 }) },
+  { id: 'words_300', icon: '🏛️', title: 'Енциклопедія слів', desc: 'Вивчити 300 німецьких слів', check: (s) => s.learnedCount >= 300, getProgress: (s) => ({ current: Math.min(s.learnedCount, 300), target: 300 }) },
+  { id: 'words_500', icon: '👑', title: 'Повна база майстра', desc: 'Вивчити 500+ слів із бази', check: (s) => s.learnedCount >= 500, getProgress: (s) => ({ current: Math.min(s.learnedCount, 500), target: 500 }) },
+
   { id: 'xp_100', icon: '⚡', title: 'Розминка', desc: 'Набрати 100 балів XP', check: (s) => s.xp >= 100, getProgress: (s) => ({ current: Math.min(s.xp, 100), target: 100 }) },
   { id: 'xp_300', icon: '✨', title: 'Перші 300 XP', desc: 'Набрати 300 балів XP', check: (s) => s.xp >= 300, getProgress: (s) => ({ current: Math.min(s.xp, 300), target: 300 }) },
   { id: 'xp_500', icon: '🔥', title: 'Пів тисячі балів', desc: 'Набрати 500 балів XP', check: (s) => s.xp >= 500, getProgress: (s) => ({ current: Math.min(s.xp, 500), target: 500 }) },
   { id: 'xp_1000', icon: '🏆', title: 'Тисячник', desc: 'Набрати 1 000 балів XP', check: (s) => s.xp >= 1000, getProgress: (s) => ({ current: Math.min(s.xp, 1000), target: 1000 }) },
   { id: 'xp_2500', icon: '💎', title: 'Марафонець XP', desc: 'Набрати 2 500 балів XP', check: (s) => s.xp >= 2500, getProgress: (s) => ({ current: Math.min(s.xp, 2500), target: 2500 }) },
   { id: 'xp_5000', icon: '🇩🇪', title: 'Легенда deutsch mit Dmytro', desc: 'Набрати 5 000 балів XP', check: (s) => s.xp >= 5000, getProgress: (s) => ({ current: Math.min(s.xp, 5000), target: 5000 }) },
+  { id: 'xp_10000', icon: '🌟', title: 'Гросмейстер німецької', desc: 'Набрати 10 000 балів XP', check: (s) => s.xp >= 10000, getProgress: (s) => ({ current: Math.min(s.xp, 10000), target: 10000 }) },
+
   { id: 'streak_3', icon: '🕯️', title: 'Три дні поспіль', desc: 'Тримати серію 3 дні', check: (s) => s.streakDays >= 3, getProgress: (s) => ({ current: Math.min(s.streakDays, 3), target: 3 }) },
   { id: 'streak_7', icon: '📅', title: 'Тиждень без пропусків', desc: 'Тримати серію 7 днів поспіль', check: (s) => s.streakDays >= 7, getProgress: (s) => ({ current: Math.min(s.streakDays, 7), target: 7 }) },
   { id: 'streak_14', icon: '💪', title: 'Два тижні дисципліни', desc: 'Тримати серію 14 днів поспіль', check: (s) => s.streakDays >= 14, getProgress: (s) => ({ current: Math.min(s.streakDays, 14), target: 14 }) },
   { id: 'streak_30', icon: '🏅', title: 'Місяць німецької', desc: 'Тримати серію 30 днів поспіль', check: (s) => s.streakDays >= 30, getProgress: (s) => ({ current: Math.min(s.streakDays, 30), target: 30 }) },
+  { id: 'streak_60', icon: '🌋', title: 'Залізна звичка', desc: 'Тримати серію 60 днів поспіль', check: (s) => s.streakDays >= 60, getProgress: (s) => ({ current: Math.min(s.streakDays, 60), target: 60 }) },
+
   { id: 'level_a2', icon: '🎯', title: 'Знавець A2', desc: 'Вивчити перше слово рівня A2', check: (s) => s.hasLevelA2, getProgress: (s) => ({ current: s.hasLevelA2 ? 1 : 0, target: 1 }) },
   { id: 'level_b', icon: '🚀', title: 'Рівень B1–B2 у грі', desc: 'Вивчити перше слово рівня B1 або B2', check: (s) => s.hasLevelB1OrB2, getProgress: (s) => ({ current: s.hasLevelB1OrB2 ? 1 : 0, target: 1 }) },
   { id: 'pro_member', icon: '👑', title: 'Учень PRO', desc: 'Активувати повний абонемент PRO', check: (s) => s.isPro, getProgress: (s) => ({ current: s.isPro ? 1 : 0, target: 1 }) },
@@ -169,19 +192,33 @@ const ACHIEVEMENTS = [
   { id: 'cat_feed_1', icon: '🥛', title: 'Перший сніданок кота', desc: 'Погодувати або погратися з котом уперше', check: (s) => s.feedsCount >= 1, getProgress: (s) => ({ current: Math.min(s.feedsCount, 1), target: 1 }) },
   { id: 'cat_feed_5', icon: '🥨', title: 'Турботливий господар', desc: 'Погодувати кота 5 разів', check: (s) => s.feedsCount >= 5, getProgress: (s) => ({ current: Math.min(s.feedsCount, 5), target: 5 }) },
   { id: 'cat_feed_15', icon: '🍣', title: 'Шеф-кухар для кота', desc: 'Погодувати кота 15 разів', check: (s) => s.feedsCount >= 15, getProgress: (s) => ({ current: Math.min(s.feedsCount, 15), target: 15 }) },
+  { id: 'cat_feed_30', icon: '🍽️', title: 'Мішленівський кіт', desc: 'Погодувати кота 30 разів', check: (s) => s.feedsCount >= 30, getProgress: (s) => ({ current: Math.min(s.feedsCount, 30), target: 30 }) },
   { id: 'cat_full', icon: '😻', title: 'Повне муркотіння', desc: 'Довести ситість кота до 100%', check: (s) => s.catHunger >= 100, getProgress: (s) => ({ current: Math.min(s.catHunger, 100), target: 100 }) },
   { id: 'cat_lvl_2', icon: '😺', title: 'Кіт підріс', desc: 'Прокачати кота до 2-го рівня', check: (s) => s.catLevel >= 2, getProgress: (s) => ({ current: Math.min(s.catLevel, 2), target: 2 }) },
   { id: 'cat_lvl_3', icon: '😸', title: 'Кіт-словничок', desc: 'Прокачати кота до 3-го рівня', check: (s) => s.catLevel >= 3, getProgress: (s) => ({ current: Math.min(s.catLevel, 3), target: 3 }) },
   { id: 'cat_lvl_5', icon: '🦁', title: 'Легендарний кіт', desc: 'Прокачати кота до 5-го рівня', check: (s) => s.catLevel >= 5, getProgress: (s) => ({ current: Math.min(s.catLevel, 5), target: 5 }) },
+
   { id: 'cat_acc_1', icon: '🧣', title: 'Перша обновка', desc: 'Купити перший аксесуар для кота', check: (s) => s.accessoriesCount >= 1, getProgress: (s) => ({ current: Math.min(s.accessoriesCount, 1), target: 1 }) },
-  { id: 'cat_acc_4', icon: '🎩', title: 'Кіт-модник', desc: 'Зібрати всі 4 аксесуари для кота', check: (s) => s.accessoriesCount >= 4, getProgress: (s) => ({ current: Math.min(s.accessoriesCount, 4), target: 4 }) },
+  { id: 'cat_acc_4', icon: '🎩', title: 'Кіт-модник', desc: 'Зібрати 4 аксесуари для кота', check: (s) => s.accessoriesCount >= 4, getProgress: (s) => ({ current: Math.min(s.accessoriesCount, 4), target: 4 }) },
+  { id: 'cat_acc_8', icon: '🏰', title: 'Повний гардероб кота', desc: 'Зібрати всі 8 преміум-аксесуарів', check: (s) => s.accessoriesCount >= 8, getProgress: (s) => ({ current: Math.min(s.accessoriesCount, 8), target: 8 }) },
+
   { id: 'coins_200', icon: '🪙', title: 'Перші 200 монет', desc: 'Мати 200 монет на балансі', check: (s) => s.coins >= 200, getProgress: (s) => ({ current: Math.min(s.coins, 200), target: 200 }) },
+  { id: 'coins_1000', icon: '💰', title: 'Скарбничка поліглота', desc: 'Накопичити 1 000 монет на балансі', check: (s) => s.coins >= 1000, getProgress: (s) => ({ current: Math.min(s.coins, 1000), target: 1000 }) },
   { id: 'coins_spent_300', icon: '🛍️', title: 'Щедрий власник', desc: 'Витратити 300 монет у крамничці кота', check: (s) => s.coinsSpent >= 300, getProgress: (s) => ({ current: Math.min(s.coinsSpent, 300), target: 300 }) },
   { id: 'coins_spent_1000', icon: '🏦', title: 'VIP-клієнт крамнички', desc: 'Витратити 1 000 монет на догляд за котом', check: (s) => s.coinsSpent >= 1000, getProgress: (s) => ({ current: Math.min(s.coinsSpent, 1000), target: 1000 }) },
+  { id: 'coins_spent_3000', icon: '💎', title: 'Меценат котика', desc: 'Витратити 3 000 монет у крамничці', check: (s) => s.coinsSpent >= 3000, getProgress: (s) => ({ current: Math.min(s.coinsSpent, 3000), target: 3000 }) },
+
   { id: 'hint_1', icon: '💡', title: 'Мяу-підказка', desc: 'Попросити підказку у кота під час вправи', check: (s) => s.hintsUsed >= 1, getProgress: (s) => ({ current: Math.min(s.hintsUsed, 1), target: 1 }) },
   { id: 'hint_10', icon: '🔮', title: 'Робота в команді', desc: 'Використати підказку кота 10 разів', check: (s) => s.hintsUsed >= 10, getProgress: (s) => ({ current: Math.min(s.hintsUsed, 10), target: 10 }) },
+
   { id: 'spell_1', icon: '✍️', title: 'Без жодної помилки', desc: 'Написати перше слово у режимі Правопис', check: (s) => s.spellingDone >= 1, getProgress: (s) => ({ current: Math.min(s.spellingDone, 1), target: 1 }) },
   { id: 'spell_15', icon: '🎯', title: 'Майстер артиклів та умлаутів', desc: 'Правильно написати 15 слів у Правописі', check: (s) => s.spellingDone >= 15, getProgress: (s) => ({ current: Math.min(s.spellingDone, 15), target: 15 }) },
+
+  { id: 'sent_1', icon: '🎙️', title: 'Перше живе речення', desc: 'Скласти та перевірити перше речення німецькою', check: (s) => s.sentencesDone >= 1, getProgress: (s) => ({ current: Math.min(s.sentencesDone, 1), target: 1 }) },
+  { id: 'sent_10', icon: '🗣️', title: 'Впевнена мова', desc: 'Скласти 10 правильних речень із ШІ-розбором', check: (s) => s.sentencesDone >= 10, getProgress: (s) => ({ current: Math.min(s.sentencesDone, 10), target: 10 }) },
+
+  { id: 'custom_1', icon: '📝', title: 'Особистий нотатник', desc: 'Додати перше власне слово у приватний словник', check: (s) => s.customWordsCount >= 1, getProgress: (s) => ({ current: Math.min(s.customWordsCount, 1), target: 1 }) },
+  { id: 'custom_15', icon: '📒', title: 'Авторський словник', desc: 'Зібрати 15 власних слів у приватному словнику', check: (s) => s.customWordsCount >= 15, getProgress: (s) => ({ current: Math.min(s.customWordsCount, 15), target: 15 }) },
 ];
 
 const getLocalDateStr = (date = new Date()) => {
@@ -327,6 +364,10 @@ const buildCatHint = (wordObj, currentMode) => {
     return `Це слово рівня ${wordObj.level}, перша літера перекладу: «${(wordObj.translation || '')[0] || ''}...»`;
   }
 
+  if (currentMode === 'sentence') {
+    return `Можеш почати з простої конструкції: «Ich habe ...» або «Heute brauche ich ${art ? art + ' ' : ''}${w}...»`;
+  }
+
   const tips = [];
   if (art === 'der') tips.push('Чоловічий рід (der)');
   if (art === 'die') {
@@ -345,6 +386,26 @@ const buildCatHint = (wordObj, currentMode) => {
     tips.push('У слові є умлаут або ß!');
   }
   return tips.join(' • ');
+};
+
+const buildSessionAdvice = (results) => {
+  const wrong = results.filter((r) => !r.isCorrect);
+  if (wrong.length === 0) {
+    return 'Бездоганний результат! Жодної помилки — можеш переходити до наступної теми або закріпити слова у режимі «Речення».';
+  }
+  const articleMistakes = wrong.filter((r) => r.reason === 'article').length;
+  const spellingMistakes = wrong.filter((r) => r.reason === 'spelling').length;
+  const tips = [];
+  if (articleMistakes > 0) {
+    tips.push(`Артиклі (${articleMistakes} помил.): запам’ятовуй іменник одразу разом із der/die/das та звертай увагу на суфікси (-ung, -heit, -keit → завжди die).`);
+  }
+  if (spellingMistakes > 0) {
+    tips.push(`Правопис (${spellingMistakes} помил.): перевір велику першу літеру в німецьких іменниках та умлаути (ä, ö, ü, ß).`);
+  }
+  if (tips.length === 0) {
+    tips.push('Зверни увагу на точний переклад у контексті речення — прослухай озвучення кожного помилкового слова ще 2–3 рази.');
+  }
+  return tips.join(' ');
 };
 
 const resizeAvatarFile = (file) =>
@@ -371,6 +432,18 @@ const resizeAvatarFile = (file) =>
     reader.readAsDataURL(file);
   });
 
+const blobToBase64 = (blob) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = String(reader.result || '');
+      const base64 = result.includes(',') ? result.split(',')[1] : result;
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+
 export default function App() {
   const [vocabulary, setVocabulary] = useState(FALLBACK_DATA);
   const [loading, setLoading] = useState(true);
@@ -392,8 +465,24 @@ export default function App() {
   const [showProfileDrawer, setShowProfileDrawer] = useState(false);
   const [profileTab, setProfileTab] = useState('pet');
   const [achFilter, setAchFilter] = useState('all');
+  const [dictSubTab, setDictSubTab] = useState('base'); // 'base' | 'custom'
   const [dictSearch, setDictSearch] = useState('');
   const [dictLevelFilter, setDictLevelFilter] = useState('ALL');
+
+  // Приватний власний словник учня
+  const [customWords, setCustomWords] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('dmd_custom_words') || '[]');
+      return Array.isArray(saved) ? saved : [];
+    } catch {
+      return [];
+    }
+  });
+  const [newCustomArticle, setNewCustomArticle] = useState('');
+  const [newCustomWord, setNewCustomWord] = useState('');
+  const [newCustomTranslation, setNewCustomTranslation] = useState('');
+  const [newCustomExample, setNewCustomExample] = useState('');
+  const [practiceCustomMode, setPracticeCustomMode] = useState(false);
 
   const [fullName, setFullName] = useState(() => localStorage.getItem('dmd_full_name') || '');
   const [nameDraft, setNameDraft] = useState('');
@@ -408,12 +497,17 @@ export default function App() {
   const [reviewLearnedInModule, setReviewLearnedInModule] = useState(false);
   const [practiceAllLearnedMode, setPracticeAllLearnedMode] = useState(false);
   const [practiceLevelFilter, setPracticeLevelFilter] = useState('ALL');
+  const [mistakeOnlyWords, setMistakeOnlyWords] = useState(null); // масив слів для відпрацювання помилок
   const [isSpeaking, setIsSpeaking] = useState(false);
   const audioRef = useRef(null);
 
-  const [mode, setMode] = useState('cards');
+  const [mode, setMode] = useState('cards'); // 'cards' | 'quiz' | 'spelling' | 'sentence'
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
+
+  // Статистика та розбір поточної сесії Тесту / Правопису
+  const [sessionResults, setSessionResults] = useState([]);
+  const [showSessionSummary, setShowSessionSummary] = useState(false);
 
   const [xp, setXp] = useState(() => Number(localStorage.getItem('dmd_xp')) || 0);
   const [coins, setCoins] = useState(() => {
@@ -439,7 +533,7 @@ export default function App() {
   );
   const [activeHint, setActiveHint] = useState('');
 
-  // ШІ-помічник курсу (плашка чату в правому нижньому куті)
+  // ШІ-помічник курсу
   const [showAiChat, setShowAiChat] = useState(false);
   const [aiMessages, setAiMessages] = useState([
     {
@@ -464,6 +558,25 @@ export default function App() {
       aiChatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [aiMessages, showAiChat]);
+
+  // Режим складання речень і розбору голосу
+  const [sentenceText, setSentenceText] = useState('');
+  const [isRecordingAudio, setIsRecordingAudio] = useState(false);
+  const [recordedAudio, setRecordedAudio] = useState(null);
+  const [analyzingSentence, setAnalyzingSentence] = useState(false);
+  const [sentenceAnalysis, setSentenceAnalysis] = useState(null);
+  const [sentenceError, setSentenceError] = useState('');
+  const [sentenceUsageToday, setSentenceUsageToday] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('dmd_sent_usage') || '{}');
+      return saved.date === getLocalDateStr() ? (saved.count || 0) : 0;
+    } catch {
+      return 0;
+    }
+  });
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const sentenceInputRef = useRef(null);
 
   const [streak, setStreak] = useState(() => {
     const savedStreak = Number(localStorage.getItem('dmd_streak')) || 1;
@@ -500,6 +613,16 @@ export default function App() {
   const [spellingInput, setSpellingInput] = useState('');
   const [spellingResult, setSpellingResult] = useState(null);
   const spellingInputRef = useRef(null);
+
+  const resetSentenceState = () => {
+    setSentenceText('');
+    setSentenceAnalysis(null);
+    setSentenceError('');
+    if (recordedAudio?.url) {
+      URL.revokeObjectURL(recordedAudio.url);
+    }
+    setRecordedAudio(null);
+  };
 
   const handleDismissOnboarding = () => {
     setShowOnboarding(false);
@@ -552,6 +675,14 @@ export default function App() {
       const resolvedName = profile.full_name || localStorage.getItem('dmd_full_name') || '';
       const resolvedAvatar = profile.avatar_url || localStorage.getItem('dmd_avatar_url') || '';
 
+      const dbCustom = Array.isArray(profile.custom_words) ? profile.custom_words : [];
+      const localCustom = JSON.parse(localStorage.getItem('dmd_custom_words') || '[]');
+      const customMap = new Map();
+      [...dbCustom, ...localCustom].forEach((item) => {
+        if (item && item.id) customMap.set(item.id, item);
+      });
+      const mergedCustom = Array.from(customMap.values());
+
       const dbPet = profile.pet_data && typeof profile.pet_data === 'object' ? profile.pet_data : {};
       const localPet = JSON.parse(localStorage.getItem('dmd_pet') || '{}');
       const combinedRawPet = {
@@ -563,6 +694,7 @@ export default function App() {
         hintsUsed: Math.max(dbPet.hintsUsed || 0, localPet.hintsUsed || 0),
         coinsSpent: Math.max(dbPet.coinsSpent || 0, localPet.coinsSpent || 0),
         spellingDone: Math.max(dbPet.spellingDone || 0, localPet.spellingDone || 0),
+        sentencesDone: Math.max(dbPet.sentencesDone || 0, localPet.sentencesDone || 0),
         ownedItems: Array.from(new Set([...(dbPet.ownedItems || []), ...(localPet.ownedItems || [])])),
       };
 
@@ -572,6 +704,7 @@ export default function App() {
       setXp(mergedXp);
       setCoins(mergedCoins);
       setPet(mergedPet);
+      setCustomWords(mergedCustom);
       setCatReaction(buildCatGreeting(mergedPet, decayed.daysMissed, decayed.hungerDropped));
       setStreak(resolved.streak);
       lastActiveDateRef.current = resolved.lastActiveDate;
@@ -586,6 +719,7 @@ export default function App() {
         xp: mergedXp,
         coins: mergedCoins,
         pet_data: mergedPet,
+        custom_words: mergedCustom,
         streak: resolved.streak,
         last_active_date: resolved.lastActiveDate,
         learned_ids: mergedLearned,
@@ -600,6 +734,7 @@ export default function App() {
       const initialXp = Number(localStorage.getItem('dmd_xp')) || 0;
       const savedName = localStorage.getItem('dmd_full_name') || '';
       const savedAvatar = localStorage.getItem('dmd_avatar_url') || '';
+      const savedCustom = JSON.parse(localStorage.getItem('dmd_custom_words') || '[]');
       const freshPet = { ...DEFAULT_PET, lastDecayDate: getLocalDateStr() };
       setStreak(initialStreak);
       setCoins(initialXp);
@@ -617,6 +752,7 @@ export default function App() {
         xp: initialXp,
         coins: initialXp,
         pet_data: freshPet,
+        custom_words: savedCustom,
         streak: initialStreak,
         last_active_date: null,
         learned_ids: JSON.parse(localStorage.getItem('dmd_learned') || '[]'),
@@ -653,6 +789,7 @@ export default function App() {
     localStorage.setItem('dmd_xp', xp);
     localStorage.setItem('dmd_coins', coins);
     localStorage.setItem('dmd_pet', JSON.stringify(pet));
+    localStorage.setItem('dmd_custom_words', JSON.stringify(customWords));
     localStorage.setItem('dmd_streak', streak);
     if (lastActiveDate) localStorage.setItem('dmd_last_active', lastActiveDate);
     else localStorage.removeItem('dmd_last_active');
@@ -666,13 +803,14 @@ export default function App() {
         xp,
         coins,
         pet_data: pet,
+        custom_words: customWords,
         streak,
         last_active_date: lastActiveDate || null,
         learned_ids: learnedIds,
         updated_at: new Date().toISOString()
       }).eq('id', user.id).then(() => {});
     }
-  }, [xp, coins, pet, streak, lastActiveDate, learnedIds, isPro, proUntil, user]);
+  }, [xp, coins, pet, customWords, streak, lastActiveDate, learnedIds, isPro, proUntil, user]);
 
   const handleSaveProfileName = async (e) => {
     e.preventDefault();
@@ -894,11 +1032,60 @@ export default function App() {
     setCatReaction(`Мяу! Відтепер я — ${trimmed}! 🐾`);
   };
 
+  // Додавання та видалення власних слів учня
+  const handleAddCustomWord = (e) => {
+    e.preventDefault();
+    const w = newCustomWord.trim();
+    const tr = newCustomTranslation.trim();
+    if (!w || !tr) return;
+
+    const newItem = {
+      id: `custom_${Date.now()}`,
+      level: 'OWN',
+      category: 'custom',
+      article: newCustomArticle.trim(),
+      word: w,
+      plural: '',
+      translation: tr,
+      example: newCustomExample.trim(),
+      exampleUa: '',
+    };
+
+    setCustomWords((prev) => [newItem, ...prev]);
+    setNewCustomArticle('');
+    setNewCustomWord('');
+    setNewCustomTranslation('');
+    setNewCustomExample('');
+  };
+
+  const handleDeleteCustomWord = (id) => {
+    setCustomWords((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const handleStartCustomPractice = (targetMode = 'cards') => {
+    if (customWords.length === 0) return;
+    setPracticeCustomMode(true);
+    setPracticeAllLearnedMode(false);
+    setReviewLearnedInModule(false);
+    setMistakeOnlyWords(null);
+    setSessionResults([]);
+    setShowSessionSummary(false);
+    setMode(targetMode);
+    setCurrentIndex(0);
+    setIsFlipped(false);
+    setQuizAnswer(null);
+    setShowProfileDrawer(false);
+  };
+
   const handleSelectModule = (lvl, cat) => {
     setSelectedLevel(lvl);
     setSelectedCategory(cat);
     setReviewLearnedInModule(false);
     setPracticeAllLearnedMode(false);
+    setPracticeCustomMode(false);
+    setMistakeOnlyWords(null);
+    setSessionResults([]);
+    setShowSessionSummary(false);
     setCurrentIndex(0);
     setIsFlipped(false);
     setQuizAnswer(null);
@@ -906,6 +1093,15 @@ export default function App() {
     setSpellingInput('');
     setSpellingResult(null);
     setActiveHint('');
+    resetSentenceState();
+  };
+
+  const handleModeChange = (nextMode) => {
+    setMode(nextMode);
+    setShowSessionSummary(false);
+    if (nextMode === 'quiz' || nextMode === 'spelling') {
+      setSessionResults([]);
+    }
   };
 
   const learnedWordsList = useMemo(
@@ -933,6 +1129,8 @@ export default function App() {
   );
 
   const filteredWords = useMemo(() => {
+    if (mistakeOnlyWords && mistakeOnlyWords.length > 0) return mistakeOnlyWords;
+    if (practiceCustomMode) return customWords;
     if (practiceAllLearnedMode) {
       if (practiceLevelFilter === 'ALL') return learnedWordsList;
       const byLvl = learnedWordsList.filter((w) => w.level === practiceLevelFilter);
@@ -940,7 +1138,7 @@ export default function App() {
     }
     if (reviewLearnedInModule) return learnedCategoryWords;
     return unlearnedCategoryWords;
-  }, [practiceAllLearnedMode, practiceLevelFilter, learnedWordsList, reviewLearnedInModule, learnedCategoryWords, unlearnedCategoryWords]);
+  }, [mistakeOnlyWords, practiceCustomMode, customWords, practiceAllLearnedMode, practiceLevelFilter, learnedWordsList, reviewLearnedInModule, learnedCategoryWords, unlearnedCategoryWords]);
 
   useEffect(() => {
     if (currentIndex >= filteredWords.length) {
@@ -951,10 +1149,19 @@ export default function App() {
   const goToNextWord = () => {
     if (filteredWords.length === 0) return;
     const nextIndex = currentIndex + 1;
+
+    // Якщо учень дійшов до кінця серії в Тесті або Правописі — показуємо повний розбір сесії
+    if ((mode === 'quiz' || mode === 'spelling') && nextIndex >= filteredWords.length && sessionResults.length > 0) {
+      setShowSessionSummary(true);
+      return;
+    }
+
     if (
       !isPro &&
       !reviewLearnedInModule &&
       !practiceAllLearnedMode &&
+      !practiceCustomMode &&
+      !mistakeOnlyWords &&
       nextIndex >= filteredWords.length &&
       allCategoryWords.length > availableModuleWords.length
     ) {
@@ -966,6 +1173,7 @@ export default function App() {
     setSpellingInput('');
     setSpellingResult(null);
     setActiveHint('');
+    resetSentenceState();
     setCurrentIndex(nextIndex % filteredWords.length);
   };
 
@@ -974,23 +1182,28 @@ export default function App() {
 
   useEffect(() => {
     if (!currentWord) return;
-    const others = vocabulary.filter((w) => w.id !== currentWord.id).sort(() => 0.5 - Math.random()).slice(0, 3);
+    const pool = practiceCustomMode && customWords.length >= 4 ? customWords : vocabulary;
+    const others = pool.filter((w) => w.id !== currentWord.id).sort(() => 0.5 - Math.random()).slice(0, 3);
     setQuizOptions([...others, currentWord].sort(() => 0.5 - Math.random()));
     setQuizAnswer(null);
     setSelectedArticle('');
     setSpellingInput('');
     setSpellingResult(null);
     setActiveHint('');
-  }, [currentWord, mode, vocabulary]);
+    resetSentenceState();
+  }, [currentWord, mode, vocabulary, practiceCustomMode, customWords]);
 
+  // Прогресивна ціна підказок: 1-ша на день безкоштовна (якщо кіт ситий >=70%), далі 20, 40, 60, 80...
   const todayStr = getLocalDateStr();
-  const hasFreeHintToday = (pet.hunger ?? 80) >= 70 && pet.freeHintDate !== todayStr;
-  const hintCost = hasFreeHintToday ? 0 : 10;
+  const hintsUsedToday = pet.hintsDate === todayStr ? (pet.hintsTodayCount || 0) : 0;
+  const hasFreeHintToday = (pet.hunger ?? 80) >= 70 && hintsUsedToday === 0;
+  const paidHintsCountToday = (pet.hunger ?? 80) >= 70 ? Math.max(0, hintsUsedToday - 1) : hintsUsedToday;
+  const hintCost = hasFreeHintToday ? 0 : (paidHintsCountToday + 1) * 20;
 
   const handleRequestCatHint = () => {
     if (!currentWord || activeHint) return;
     if (hintCost > 0 && coins < hintCost) {
-      setCatReaction('Мяу... Не вистачає 10 монет на підказку. Вивчи слово на картці! 🪙');
+      setCatReaction(`Мяу... Ця підказка коштує ${hintCost} монет (ціна зростає на +20 щоразу). Спробуй згадати сам! 🪙`);
       return;
     }
     if (hintCost > 0) {
@@ -998,13 +1211,17 @@ export default function App() {
     }
     const hintText = buildCatHint(currentWord, mode);
     setActiveHint(hintText);
+    const nextTodayCount = hintsUsedToday + 1;
+    const nextHintPrice = nextTodayCount * 20;
     setPet((prev) => ({
       ...prev,
       hintsUsed: (prev.hintsUsed || 0) + 1,
       coinsSpent: (prev.coinsSpent || 0) + hintCost,
       freeHintDate: hintCost === 0 ? todayStr : prev.freeHintDate,
+      hintsDate: todayStr,
+      hintsTodayCount: nextTodayCount,
     }));
-    setCatReaction(`Лови підказку! ${hintText}`);
+    setCatReaction(`Лови підказку! ${hintText} (Наступна підказка сьогодні: ${nextHintPrice} 🪙)`);
   };
 
   const isTestActiveNow = Boolean(
@@ -1075,6 +1292,144 @@ export default function App() {
     }
   };
 
+  const handleToggleAudioRecording = async () => {
+    setSentenceError('');
+    if (isRecordingAudio) {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+      }
+      setIsRecordingAudio(false);
+      return;
+    }
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setSentenceError('Твій браузер не підтримує запис з мікрофона. Напиши речення текстом нижче.');
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const preferredTypes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg'];
+      const supportedType = preferredTypes.find((t) => window.MediaRecorder?.isTypeSupported?.(t)) || '';
+      const recorder = supportedType ? new MediaRecorder(stream, { mimeType: supportedType }) : new MediaRecorder(stream);
+
+      audioChunksRef.current = [];
+      recorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        stream.getTracks().forEach((track) => track.stop());
+        const mime = recorder.mimeType || supportedType || 'audio/webm';
+        const blob = new Blob(audioChunksRef.current, { type: mime });
+        if (recordedAudio?.url) {
+          URL.revokeObjectURL(recordedAudio.url);
+        }
+        const url = URL.createObjectURL(blob);
+        setRecordedAudio({ blob, url, mimeType: mime });
+        setSentenceAnalysis(null);
+      };
+
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+      setIsRecordingAudio(true);
+      setSentenceAnalysis(null);
+    } catch {
+      setSentenceError('Немає доступу до мікрофона. Дозволь мікрофон у налаштуваннях браузера або введи речення текстом.');
+    }
+  };
+
+  const handleInsertSentenceUmlaut = (char) => {
+    const input = sentenceInputRef.current;
+    if (!input) {
+      setSentenceText((prev) => prev + char);
+      return;
+    }
+    const start = input.selectionStart ?? sentenceText.length;
+    const end = input.selectionEnd ?? sentenceText.length;
+    const updated = sentenceText.slice(0, start) + char + sentenceText.slice(end);
+    setSentenceText(updated);
+    requestAnimationFrame(() => {
+      input.focus();
+      input.setSelectionRange(start + char.length, start + char.length);
+    });
+  };
+
+  const handleAnalyzeSentence = async (e) => {
+    if (e) e.preventDefault();
+    if (!currentWord || analyzingSentence) return;
+
+    const cleanText = sentenceText.trim();
+    if (!cleanText && !recordedAudio) {
+      setSentenceError('Запиши речення голосом або напиши його у полі вище.');
+      return;
+    }
+
+    if (!isPro && sentenceUsageToday >= FREE_DAILY_SENTENCE_LIMIT) {
+      setSentenceError(`Ліміт безкоштовних перевірок речень (${FREE_DAILY_SENTENCE_LIMIT}/день) вичерпано. Відкрий PRO для безлімітної практики!`);
+      return;
+    }
+
+    setAnalyzingSentence(true);
+    setSentenceError('');
+    setSentenceAnalysis(null);
+
+    try {
+      let audioBase64 = '';
+      let audioMimeType = '';
+      if (recordedAudio?.blob) {
+        audioBase64 = await blobToBase64(recordedAudio.blob);
+        audioMimeType = recordedAudio.mimeType || 'audio/webm';
+      }
+
+      const res = await fetch('/api/analyze-sentence', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetWord: currentWord.word,
+          targetArticle: currentWord.article,
+          targetTranslation: currentWord.translation,
+          level: currentWord.level === 'OWN' ? 'B1' : currentWord.level,
+          category: currentWord.category === 'custom' ? 'colloquial' : currentWord.category,
+          textInput: cleanText,
+          audioBase64,
+          audioMimeType,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setSentenceError(data?.error || 'Не вдалося розібрати речення.');
+        return;
+      }
+
+      const analysis = data.analysis;
+      setSentenceAnalysis(analysis);
+
+      const nextUsage = sentenceUsageToday + 1;
+      setSentenceUsageToday(nextUsage);
+      localStorage.setItem('dmd_sent_usage', JSON.stringify({ date: todayStr, count: nextUsage }));
+
+      if (analysis?.usedTargetWord && analysis?.isCorrect) {
+        touchDailyStreak();
+        addXpAndCoins(30);
+        setPet((prev) => ({ ...prev, sentencesDone: (prev.sentencesDone || 0) + 1 }));
+        setCatReaction(`Wunderbar! Чудове речення зі словом ${currentWord.word}! +30 монет 😻`);
+        if (!practiceCustomMode && !learnedIds.includes(currentWord.id)) {
+          setLearnedIds((prev) => [...prev, currentWord.id]);
+        }
+      } else {
+        setCatReaction('Подивись розбір від викладача — там є корисна підказка! 🐾');
+      }
+    } catch {
+      setSentenceError('Помилка мережі під час перевірки. Спробуй ще раз.');
+    } finally {
+      setAnalyzingSentence(false);
+    }
+  };
+
   const getArticleColor = (article) => {
     if (article === 'der') return 'text-blue-600 bg-blue-50 border-blue-200';
     if (article === 'die') return 'text-rose-600 bg-rose-50 border-rose-200';
@@ -1092,7 +1447,7 @@ export default function App() {
   const handleMarkLearned = () => {
     if (!currentWord) return;
     touchDailyStreak();
-    if (!isCurrentLearned) {
+    if (!practiceCustomMode && !isCurrentLearned) {
       setLearnedIds((prev) => (prev.includes(currentWord.id) ? prev : [...prev, currentWord.id]));
       addXpAndCoins(15);
       setCatReaction(`Super! +15 монет у скарбничку! (${pet.name} муркоче 😻)`);
@@ -1102,7 +1457,7 @@ export default function App() {
     }
     setIsFlipped(false);
     setCurrentIndex((prev) => {
-      const nextLen = practiceAllLearnedMode
+      const nextLen = practiceCustomMode || practiceAllLearnedMode || mistakeOnlyWords
         ? filteredWords.length
         : reviewLearnedInModule
           ? learnedCategoryWords.length
@@ -1112,14 +1467,26 @@ export default function App() {
     });
   };
 
+  const recordSessionAttempt = (wordObj, isCorrect, userAnswerText, reason = 'translation') => {
+    setSessionResults((prev) => {
+      const filtered = prev.filter((item) => item.wordObj.id !== wordObj.id);
+      return [...filtered, { wordObj, isCorrect, userAnswerText, reason }];
+    });
+  };
+
   const handleQuizChoice = (option) => {
     if (quizAnswer || !currentWord) return;
     setQuizAnswer(option.id);
-    if (option.id === currentWord.id) {
+    const isOk = option.id === currentWord.id;
+    recordSessionAttempt(currentWord, isOk, option.translation, 'translation');
+
+    if (isOk) {
       touchDailyStreak();
       addXpAndCoins(20);
       setCatReaction('Genau richtig! +20 монет — можемо купити смаколик 🥨');
-      if (!learnedIds.includes(currentWord.id)) setLearnedIds((prev) => [...prev, currentWord.id]);
+      if (!practiceCustomMode && !learnedIds.includes(currentWord.id)) {
+        setLearnedIds((prev) => [...prev, currentWord.id]);
+      }
       speakGerman(currentWord.word);
     } else {
       setCatReaction('Мяу, нічого страшного! Запам’ятай правильний варіант 🐱');
@@ -1162,17 +1529,34 @@ export default function App() {
     setSpellingResult({ articleOk, wordOk, allOk });
     speakGerman(currentWord.word, currentWord.article);
 
+    const typedFull = `${needsArticle ? selectedArticle + ' ' : ''}${typedWord}`;
+    const reason = !articleOk ? 'article' : !wordOk ? 'spelling' : 'ok';
+    recordSessionAttempt(currentWord, allOk, typedFull, reason);
+
     if (allOk) {
       touchDailyStreak();
       addXpAndCoins(25);
       setPet((prev) => ({ ...prev, spellingDone: (prev.spellingDone || 0) + 1 }));
       setCatReaction('Perfekt! Бездоганний правопис! +25 монет 😻');
-      if (!learnedIds.includes(currentWord.id)) {
+      if (!practiceCustomMode && !learnedIds.includes(currentWord.id)) {
         setLearnedIds((prev) => [...prev, currentWord.id]);
       }
     } else {
       setCatReaction('Майже! Зверни увагу на артикль і велику літеру 🐾');
     }
+  };
+
+  const handlePracticeMistakesOnly = () => {
+    const wrongWords = sessionResults.filter((r) => !r.isCorrect).map((r) => r.wordObj);
+    if (wrongWords.length === 0) return;
+    setMistakeOnlyWords(wrongWords);
+    setSessionResults([]);
+    setShowSessionSummary(false);
+    setCurrentIndex(0);
+    setQuizAnswer(null);
+    setSelectedArticle('');
+    setSpellingInput('');
+    setSpellingResult(null);
   };
 
   const getRank = () => {
@@ -1208,7 +1592,9 @@ export default function App() {
     coinsSpent: pet.coinsSpent || 0,
     hintsUsed: pet.hintsUsed || 0,
     spellingDone: pet.spellingDone || 0,
-  }), [xp, coins, learnedIds.length, streak, isPro, learnedWordsList, pet, catStageInfo.current.level, ownedAccessoriesCount]);
+    sentencesDone: pet.sentencesDone || 0,
+    customWordsCount: customWords.length,
+  }), [xp, coins, learnedIds.length, streak, isPro, learnedWordsList, pet, catStageInfo.current.level, ownedAccessoriesCount, customWords.length]);
 
   const userAchievements = useMemo(() => {
     return ACHIEVEMENTS.map((ach) => {
@@ -1267,7 +1653,11 @@ export default function App() {
     if (learnedWordsList.length === 0) return;
     setPracticeLevelFilter(dictLevelFilter);
     setPracticeAllLearnedMode(true);
+    setPracticeCustomMode(false);
     setReviewLearnedInModule(false);
+    setMistakeOnlyWords(null);
+    setSessionResults([]);
+    setShowSessionSummary(false);
     setMode('quiz');
     setCurrentIndex(0);
     setIsFlipped(false);
@@ -1304,9 +1694,13 @@ export default function App() {
   };
 
   const currentPlanObj = PLANS.find((p) => p.id === selectedPlan) || PLANS[1];
-  const hasMoreWordsInPro = !isPro && !practiceAllLearnedMode && allCategoryWords.length > availableModuleWords.length;
+  const hasMoreWordsInPro = !isPro && !practiceAllLearnedMode && !practiceCustomMode && !mistakeOnlyWords && allCategoryWords.length > availableModuleWords.length;
   const currentNeedsArticle = currentWord ? ARTICLES.includes((currentWord.article || '').toLowerCase()) : false;
   const activeLevelTheme = LEVEL_STYLES[selectedLevel] || LEVEL_STYLES.A1;
+
+  const sessionCorrectCount = sessionResults.filter((r) => r.isCorrect).length;
+  const sessionWrongList = sessionResults.filter((r) => !r.isCorrect);
+  const sessionAccuracy = sessionResults.length > 0 ? Math.round((sessionCorrectCount / sessionResults.length) * 100) : 0;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col">
@@ -1435,15 +1829,15 @@ export default function App() {
                 </p>
               </div>
               <div className="bg-white/10 rounded-2xl p-3 space-y-1">
-                <div className="font-extrabold text-emerald-300">2. Тренуйся у 3 режимах</div>
+                <div className="font-extrabold text-emerald-300">2. Тренуйся у 4 режимах</div>
                 <p className="text-slate-300 leading-snug">
-                  Гортай картки з озвученням, проходь швидкі тести та тренуй правильні артиклі у «Правописі».
+                  Картки, тести з розбором помилок, правопис з артиклями та складання власних речень із голосом.
                 </p>
               </div>
               <div className="bg-white/10 rounded-2xl p-3 space-y-1">
                 <div className="font-extrabold text-sky-300">3. Заробляй монети 🪙</div>
                 <p className="text-slate-300 leading-snug">
-                  За кожне слово отримуй XP і монети — годуй кота {pet.name}, відкривай 36 ачівок і бери підказки.
+                  Годуй кота {pet.name}, збирай преміум-аксесуари, відкривай 46 ачівок і веди власний словник.
                 </p>
               </div>
             </div>
@@ -1506,12 +1900,13 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            {currentWord && (mode === 'quiz' || mode === 'spelling') && (
+            {currentWord && !showSessionSummary && (mode === 'quiz' || mode === 'spelling' || mode === 'sentence') && (
               <button
                 type="button"
                 onClick={handleRequestCatHint}
                 disabled={Boolean(activeHint)}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 disabled:opacity-50 text-amber-950 text-xs font-bold transition"
+                title="Ціна підказки зростає на +20 🪙 після кожного використання за день"
               >
                 <Lightbulb className="w-3.5 h-3.5 text-amber-600" />
                 <span>{hintCost === 0 ? 'Підказка (0 🪙)' : `Підказка (${hintCost} 🪙)`}</span>
@@ -1523,7 +1918,7 @@ export default function App() {
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition"
             >
               <ShoppingBag className="w-3.5 h-3.5 text-amber-400" />
-              <span>Погодувати</span>
+              <span>Крамничка</span>
             </button>
           </div>
         </section>
@@ -1548,7 +1943,7 @@ export default function App() {
 
           <div className="grid grid-cols-4 gap-2.5">
             {LEVELS.map((lvl) => {
-              const active = !practiceAllLearnedMode && selectedLevel === lvl;
+              const active = !practiceAllLearnedMode && !practiceCustomMode && !mistakeOnlyWords && selectedLevel === lvl;
               const theme = LEVEL_STYLES[lvl] || LEVEL_STYLES.A1;
               return (
                 <button
@@ -1571,7 +1966,7 @@ export default function App() {
             <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-2.5">2. Обери ціль та категорію</h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               {CATEGORIES.map((cat) => {
-                const active = !practiceAllLearnedMode && selectedCategory === cat.id;
+                const active = !practiceAllLearnedMode && !practiceCustomMode && !mistakeOnlyWords && selectedCategory === cat.id;
                 const catWordsCount = vocabulary.filter((w) => w.level === selectedLevel && w.category === cat.id).length;
                 return (
                   <button
@@ -1604,37 +1999,49 @@ export default function App() {
           <div className="flex flex-wrap items-center gap-2">
             <div className="inline-flex flex-wrap bg-slate-200/70 p-1 rounded-xl gap-1">
               <button
-                onClick={() => setMode('cards')}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition ${
+                onClick={() => handleModeChange('cards')}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition ${
                   mode === 'cards' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <BookOpen className="w-4 h-4" /> Картки
               </button>
               <button
-                onClick={() => setMode('quiz')}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition ${
+                onClick={() => handleModeChange('quiz')}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition ${
                   mode === 'quiz' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <BrainCircuit className="w-4 h-4" /> Тест (+20)
               </button>
               <button
-                onClick={() => setMode('spelling')}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition ${
+                onClick={() => handleModeChange('spelling')}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition ${
                   mode === 'spelling' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <Keyboard className="w-4 h-4" /> Правопис (+25)
               </button>
+              <button
+                onClick={() => handleModeChange('sentence')}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition ${
+                  mode === 'sentence' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Mic className="w-4 h-4 text-rose-500" /> Речення (+30)
+              </button>
             </div>
 
-            {(reviewLearnedInModule || practiceAllLearnedMode) && (
+            {(reviewLearnedInModule || practiceAllLearnedMode || practiceCustomMode || mistakeOnlyWords) && (
               <button
                 type="button"
                 onClick={() => {
                   setReviewLearnedInModule(false);
                   setPracticeAllLearnedMode(false);
+                  setPracticeCustomMode(false);
+                  setMistakeOnlyWords(null);
+                  setSessionResults([]);
+                  setShowSessionSummary(false);
                   setCurrentIndex(0);
                   setIsFlipped(false);
                 }}
@@ -1645,15 +2052,19 @@ export default function App() {
             )}
           </div>
 
-          <div className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-slate-500">
+          <div className="flex items-center gap-2 text-xs sm:text-sm font-medium text-slate-500">
             {loading && <Loader2 className="w-4 h-4 animate-spin text-amber-600" />}
             {filteredWords.length > 0 ? (
               <span>
-                {practiceAllLearnedMode
-                  ? `Тренування словника${practiceLevelFilter !== 'ALL' ? ` (${practiceLevelFilter})` : ''}: `
-                  : reviewLearnedInModule
-                    ? 'Повторення: слово '
-                    : 'Нове слово '}
+                {mistakeOnlyWords
+                  ? 'Робота над помилками: '
+                  : practiceCustomMode
+                    ? 'Мій словник: '
+                    : practiceAllLearnedMode
+                      ? `Тренування словника${practiceLevelFilter !== 'ALL' ? ` (${practiceLevelFilter})` : ''}: `
+                      : reviewLearnedInModule
+                        ? 'Повторення: слово '
+                        : 'Слово '}
                 <strong className="text-slate-900">{currentIndex + 1}</strong> з {filteredWords.length}
                 {hasMoreWordsInPro && (
                   <button onClick={() => setShowPaywall(true)} className="ml-1.5 text-amber-700 font-semibold hover:underline">
@@ -1664,10 +2075,108 @@ export default function App() {
             ) : (
               <span>Нових слів у доступі: <strong className="text-slate-900">0</strong></span>
             )}
+
+            {(mode === 'quiz' || mode === 'spelling') && sessionResults.length > 0 && !showSessionSummary && (
+              <button
+                type="button"
+                onClick={() => setShowSessionSummary(true)}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition"
+              >
+                <ClipboardList className="w-3.5 h-3.5 text-amber-400" />
+                <span>Розбір ({sessionResults.length})</span>
+              </button>
+            )}
           </div>
         </div>
 
-        {!currentWord && (
+        {/* Підсумковий розбір результатів Тесту або Правопису */}
+        {showSessionSummary && (mode === 'quiz' || mode === 'spelling') && (
+          <section className="bg-white border-2 border-slate-900 rounded-3xl p-6 sm:p-8 shadow-lg space-y-5">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
+              <div>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 text-xs font-extrabold">
+                  <ClipboardList className="w-3.5 h-3.5" /> Підсумок тренування
+                </span>
+                <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1">
+                  Результат: {sessionCorrectCount} з {sessionResults.length} ({sessionAccuracy}%)
+                </h3>
+              </div>
+
+              <div className="flex items-center gap-2 text-center">
+                <div className="px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200">
+                  <div className="text-sm font-extrabold text-emerald-700">{sessionCorrectCount}</div>
+                  <div className="text-[10px] font-bold text-emerald-600 uppercase">Вірно</div>
+                </div>
+                <div className="px-3 py-1.5 rounded-xl bg-rose-50 border border-rose-200">
+                  <div className="text-sm font-extrabold text-rose-700">{sessionWrongList.length}</div>
+                  <div className="text-[10px] font-bold text-rose-600 uppercase">Помилки</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-amber-50/90 border border-amber-200 rounded-2xl p-4 space-y-1">
+              <div className="text-xs font-extrabold text-amber-950 uppercase tracking-wider">💡 На що звернути увагу далі</div>
+              <p className="text-xs sm:text-sm text-amber-900 leading-relaxed">{buildSessionAdvice(sessionResults)}</p>
+            </div>
+
+            {sessionWrongList.length > 0 && (
+              <div className="space-y-2.5">
+                <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
+                  Слова, де були помилки ({sessionWrongList.length}):
+                </h4>
+                <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl bg-slate-50/70">
+                  {sessionWrongList.map((item, idx) => (
+                    <div key={idx} className="p-3.5 flex items-center justify-between gap-3 text-xs">
+                      <div className="space-y-0.5 min-w-0">
+                        <div className="font-extrabold text-slate-900">
+                          {item.wordObj.article ? `${item.wordObj.article} ` : ''}{item.wordObj.word}
+                          <span className="font-normal text-slate-500 ml-1.5">— {item.wordObj.translation}</span>
+                        </div>
+                        <div className="text-[11px] text-rose-600">
+                          Твоя відповідь: <strong>«{item.userAnswerText}»</strong>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => speakGerman(item.wordObj.word, item.wordObj.article)}
+                        className="p-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 shrink-0 transition"
+                        title="Прослухати правильну вимову"
+                      >
+                        <Volume2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex flex-wrap items-center justify-end gap-2.5 pt-2">
+              {sessionWrongList.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handlePracticeMistakesOnly}
+                  className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs sm:text-sm transition"
+                >
+                  Відпрацювати лише помилки ({sessionWrongList.length})
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  setMistakeOnlyWords(null);
+                  setSessionResults([]);
+                  setShowSessionSummary(false);
+                  setCurrentIndex(0);
+                }}
+                className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm transition"
+              >
+                Продовжити навчання
+              </button>
+            </div>
+          </section>
+        )}
+
+        {!showSessionSummary && !currentWord && (
           <section className="bg-white border border-slate-200 rounded-3xl p-8 text-center space-y-4 shadow-sm">
             <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto">
               <CheckCircle2 className="w-6 h-6" />
@@ -1681,7 +2190,7 @@ export default function App() {
               <p className="text-sm text-slate-600 max-w-md mx-auto">
                 {hasMoreWordsInPro
                   ? `Ти вже вивчив усі 5 безкоштовних слів у цій категорії (загалом доступно 60 безкоштовних слів по всіх рівнях і категоріях). Відкрий PRO, щоб отримати доступ до всіх ${allCategoryWords.length} слів категорії.`
-                  : 'Вивчені слова вже збережені у твоєму кабінеті. Можеш повторити їх тут або відкрити повний список у кабінеті учня.'}
+                  : 'Вивчені слова вже збережені у твоєму кабінеті. Можеш повторити їх тут або додати власні слова у приватному словнику.'}
               </p>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
@@ -1706,17 +2215,17 @@ export default function App() {
               {user && (
                 <button
                   type="button"
-                  onClick={() => openProfileDrawer('dictionary')}
+                  onClick={() => { setDictSubTab('custom'); openProfileDrawer('dictionary'); }}
                   className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs sm:text-sm transition"
                 >
-                  Мій словник
+                  Мій власний словник
                 </button>
               )}
             </div>
           </section>
         )}
 
-        {currentWord && mode === 'cards' && (
+        {!showSessionSummary && currentWord && mode === 'cards' && (
           <section className="space-y-4">
             <div
               onClick={() => setIsFlipped(!isFlipped)}
@@ -1724,7 +2233,7 @@ export default function App() {
             >
               <div className="flex items-center justify-between">
                 <span className={`px-3 py-1 rounded-full text-xs font-extrabold border ${(LEVEL_STYLES[currentWord.level] || LEVEL_STYLES.A1).badge}`}>
-                  {currentWord.level} • {CATEGORIES.find((c) => c.id === currentWord.category)?.label}
+                  {currentWord.level === 'OWN' ? 'Мій словник' : `${currentWord.level} • ${CATEGORIES.find((c) => c.id === currentWord.category)?.label}`}
                 </span>
                 <button
                   onClick={(e) => {
@@ -1752,21 +2261,23 @@ export default function App() {
                 {isFlipped ? (
                   <div className="pt-6 mt-6 border-t border-slate-100 space-y-3">
                     <p className="text-2xl font-bold text-amber-600">{currentWord.translation}</p>
-                    <div className="bg-slate-50 p-4 rounded-2xl max-w-lg mx-auto text-left space-y-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-sm font-semibold text-slate-800">«{currentWord.example}»</p>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            speakGerman(currentWord.example);
-                          }}
-                          className="text-slate-400 hover:text-amber-600 p-1"
-                        >
-                          <Volume2 className="w-4 h-4" />
-                        </button>
+                    {currentWord.example && (
+                      <div className="bg-slate-50 p-4 rounded-2xl max-w-lg mx-auto text-left space-y-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-sm font-semibold text-slate-800">«{currentWord.example}»</p>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              speakGerman(currentWord.example);
+                            }}
+                            className="text-slate-400 hover:text-amber-600 p-1"
+                          >
+                            <Volume2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                        {currentWord.exampleUa && <p className="text-xs text-slate-500">{currentWord.exampleUa}</p>}
                       </div>
-                      <p className="text-xs text-slate-500">{currentWord.exampleUa}</p>
-                    </div>
+                    )}
                   </div>
                 ) : (
                   <p className="text-xs text-slate-400 pt-6">Натисни на картку, щоб побачити переклад і приклад</p>
@@ -1774,7 +2285,7 @@ export default function App() {
               </div>
 
               <div className="flex justify-center">
-                {isCurrentLearned && (
+                {isCurrentLearned && !practiceCustomMode && (
                   <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600">
                     <CheckCircle2 className="w-3.5 h-3.5" /> Вивчено
                   </span>
@@ -1787,18 +2298,18 @@ export default function App() {
                 <RotateCcw className="w-4 h-4" /> Повторити пізніше
               </button>
               <button onClick={handleMarkLearned} className="flex-1 py-3.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition flex items-center justify-center gap-2 shadow-sm">
-                <span>{isCurrentLearned ? 'Закріпити (+5 🪙)' : 'Знаю (+15 🪙)'}</span>
+                <span>{isCurrentLearned || practiceCustomMode ? 'Закріпити (+5 🪙)' : 'Знаю (+15 🪙)'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </section>
         )}
 
-        {currentWord && mode === 'quiz' && (
+        {!showSessionSummary && currentWord && mode === 'quiz' && (
           <section className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
             <div className="flex items-center justify-between gap-2">
               <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-extrabold border ${(LEVEL_STYLES[currentWord.level] || LEVEL_STYLES.A1).badge}`}>
-                {currentWord.level} • Обери переклад
+                {currentWord.level === 'OWN' ? 'Мій словник' : currentWord.level} • Обери переклад
               </span>
               <div className="flex items-center gap-2">
                 <button
@@ -1807,7 +2318,7 @@ export default function App() {
                   disabled={Boolean(activeHint)}
                   className="flex items-center gap-1 text-xs font-bold text-amber-800 bg-amber-100 px-3 py-1.5 rounded-full hover:bg-amber-200 disabled:opacity-50"
                 >
-                  <Lightbulb className="w-3.5 h-3.5" /> {hintCost === 0 ? 'Підказка' : `${hintCost} 🪙`}
+                  <Lightbulb className="w-3.5 h-3.5" /> {hintCost === 0 ? 'Підказка (0 🪙)' : `Підказка (${hintCost} 🪙)`}
                 </button>
                 <button onClick={() => speakGerman(currentWord.word, currentWord.article)} className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-full hover:bg-amber-100">
                   <Volume2 className="w-4 h-4" /> Озвучити
@@ -1850,16 +2361,23 @@ export default function App() {
             </div>
 
             {quizAnswer && (
-              <div className="pt-2 flex justify-end">
+              <div className="pt-2 flex flex-wrap items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowSessionSummary(true)}
+                  className="text-xs font-bold text-slate-600 hover:text-slate-900 underline"
+                >
+                  Завершити й переглянути розбір
+                </button>
                 <button onClick={goToNextWord} className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 rounded-xl font-semibold flex items-center gap-2">
-                  Наступне слово <ArrowRight className="w-4 h-4" />
+                  {currentIndex + 1 >= filteredWords.length ? 'Завершити і розібрати' : 'Наступне слово'} <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
             )}
           </section>
         )}
 
-        {currentWord && mode === 'spelling' && (
+        {!showSessionSummary && currentWord && mode === 'spelling' && (
           <section className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
@@ -1872,7 +2390,7 @@ export default function App() {
                   disabled={Boolean(activeHint) || Boolean(spellingResult)}
                   className="flex items-center gap-1 text-xs font-bold text-amber-800 bg-amber-100 px-3 py-1.5 rounded-full hover:bg-amber-200 disabled:opacity-50"
                 >
-                  <Lightbulb className="w-3.5 h-3.5" /> {hintCost === 0 ? 'Підказка' : `${hintCost} 🪙`}
+                  <Lightbulb className="w-3.5 h-3.5" /> {hintCost === 0 ? 'Підказка (0 🪙)' : `Підказка (${hintCost} 🪙)`}
                 </button>
                 <button
                   type="button"
@@ -1893,7 +2411,7 @@ export default function App() {
 
             <div className="text-center py-3 space-y-1.5">
               <span className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-extrabold border ${(LEVEL_STYLES[currentWord.level] || LEVEL_STYLES.A1).badge}`}>
-                {currentWord.level} • {CATEGORIES.find((c) => c.id === currentWord.category)?.label}
+                {currentWord.level === 'OWN' ? 'Мій словник' : `${currentWord.level} • ${CATEGORIES.find((c) => c.id === currentWord.category)?.label}`}
               </span>
               <h3 className="text-2xl sm:text-4xl font-extrabold text-slate-900">{currentWord.translation}</h3>
               <p className="text-xs text-slate-400">Іменники пиши з великої літери (напр. Kumpel)</p>
@@ -2031,18 +2549,261 @@ export default function App() {
                     )}
                   </div>
 
-                  <div className="flex justify-end pt-1">
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setShowSessionSummary(true)}
+                      className="text-xs font-bold text-slate-700 hover:text-slate-900 underline"
+                    >
+                      Розбір помилок ({sessionResults.length})
+                    </button>
                     <button
                       type="button"
                       onClick={goToNextWord}
                       className="bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2"
+                    >
+                      {currentIndex + 1 >= filteredWords.length ? 'Завершити і розібрати' : 'Наступне слово'} <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </form>
+          </section>
+        )}
+
+        {!showSessionSummary && currentWord && mode === 'sentence' && (
+          <section className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-extrabold border ${(LEVEL_STYLES[currentWord.level] || LEVEL_STYLES.A1).badge}`}>
+                  {currentWord.level === 'OWN' ? 'Мій словник' : currentWord.level} • Практика мовлення
+                </span>
+                {!isPro && (
+                  <span className="text-[11px] font-semibold text-slate-500">
+                    Сьогодні: {Math.max(0, FREE_DAILY_SENTENCE_LIMIT - sentenceUsageToday)}/{FREE_DAILY_SENTENCE_LIMIT} безкоштовно
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleRequestCatHint}
+                  disabled={Boolean(activeHint)}
+                  className="flex items-center gap-1 text-xs font-bold text-amber-800 bg-amber-100 px-3 py-1.5 rounded-full hover:bg-amber-200 disabled:opacity-50"
+                >
+                  <Lightbulb className="w-3.5 h-3.5" /> {hintCost === 0 ? 'Підказка (0 🪙)' : `Підказка (${hintCost} 🪙)`}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => speakGerman(currentWord.word, currentWord.article)}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-full hover:bg-amber-100"
+                >
+                  <Volume2 className="w-4 h-4" /> Послухати слово
+                </button>
+              </div>
+            </div>
+
+            {activeHint && (
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-2.5 text-xs text-amber-950 font-medium flex items-center gap-2">
+                <span>{catStageInfo.current.emoji}</span>
+                <span>{activeHint}</span>
+              </div>
+            )}
+
+            <div className="text-center space-y-1.5 py-2">
+              <p className="text-xs font-semibold text-slate-500">Склади власне речення німецькою зі словом:</p>
+              <h3 className="text-2xl sm:text-4xl font-extrabold text-slate-900">
+                {currentWord.article && <span className="text-slate-400 font-semibold mr-2">{currentWord.article}</span>}
+                {currentWord.word}
+              </h3>
+              <p className="text-sm font-medium text-amber-700">({currentWord.translation})</p>
+            </div>
+
+            <div className="max-w-lg mx-auto space-y-4">
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="text-center sm:text-left">
+                  <div className="text-xs font-extrabold text-slate-900">
+                    {isRecordingAudio ? 'Йде запис голосу... Говори німецькою!' : 'Варіант А: Сказати голосом'}
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    ШІ перевірить вимову, інтонацію та граматику
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={handleToggleAudioRecording}
+                    className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition shadow-xs ${
+                      isRecordingAudio
+                        ? 'bg-rose-600 hover:bg-rose-700 text-white animate-pulse'
+                        : 'bg-slate-900 hover:bg-slate-800 text-white'
+                    }`}
+                  >
+                    {isRecordingAudio ? (
+                      <>
+                        <Square className="w-3.5 h-3.5 fill-white" /> Зупинити запис
+                      </>
+                    ) : (
+                      <>
+                        <Mic className="w-4 h-4 text-rose-400" /> {recordedAudio ? 'Перезаписати' : 'Записати голос'}
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {recordedAudio && (
+                <div className="bg-emerald-50/70 border border-emerald-200 rounded-2xl p-3 flex items-center justify-between gap-2">
+                  <audio controls src={recordedAudio.url} className="h-8 flex-1" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      URL.revokeObjectURL(recordedAudio.url);
+                      setRecordedAudio(null);
+                    }}
+                    className="p-1.5 rounded-lg bg-white text-slate-500 hover:text-rose-600 border border-slate-200"
+                    title="Видалити запис"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+
+              <form onSubmit={handleAnalyzeSentence} className="space-y-3">
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-500">
+                    Варіант Б: Або напиши речення текстом
+                  </label>
+                  <textarea
+                    ref={sentenceInputRef}
+                    rows={2}
+                    maxLength={250}
+                    value={sentenceText}
+                    onChange={(e) => setSentenceText(e.target.value)}
+                    placeholder={`Наприклад: Mein ${currentWord.word} ...`}
+                    className="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 focus:border-amber-400 focus:outline-none text-sm font-medium text-slate-900 bg-slate-50/60 resize-none"
+                  />
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-[11px] text-slate-400 mr-1">Умлаути:</span>
+                    {UMLAUT_CHARS.map((char) => (
+                      <button
+                        key={char}
+                        type="button"
+                        onClick={() => handleInsertSentenceUmlaut(char)}
+                        className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-amber-100 hover:text-amber-900 border border-slate-200 text-xs font-bold text-slate-700 transition"
+                      >
+                        {char}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {sentenceError && (
+                  <p className="text-xs font-semibold text-rose-600 bg-rose-50 border border-rose-200 rounded-xl px-3.5 py-2.5">
+                    {sentenceError}
+                  </p>
+                )}
+
+                <div className="flex items-center gap-2.5">
+                  <button
+                    type="button"
+                    onClick={goToNextWord}
+                    className="py-3 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-xs sm:text-sm font-semibold text-slate-600 transition"
+                  >
+                    Інше слово
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={analyzingSentence || isRecordingAudio || (!sentenceText.trim() && !recordedAudio)}
+                    className="flex-1 py-3 px-5 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-slate-950 font-extrabold text-sm transition shadow-sm flex items-center justify-center gap-2"
+                  >
+                    {analyzingSentence ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" /> Перевіряю вимову та граматику...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4" /> Перевірити з ШІ (+30 🪙)
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+
+              {sentenceAnalysis && (
+                <div className="bg-slate-900 text-white rounded-3xl p-5 space-y-4 shadow-lg">
+                  <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-3">
+                    <div className="flex items-center gap-2">
+                      {sentenceAnalysis.usedTargetWord && sentenceAnalysis.isCorrect ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-extrabold">
+                          <CheckCircle2 className="w-4 h-4" /> Чудово! +30 XP • +30 🪙
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-extrabold">
+                          <Sparkles className="w-4 h-4" /> Розбір від викладача
+                        </span>
+                      )}
+                    </div>
+                    {sentenceAnalysis.correctedSentence && (
+                      <button
+                        type="button"
+                        onClick={() => speakGerman(sentenceAnalysis.correctedSentence)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 text-amber-300 text-xs font-bold transition"
+                        title="Послухати правильний варіант"
+                      >
+                        <Volume2 className="w-3.5 h-3.5" /> Вимова
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="space-y-2.5 text-xs leading-relaxed">
+                    <div className="bg-white/5 rounded-2xl p-3">
+                      <div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-0.5">Що прозвучало / написано</div>
+                      <div className="text-sm font-bold text-white">«{sentenceAnalysis.transcript}»</div>
+                    </div>
+
+                    <div className="bg-white/5 rounded-2xl p-3">
+                      <div className="text-[10px] uppercase tracking-wider text-rose-300 font-bold mb-0.5">🎙️ Вимова та звучання</div>
+                      <p className="text-slate-200">{sentenceAnalysis.pronunciation}</p>
+                    </div>
+
+                    <div className="bg-white/5 rounded-2xl p-3">
+                      <div className="text-[10px] uppercase tracking-wider text-amber-300 font-bold mb-0.5">✍️ Граматика та слова</div>
+                      <p className="text-slate-200">{sentenceAnalysis.grammarFeedback}</p>
+                      {sentenceAnalysis.correctedSentence && (
+                        <div className="mt-2 pt-2 border-t border-white/10 flex items-center justify-between gap-2">
+                          <span className="text-emerald-300 font-bold">✓ {sentenceAnalysis.correctedSentence}</span>
+                          <button
+                            type="button"
+                            onClick={() => speakGerman(sentenceAnalysis.correctedSentence)}
+                            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white shrink-0"
+                          >
+                            <Volume2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="bg-white/5 rounded-2xl p-3">
+                      <div className="text-[10px] uppercase tracking-wider text-sky-300 font-bold mb-0.5">💬 Контекст і стиль вживання</div>
+                      <p className="text-slate-200">{sentenceAnalysis.contextAdvice}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end pt-1">
+                    <button
+                      type="button"
+                      onClick={goToNextWord}
+                      className="px-5 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs inline-flex items-center gap-1.5 transition"
                     >
                       Наступне слово <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
               )}
-            </form>
+            </div>
           </section>
         )}
       </main>
@@ -2058,7 +2819,7 @@ export default function App() {
         </div>
       </footer>
 
-      {/* Плаваюча плашка ШІ-помічника в правому нижньому куті */}
+      {/* Плаваюча плашка ШІ-помічника */}
       <div className="fixed bottom-4 right-4 z-40 flex flex-col items-end">
         {showAiChat && (
           <div className="mb-3 w-[calc(100vw-2rem)] sm:w-96 bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden flex flex-col max-h-[72vh]">
@@ -2337,7 +3098,7 @@ export default function App() {
                     profileTab === 'dictionary' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  Словник ({learnedWordsList.length})
+                  Словник ({learnedWordsList.length + customWords.length})
                 </button>
               </div>
             </div>
@@ -2414,7 +3175,7 @@ export default function App() {
                         </div>
                         <p className="text-[10px] text-slate-400">
                           {(pet.hunger ?? 80) >= 70
-                            ? 'Від 70% — 1 безкоштовна підказка на день (-10%/добу без їжі)'
+                            ? 'Від 70% — 1-ша підказка безкоштовно, далі +20 🪙'
                             : 'Погодуй до 70% для бонусу (-10%/добу без їжі)'}
                         </p>
                       </div>
@@ -2441,8 +3202,8 @@ export default function App() {
 
                   <div className="space-y-2.5">
                     <div className="flex items-center justify-between">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">Крамничка смаколиків та аксесуарів</h4>
-                      <span className="text-xs font-bold text-amber-700">Твій баланс: {coins} 🪙</span>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">Крамничка їжі та преміум-аксесуарів</h4>
+                      <span className="text-xs font-bold text-amber-700">Баланс: {coins} 🪙</span>
                     </div>
 
                     <div className="grid grid-cols-1 gap-2">
@@ -2460,7 +3221,14 @@ export default function App() {
                             <div className="flex items-center gap-3 min-w-0">
                               <span className="text-2xl shrink-0">{item.icon}</span>
                               <div className="min-w-0">
-                                <div className="text-xs font-extrabold text-slate-900 truncate">{item.name}</div>
+                                <div className="text-xs font-extrabold text-slate-900 truncate flex items-center gap-1.5">
+                                  <span>{item.name}</span>
+                                  {item.price >= 1000 && (
+                                    <span className="px-1.5 py-0.2 rounded bg-violet-100 text-violet-800 text-[9px] font-black">
+                                      VIP
+                                    </span>
+                                  )}
+                                </div>
                                 <div className="text-[11px] text-slate-500 leading-snug">{item.desc}</div>
                               </div>
                             </div>
@@ -2648,99 +3416,247 @@ export default function App() {
               )}
 
               {profileTab === 'dictionary' && (
-                <div className="space-y-3">
-                  {learnedWordsList.length > 0 && (
+                <div className="space-y-3.5">
+                  {/* Перемикач: вивчені з бази vs власний приватний словник учня */}
+                  <div className="grid grid-cols-2 gap-1.5 bg-slate-100 p-1 rounded-xl">
                     <button
                       type="button"
-                      onClick={handleStartLearnedQuizFromProfile}
-                      className="w-full py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition shadow-xs"
+                      onClick={() => setDictSubTab('base')}
+                      className={`py-2 px-2 rounded-lg text-xs font-bold transition ${
+                        dictSubTab === 'base' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                      }`}
                     >
-                      <BrainCircuit className="w-4 h-4" />
-                      <span>
-                        Тренувати лише вивчені (Тест{dictLevelFilter !== 'ALL' ? ` • ${dictLevelFilter}` : ''})
-                      </span>
+                      Вивчені з бази ({learnedWordsList.length})
                     </button>
-                  )}
-
-                  <div className="flex flex-col gap-2">
-                    <div className="relative">
-                      <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="text"
-                        value={dictSearch}
-                        onChange={(e) => setDictSearch(e.target.value)}
-                        placeholder="Пошук слова або перекладу..."
-                        className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-amber-400"
-                      />
-                    </div>
-                    <div className="flex items-center gap-1 overflow-x-auto">
-                      {['ALL', ...LEVELS].map((lvl) => (
-                        <button
-                          key={lvl}
-                          type="button"
-                          onClick={() => setDictLevelFilter(lvl)}
-                          className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition shrink-0 ${
-                            dictLevelFilter === lvl
-                              ? 'bg-slate-900 text-white'
-                              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                          }`}
-                        >
-                          {lvl === 'ALL' ? 'Усі' : lvl}
-                        </button>
-                      ))}
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setDictSubTab('custom')}
+                      className={`py-2 px-2 rounded-lg text-xs font-bold transition ${
+                        dictSubTab === 'custom' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Мій власний ({customWords.length})
+                    </button>
                   </div>
 
-                  {learnedWordsList.length === 0 ? (
-                    <p className="text-xs text-slate-400 bg-slate-50 border border-slate-200 rounded-2xl p-6 text-center">
-                      Ти ще не додав вивчених слів. Натискай «Знаю це слово» або проходь тести, щоб вони з’явилися тут.
-                    </p>
-                  ) : filteredDictionaryWords.length === 0 ? (
-                    <p className="text-xs text-slate-400 bg-slate-50 border border-slate-200 rounded-2xl p-6 text-center">
-                      За твоїм запитом слів не знайдено.
-                    </p>
-                  ) : (
-                    <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl bg-slate-50/60">
-                      {filteredDictionaryWords.map((w) => (
-                        <div key={w.id} className="flex items-center justify-between gap-2 px-3.5 py-2.5 text-xs">
-                          <div className="min-w-0">
-                            <span className="font-bold text-slate-900">
-                              {w.article ? `${w.article} ` : ''}{w.word}
-                            </span>
-                            <span className="text-slate-500 ml-1.5">— {w.translation}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <button
-                              type="button"
-                              onClick={() => speakGerman(w.word, w.article)}
-                              className="p-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 transition"
-                              title="Повторити вимову"
-                            >
-                              <Volume2 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setPracticeAllLearnedMode(false);
-                                setSelectedLevel(w.level);
-                                setSelectedCategory(w.category);
-                                setReviewLearnedInModule(true);
-                                setMode('cards');
-                                setCurrentIndex(0);
-                                setIsFlipped(false);
-                                setShowProfileDrawer(false);
-                              }}
-                              className="px-2 py-1 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-[10px] font-bold text-slate-700 transition"
-                            >
-                              Повторити
-                            </button>
-                            <span className={`px-1.5 py-0.5 rounded-md border text-[10px] font-extrabold ${(LEVEL_STYLES[w.level] || LEVEL_STYLES.A1).badge}`}>
-                              {w.level}
-                            </span>
-                          </div>
+                  {dictSubTab === 'custom' ? (
+                    <div className="space-y-4">
+                      <div className="bg-rose-50/70 border border-rose-200 rounded-2xl p-3 text-[11px] text-rose-900 leading-relaxed">
+                        <strong>Твій особистий словник.</strong> Додавай сюди будь-які свої слова зі занять чи книг — вони збережені приватно лише для тебе, і ти можеш тренувати їх на картках, у тесті та правописі.
+                      </div>
+
+                      <form onSubmit={handleAddCustomWord} className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 space-y-2.5">
+                        <div className="text-xs font-extrabold text-slate-800">Додати нове слово:</div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <select
+                            value={newCustomArticle}
+                            onChange={(e) => setNewCustomArticle(e.target.value)}
+                            className="px-2.5 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-800 focus:outline-none focus:border-amber-400"
+                          >
+                            <option value="">Без артикля</option>
+                            <option value="der">der</option>
+                            <option value="die">die</option>
+                            <option value="das">das</option>
+                          </select>
+                          <input
+                            type="text"
+                            required
+                            maxLength={60}
+                            value={newCustomWord}
+                            onChange={(e) => setNewCustomWord(e.target.value)}
+                            placeholder="Німецьке слово..."
+                            className="col-span-2 px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-900 focus:outline-none focus:border-amber-400"
+                          />
                         </div>
-                      ))}
+                        <input
+                          type="text"
+                          required
+                          maxLength={100}
+                          value={newCustomTranslation}
+                          onChange={(e) => setNewCustomTranslation(e.target.value)}
+                          placeholder="Переклад українською..."
+                          className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs text-slate-900 focus:outline-none focus:border-amber-400"
+                        />
+                        <input
+                          type="text"
+                          maxLength={160}
+                          value={newCustomExample}
+                          onChange={(e) => setNewCustomExample(e.target.value)}
+                          placeholder="Приклад речення (необов’язково)..."
+                          className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs text-slate-700 focus:outline-none focus:border-amber-400"
+                        />
+                        <button
+                          type="submit"
+                          disabled={!newCustomWord.trim() || !newCustomTranslation.trim()}
+                          className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition"
+                        >
+                          <Plus className="w-4 h-4 text-amber-400" /> Зберегти у мій словник
+                        </button>
+                      </form>
+
+                      {customWords.length > 0 && (
+                        <div className="grid grid-cols-3 gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleStartCustomPractice('cards')}
+                            className="py-2 px-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold text-[11px] transition"
+                          >
+                            Картки ({customWords.length})
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleStartCustomPractice('quiz')}
+                            className="py-2 px-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-[11px] transition"
+                          >
+                            Тест
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleStartCustomPractice('spelling')}
+                            className="py-2 px-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-[11px] transition"
+                          >
+                            Правопис
+                          </button>
+                        </div>
+                      )}
+
+                      {customWords.length === 0 ? (
+                        <p className="text-xs text-slate-400 bg-slate-50 border border-slate-200 rounded-2xl p-6 text-center">
+                          У твоєму приватному словнику поки немає слів. Додай перше слово у формі вище!
+                        </p>
+                      ) : (
+                        <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl bg-slate-50/60">
+                          {customWords.map((cw) => (
+                            <div key={cw.id} className="flex items-center justify-between gap-2 px-3.5 py-2.5 text-xs">
+                              <div className="min-w-0">
+                                <div className="font-bold text-slate-900 truncate">
+                                  {cw.article ? `${cw.article} ` : ''}{cw.word}
+                                  <span className="font-normal text-slate-500 ml-1.5">— {cw.translation}</span>
+                                </div>
+                                {cw.example && (
+                                  <div className="text-[11px] text-slate-400 truncate">«{cw.example}»</div>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1 shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={() => speakGerman(cw.word, cw.article)}
+                                  className="p-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 transition"
+                                  title="Прослухати"
+                                >
+                                  <Volume2 className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteCustomWord(cw.id)}
+                                  className="p-1.5 rounded-lg bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-200 transition"
+                                  title="Видалити слово"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
+                  ) : (
+                    <>
+                      {learnedWordsList.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={handleStartLearnedQuizFromProfile}
+                          className="w-full py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition shadow-xs"
+                        >
+                          <BrainCircuit className="w-4 h-4" />
+                          <span>
+                            Тренувати лише вивчені (Тест{dictLevelFilter !== 'ALL' ? ` • ${dictLevelFilter}` : ''})
+                          </span>
+                        </button>
+                      )}
+
+                      <div className="flex flex-col gap-2">
+                        <div className="relative">
+                          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                          <input
+                            type="text"
+                            value={dictSearch}
+                            onChange={(e) => setDictSearch(e.target.value)}
+                            placeholder="Пошук слова або перекладу..."
+                            className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-amber-400"
+                          />
+                        </div>
+                        <div className="flex items-center gap-1 overflow-x-auto">
+                          {['ALL', ...LEVELS].map((lvl) => (
+                            <button
+                              key={lvl}
+                              type="button"
+                              onClick={() => setDictLevelFilter(lvl)}
+                              className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition shrink-0 ${
+                                dictLevelFilter === lvl
+                                  ? 'bg-slate-900 text-white'
+                                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                              }`}
+                            >
+                              {lvl === 'ALL' ? 'Усі' : lvl}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {learnedWordsList.length === 0 ? (
+                        <p className="text-xs text-slate-400 bg-slate-50 border border-slate-200 rounded-2xl p-6 text-center">
+                          Ти ще не додав вивчених слів. Натискай «Знаю це слово» або проходь тести, щоб вони з’явилися тут.
+                        </p>
+                      ) : filteredDictionaryWords.length === 0 ? (
+                        <p className="text-xs text-slate-400 bg-slate-50 border border-slate-200 rounded-2xl p-6 text-center">
+                          За твоїм запитом слів не знайдено.
+                        </p>
+                      ) : (
+                        <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl bg-slate-50/60">
+                          {filteredDictionaryWords.map((w) => (
+                            <div key={w.id} className="flex items-center justify-between gap-2 px-3.5 py-2.5 text-xs">
+                              <div className="min-w-0">
+                                <span className="font-bold text-slate-900">
+                                  {w.article ? `${w.article} ` : ''}{w.word}
+                                </span>
+                                <span className="text-slate-500 ml-1.5">— {w.translation}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={() => speakGerman(w.word, w.article)}
+                                  className="p-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 transition"
+                                  title="Повторити вимову"
+                                >
+                                  <Volume2 className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setPracticeAllLearnedMode(false);
+                                    setPracticeCustomMode(false);
+                                    setSelectedLevel(w.level);
+                                    setSelectedCategory(w.category);
+                                    setReviewLearnedInModule(true);
+                                    setMode('cards');
+                                    setCurrentIndex(0);
+                                    setIsFlipped(false);
+                                    setShowProfileDrawer(false);
+                                  }}
+                                  className="px-2 py-1 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-[10px] font-bold text-slate-700 transition"
+                                >
+                                  Повторити
+                                </button>
+                                <span className={`px-1.5 py-0.5 rounded-md border text-[10px] font-extrabold ${(LEVEL_STYLES[w.level] || LEVEL_STYLES.A1).badge}`}>
+                                  {w.level}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               )}
@@ -2863,7 +3779,7 @@ export default function App() {
             <div className="space-y-1.5">
               <div className="inline-flex items-center gap-1.5 bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-xs font-bold"><Crown className="w-3.5 h-3.5" /> Повний абонемент PRO</div>
               <h3 className="text-2xl font-extrabold">Відкрий усі слова та рівні A1–B2</h3>
-              <p className="text-sm text-slate-600">Безкоштовно доступні перші 5 слів у кожній категорії всіх рівнів A1–B2 (усього 60 слів). З підпискою відкривається вся база слів без обмежень.</p>
+              <p className="text-sm text-slate-600">Безкоштовно доступні перші 5 слів у кожній категорії всіх рівнів A1–B2 (усього 60 слів). З підпискою відкривається вся база слів, безлімітний ШІ-помічник і розбір голосу.</p>
             </div>
 
             <div className="grid grid-cols-3 gap-2.5">
