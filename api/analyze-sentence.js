@@ -1,4 +1,4 @@
-const MODELS = ['gemini-3.8-flash', 'gemini-3.5-flash-lite'];
+const MODELS = ['gemini-3.5-flash-lite', 'gemini-3.8-flash'];
 
 function extractAudioFromBody(body) {
   const candidates = [
@@ -151,7 +151,16 @@ export default async function handler(req, res) {
   }
 
   try {
-    const body = req.body || {};
+    let body = req.body;
+    if (typeof body === 'string') {
+      try {
+        body = JSON.parse(body);
+      } catch (_) {
+        body = {};
+      }
+    }
+    body = body || {};
+
     const word = String(body.word || body.targetWord || '').trim();
     const translation = String(body.translation || '').trim();
     const level = String(body.level || 'A1').trim();
@@ -201,11 +210,15 @@ ${textInput ? `Текст учня: "${textInput}"` : 'Учень відпові
 
     for (const model of MODELS) {
       try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 15000);
+
         const response = await fetch(
           `[https://generativelanguage.googleapis.com/v1beta/models/$](https://generativelanguage.googleapis.com/v1beta/models/$){model}:generateContent?key=${apiKey}`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            signal: controller.signal,
             body: JSON.stringify({
               contents: [{ role: 'user', parts }],
               generationConfig: {
@@ -216,6 +229,7 @@ ${textInput ? `Текст учня: "${textInput}"` : 'Учень відпові
           }
         );
 
+        clearTimeout(timer);
         const data = await response.json().catch(() => ({}));
 
         if (response.ok) {
@@ -231,7 +245,7 @@ ${textInput ? `Текст учня: "${textInput}"` : 'Учень відпові
         }
 
         lastStatus = response.status;
-        lastError = data?.error?.message || lastError;
+        lastError = data?.error?.message || `HTTP ${response.status} від Gemini API`;
 
         if (/invalid argument/i.test(lastError) && audioBase64 && !textInput) {
           lastError =
@@ -239,12 +253,14 @@ ${textInput ? `Текст учня: "${textInput}"` : 'Учень відпові
         }
       } catch (fetchErr) {
         lastStatus = 502;
-        lastError = 'Помилка зʼєднання з Gemini API';
+        lastError = `Збій запиту до Gemini API (${fetchErr?.name || 'Error'}: ${fetchErr?.message || 'невідома причина'})`;
       }
     }
 
     return res.status(lastStatus).json({ error: lastError });
   } catch (err) {
-    return res.status(500).json({ error: 'Внутрішня помилка сервера під час аналізу речення' });
+    return res.status(500).json({
+      error: `Внутрішня помилка сервера: ${err?.message || 'невідома помилка'}`,
+    });
   }
 }
