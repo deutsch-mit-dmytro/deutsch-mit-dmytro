@@ -14,6 +14,16 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const FREE_WORDS_LIMIT = 5;
 
+const PRONUNCIATION_FIXES = {
+  ciao: 'Tschau',
+};
+
+const normalizeSpeechText = (rawText) => {
+  return (rawText || '').replace(/\bCiao\b/gi, (match) => {
+    return PRONUNCIATION_FIXES[match.toLowerCase()] || match;
+  });
+};
+
 const PRIVACY_TEXT = [
   { title: '1. Загальні положення', body: 'Ця Політика конфіденційності визначає порядок обробки персональних даних користувачів платформи deutsch mit Dmytro, володільцем якої є Горішняк Дмитро Володимирович.' },
   { title: '2. Які дані збираються', body: 'Для створення акаунта та збереження навчального прогресу збираються лише email, ім’я профілю, фото аватара, зашифрований хеш пароля та статистика навчання (бали XP, монети, прогрес улюбленця, вивчені слова, статус підписки).' },
@@ -698,9 +708,13 @@ export default function App() {
     }
   };
 
-  const speakGerman = (text) => {
-    const cleanText = (text || '').trim();
-    if (!cleanText) return;
+  const speakGerman = (text, article = '') => {
+    const cleanWord = (text || '').trim();
+    const cleanArticle = (article || '').trim();
+    if (!cleanWord) return;
+
+    const rawSpeechText = cleanArticle ? `${cleanArticle} ${cleanWord}` : cleanWord;
+    const speechText = normalizeSpeechText(rawSpeechText);
 
     if (audioRef.current) {
       audioRef.current.pause();
@@ -708,19 +722,27 @@ export default function App() {
     }
 
     setIsSpeaking(true);
-    const audio = new Audio(`/api/tts?text=${encodeURIComponent(cleanText)}&voice=de-DE-KatjaNeural`);
+    const url = `/api/tts?text=${encodeURIComponent(speechText)}&voice=de-DE-KatjaNeural`;
+    const audio = new Audio(url);
+    audio.preload = 'auto';
     audioRef.current = audio;
 
     audio.onended = () => setIsSpeaking(false);
     audio.onerror = () => {
-      setIsSpeaking(false);
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(cleanText);
-        u.lang = 'de-DE';
-        u.rate = 0.92;
-        window.speechSynthesis.speak(u);
-      }
+      const retryAudio = new Audio(url);
+      audioRef.current = retryAudio;
+      retryAudio.onended = () => setIsSpeaking(false);
+      retryAudio.onerror = () => {
+        setIsSpeaking(false);
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+          const u = new SpeechSynthesisUtterance(speechText);
+          u.lang = 'de-DE';
+          u.rate = 0.92;
+          window.speechSynthesis.speak(u);
+        }
+      };
+      retryAudio.play().catch(() => setIsSpeaking(false));
     };
 
     audio.play().catch(() => setIsSpeaking(false));
@@ -1038,7 +1060,7 @@ export default function App() {
     const allOk = articleOk && wordOk;
 
     setSpellingResult({ articleOk, wordOk, allOk });
-    speakGerman(`${currentWord.article} ${currentWord.word}`);
+    speakGerman(currentWord.word, currentWord.article);
 
     if (allOk) {
       touchDailyStreak();
@@ -1282,7 +1304,6 @@ export default function App() {
       </header>
 
       <main className="max-w-4xl w-full mx-auto px-4 pt-6 pb-12 space-y-6 flex-1">
-        {/* Стартова анотація: що це за платформа та як нею користуватися */}
         {showOnboarding && (
           <section className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-5 sm:p-6 rounded-3xl shadow-md relative overflow-hidden space-y-4">
             <button
@@ -1347,7 +1368,6 @@ export default function App() {
           </section>
         )}
 
-        {/* Міні-панель кота-помічника з ранковим привітанням і шкалою ситості */}
         <section className="bg-white px-4 py-3.5 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <button
@@ -1408,7 +1428,6 @@ export default function App() {
           </div>
         </section>
 
-        {/* Блок вибору рівня (з кольоровим кодуванням A1–B2) та категорії */}
         <section className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2.5">
@@ -1610,7 +1629,7 @@ export default function App() {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    speakGerman(`${currentWord.article} ${currentWord.word}`);
+                    speakGerman(currentWord.word, currentWord.article);
                   }}
                   className={`p-3 rounded-full transition ${
                     isSpeaking ? 'bg-amber-500 text-white scale-105' : 'bg-amber-100 hover:bg-amber-200 text-amber-800'
@@ -1690,7 +1709,7 @@ export default function App() {
                 >
                   <Lightbulb className="w-3.5 h-3.5" /> {hintCost === 0 ? 'Підказка' : `${hintCost} 🪙`}
                 </button>
-                <button onClick={() => speakGerman(`${currentWord.article} ${currentWord.word}`)} className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-full hover:bg-amber-100">
+                <button onClick={() => speakGerman(currentWord.word, currentWord.article)} className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-full hover:bg-amber-100">
                   <Volume2 className="w-4 h-4" /> Озвучити
                 </button>
               </div>
@@ -1757,7 +1776,7 @@ export default function App() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => speakGerman(`${currentWord.article} ${currentWord.word}`)}
+                  onClick={() => speakGerman(currentWord.word, currentWord.article)}
                   className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-full hover:bg-amber-100"
                 >
                   <Volume2 className="w-4 h-4" /> Озвучити
@@ -1878,7 +1897,7 @@ export default function App() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => speakGerman(`${currentWord.article} ${currentWord.word}`)}
+                      onClick={() => speakGerman(currentWord.word, currentWord.article)}
                       className="p-1.5 rounded-lg bg-white/80 hover:bg-white text-slate-700"
                     >
                       <Volume2 className="w-4 h-4" />
@@ -1939,7 +1958,6 @@ export default function App() {
         </div>
       </footer>
 
-      {/* Висувний кабінет учня (Drawer справа) */}
       {user && (
         <div
           className={`fixed inset-0 z-50 transition-opacity duration-300 ${
@@ -2480,7 +2498,7 @@ export default function App() {
                           <div className="flex items-center gap-1.5 shrink-0">
                             <button
                               type="button"
-                              onClick={() => speakGerman(`${w.article} ${w.word}`)}
+                              onClick={() => speakGerman(w.word, w.article)}
                               className="p-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 transition"
                               title="Повторити вимову"
                             >
