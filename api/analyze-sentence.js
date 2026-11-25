@@ -1,3 +1,46 @@
+function normalizeAudioInput(rawAudio, rawMime) {
+  if (!rawAudio || typeof rawAudio !== 'string') {
+    return { base64: '', mimeType: '' };
+  }
+
+  let base64 = rawAudio.trim();
+  let detectedMime = '';
+
+  const dataUrlMatch = base64.match(/^data:([^;]+);base64,(.+)$/s);
+  if (dataUrlMatch) {
+    detectedMime = dataUrlMatch[1].trim();
+    base64 = dataUrlMatch[2].trim();
+  }
+
+  base64 = base64.replace(/\s+/g, '');
+  if (!base64) {
+    return { base64: '', mimeType: '' };
+  }
+
+  const cleanMime = String(rawMime || detectedMime || 'audio/mp4')
+    .split(';')[0]
+    .trim()
+    .toLowerCase();
+
+  const allowedMimes = new Set([
+    'audio/mp4',
+    'audio/m4a',
+    'audio/aac',
+    'audio/mpeg',
+    'audio/mp3',
+    'audio/wav',
+    'audio/webm',
+    'audio/ogg',
+    'audio/flac',
+  ]);
+
+  let finalMime = allowedMimes.has(cleanMime) ? cleanMime : 'audio/mp4';
+  if (finalMime === 'audio/m4a') finalMime = 'audio/mp4';
+  if (finalMime === 'audio/mp3') finalMime = 'audio/mpeg';
+
+  return { base64, mimeType: finalMime };
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -14,8 +57,13 @@ export default async function handler(req, res) {
     const translation = String(body.translation || '').trim();
     const level = String(body.level || 'A1').trim();
     const textInput = String(body.sentence || body.text || '').trim();
-    const audioBase64 = body.audioBase64 || body.audio || '';
-    const audioMimeType = body.audioMimeType || body.mimeType || 'audio/mp4';
+    const rawAudio = body.audioBase64 || body.audio || '';
+    const rawMime = body.audioMimeType || body.mimeType || '';
+
+    const { base64: audioBase64, mimeType: audioMimeType } = normalizeAudioInput(
+      rawAudio,
+      rawMime
+    );
 
     if (!textInput && !audioBase64) {
       return res.status(400).json({ error: 'Запиши голос або введи речення перед перевіркою.' });
@@ -54,29 +102,21 @@ ${textInput ? `Текст учня: "${textInput}"` : 'Учень відпові
     for (const model of models) {
       for (let attempt = 0; attempt < 2; attempt++) {
         try {
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 20000);
-
           const response = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
             {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              signal: controller.signal,
               body: JSON.stringify({
                 contents: [{ role: 'user', parts }],
                 generationConfig: {
                   temperature: 0.4,
                   maxOutputTokens: 1200,
-                  thinkingConfig: {
-                    thinkingBudget: 0,
-                  },
                 },
               }),
             }
           );
 
-          clearTimeout(timeout);
           const data = await response.json().catch(() => ({}));
 
           if (response.ok) {
@@ -99,6 +139,11 @@ ${textInput ? `Текст учня: "${textInput}"` : 'Учень відпові
           const apiMsg = data?.error?.message || lastError;
           lastError = apiMsg;
 
+          if (/invalid argument/i.test(apiMsg) && audioBase64 && !textInput) {
+            lastError =
+              'Формат аудіо з браузера не підтримується напряму. Спробуй ввести речення текстом або перезаписати голос.';
+          }
+
           if (response.status === 404 || /not found|not supported/i.test(apiMsg)) {
             break;
           }
@@ -109,16 +154,16 @@ ${textInput ? `Текст учня: "${textInput}"` : 'Учень відпові
               /high demand|overloaded|try again later|quota|rate limit/i.test(apiMsg)) &&
             attempt === 0
           ) {
-            await sleep(500);
+            await sleep(700);
             continue;
           }
 
           break;
         } catch (err) {
-          lastStatus = 504;
-          lastError = 'Перевищено час очікування відповіді від ШІ. Спробуй ще раз.';
+          lastStatus = 502;
+          lastError = 'Помилка зʼєднання з Gemini API';
           if (attempt === 0) {
-            await sleep(400);
+            await sleep(500);
             continue;
           }
           break;
