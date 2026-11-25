@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import {
   Volume2, Flame, Trophy, CheckCircle2, XCircle,
   Share2, Sparkles, BookOpen, BrainCircuit, ArrowRight,
-  RotateCcw, Crown, Check, Copy, X, Loader2, LogOut, User, ShieldCheck, FileText, ExternalLink, Search, Keyboard, Compass, Camera, Pencil, Coins, Lightbulb, ShoppingBag, Heart, HelpCircle
+  RotateCcw, Crown, Check, Copy, X, Loader2, LogOut, User, ShieldCheck, FileText, ExternalLink, Search, Keyboard, Compass, Camera, Pencil, Coins, Lightbulb, ShoppingBag, Heart, HelpCircle, MessageCircle, Send
 } from 'lucide-react';
 
 const SUPABASE_URL = 'https://vdjduptyloghojeqaglw.supabase.co';
@@ -13,10 +13,10 @@ const LEVEL_TEST_URL = 'https://sites.google.com/view/deutschmitdmytro/full-page
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const FREE_WORDS_LIMIT = 5;
+const FREE_DAILY_AI_LIMIT = 10;
 
 const normalizeSpeechText = (rawText) => {
   let text = (rawText || '').trim();
-  // Замінюємо Ciao на німецький фонетичний аналог Tschau з легкою інтонацією, щоб Safari не обрізав звук "т"
   text = text.replace(/ciao/gi, 'Tschau');
   if (text.toLowerCase() === 'tschau') {
     return '... Tschau!';
@@ -137,6 +137,12 @@ const DEFAULT_PET = {
   lastFedDate: null,
   lastDecayDate: null
 };
+
+const QUICK_AI_PROMPTS = [
+  'Які є синоніми до слова Tschüss?',
+  'Як швидко запам’ятовувати артиклі der, die, das?',
+  'Як працює підписка PRO та монети?'
+];
 
 const ACHIEVEMENTS = [
   { id: 'first_step', icon: '🚀', title: 'Перший крок', desc: 'Почати навчання на платформі', check: (s) => s.streakDays >= 1 || s.learnedCount >= 1, getProgress: (s) => ({ current: Math.min(Math.max(s.streakDays, s.learnedCount), 1), target: 1 }) },
@@ -432,6 +438,32 @@ export default function App() {
     buildCatGreeting(initialCatState.pet, initialCatState.daysMissed, initialCatState.hungerDropped)
   );
   const [activeHint, setActiveHint] = useState('');
+
+  // ШІ-помічник курсу (плашка чату в правому нижньому куті)
+  const [showAiChat, setShowAiChat] = useState(false);
+  const [aiMessages, setAiMessages] = useState([
+    {
+      role: 'assistant',
+      text: 'Hallo! Я ШІ-помічник deutsch mit Dmytro. Підкажу синоніми слів, різницю між стилями чи правила платформи. (Під час тестів не підказую поточне слово 😉)'
+    }
+  ]);
+  const [aiInput, setAiInput] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiUsageToday, setAiUsageToday] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('dmd_ai_usage') || '{}');
+      return saved.date === getLocalDateStr() ? (saved.count || 0) : 0;
+    } catch {
+      return 0;
+    }
+  });
+  const aiChatEndRef = useRef(null);
+
+  useEffect(() => {
+    if (showAiChat) {
+      aiChatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [aiMessages, showAiChat]);
 
   const [streak, setStreak] = useState(() => {
     const savedStreak = Number(localStorage.getItem('dmd_streak')) || 1;
@@ -975,6 +1007,74 @@ export default function App() {
     setCatReaction(`Лови підказку! ${hintText}`);
   };
 
+  const isTestActiveNow = Boolean(
+    currentWord &&
+    ((mode === 'quiz' && !quizAnswer) || (mode === 'spelling' && !spellingResult))
+  );
+
+  const handleSendAiQuestion = async (rawQuestion) => {
+    const question = (rawQuestion ?? aiInput).trim();
+    if (!question || aiLoading) return;
+
+    if (!isPro && aiUsageToday >= FREE_DAILY_AI_LIMIT) {
+      setAiMessages((prev) => [
+        ...prev,
+        { role: 'user', text: question },
+        {
+          role: 'assistant',
+          text: `На сьогодні ліміт безкоштовних запитань (${FREE_DAILY_AI_LIMIT}/день) вичерпано. Оформи PRO-абонемент для безлімітного спілкування або повертайся завтра!`
+        }
+      ]);
+      setAiInput('');
+      return;
+    }
+
+    const updatedHistory = [...aiMessages, { role: 'user', text: question }];
+    setAiMessages(updatedHistory);
+    setAiInput('');
+    setAiLoading(true);
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: updatedHistory,
+          context: {
+            mode,
+            isTestActive: isTestActiveNow,
+            forbiddenWord: isTestActiveNow && currentWord ? `${currentWord.article ? currentWord.article + ' ' : ''}${currentWord.word}` : '',
+            forbiddenTranslation: isTestActiveNow && currentWord ? currentWord.translation : '',
+            level: selectedLevel,
+            category: selectedCategory,
+            petName: pet.name,
+            isPro,
+          },
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setAiMessages((prev) => [
+          ...prev,
+          { role: 'assistant', text: data?.error || 'Помічник тимчасово недоступний. Спробуй через хвилину.' }
+        ]);
+      } else {
+        setAiMessages((prev) => [...prev, { role: 'assistant', text: data.reply }]);
+        const nextCount = aiUsageToday + 1;
+        setAiUsageToday(nextCount);
+        localStorage.setItem('dmd_ai_usage', JSON.stringify({ date: todayStr, count: nextCount }));
+      }
+    } catch {
+      setAiMessages((prev) => [
+        ...prev,
+        { role: 'assistant', text: 'Помилка з’єднання. Перевір інтернет і спробуй ще раз.' }
+      ]);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   const getArticleColor = (article) => {
     if (article === 'der') return 'text-blue-600 bg-blue-50 border-blue-200';
     if (article === 'die') return 'text-rose-600 bg-rose-50 border-rose-200';
@@ -1303,7 +1403,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="max-w-4xl w-full mx-auto px-4 pt-6 pb-12 space-y-6 flex-1">
+      <main className="max-w-4xl w-full mx-auto px-4 pt-6 pb-24 space-y-6 flex-1">
         {showOnboarding && (
           <section className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-5 sm:p-6 rounded-3xl shadow-md relative overflow-hidden space-y-4">
             <button
@@ -1958,6 +2058,120 @@ export default function App() {
         </div>
       </footer>
 
+      {/* Плаваюча плашка ШІ-помічника в правому нижньому куті */}
+      <div className="fixed bottom-4 right-4 z-40 flex flex-col items-end">
+        {showAiChat && (
+          <div className="mb-3 w-[calc(100vw-2rem)] sm:w-96 bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden flex flex-col max-h-[72vh]">
+            <div className="px-4 py-3 bg-slate-900 text-white flex items-center justify-between gap-2 shrink-0">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-xl bg-amber-400/20 border border-amber-400/40 flex items-center justify-center text-base shrink-0">
+                  {catStageInfo.current.emoji}
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-extrabold truncate flex items-center gap-1.5">
+                    <span>ШІ-помічник курсу</span>
+                    <span className="px-1.5 py-0.2 rounded bg-amber-400 text-slate-950 text-[9px] font-black">AI</span>
+                  </div>
+                  <div className="text-[10px] text-slate-400 truncate">
+                    {isTestActiveNow
+                      ? 'Режим тесту: поточне слово захищено'
+                      : isPro
+                        ? 'PRO: безлімітні запитання'
+                        : `Залишилось сьогодні: ${Math.max(0, FREE_DAILY_AI_LIMIT - aiUsageToday)}/${FREE_DAILY_AI_LIMIT}`}
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAiChat(false)}
+                className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-3.5 overflow-y-auto flex-1 space-y-2.5 bg-slate-50/70 text-xs">
+              {aiMessages.map((msg, idx) => (
+                <div
+                  key={idx}
+                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-[85%] px-3.5 py-2.5 rounded-2xl leading-relaxed whitespace-pre-line ${
+                      msg.role === 'user'
+                        ? 'bg-slate-900 text-white rounded-br-sm'
+                        : 'bg-white border border-slate-200 text-slate-800 rounded-bl-sm shadow-2xs'
+                    }`}
+                  >
+                    {msg.text}
+                  </div>
+                </div>
+              ))}
+              {aiLoading && (
+                <div className="flex justify-start">
+                  <div className="bg-white border border-slate-200 text-slate-500 px-3.5 py-2 rounded-2xl rounded-bl-sm inline-flex items-center gap-1.5">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-500" />
+                    <span>Думаю...</span>
+                  </div>
+                </div>
+              )}
+              <div ref={aiChatEndRef} />
+            </div>
+
+            {aiMessages.length <= 2 && (
+              <div className="px-3 py-2 bg-white border-t border-slate-100 flex flex-wrap gap-1.5 shrink-0">
+                {QUICK_AI_PROMPTS.map((q) => (
+                  <button
+                    key={q}
+                    type="button"
+                    onClick={() => handleSendAiQuestion(q)}
+                    disabled={aiLoading}
+                    className="text-[11px] px-2.5 py-1 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 font-medium transition text-left"
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSendAiQuestion();
+              }}
+              className="p-2.5 bg-white border-t border-slate-200 flex items-center gap-2 shrink-0"
+            >
+              <input
+                type="text"
+                maxLength={300}
+                value={aiInput}
+                onChange={(e) => setAiInput(e.target.value)}
+                placeholder={isTestActiveNow ? 'Запитай про синоніми чи курс...' : 'Запитай про слово або курс...'}
+                className="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-amber-400"
+              />
+              <button
+                type="submit"
+                disabled={aiLoading || !aiInput.trim()}
+                className="p-2 rounded-xl bg-amber-500 hover:bg-amber-600 disabled:opacity-40 text-slate-950 transition shrink-0"
+                title="Надіслати"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </form>
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={() => setShowAiChat((prev) => !prev)}
+          className="inline-flex items-center gap-2 px-4 py-3 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-bold shadow-lg border border-slate-700 transition hover:scale-105"
+        >
+          <MessageCircle className="w-4 h-4 text-amber-400" />
+          <span>{showAiChat ? 'Згорнути ШІ' : 'Запитати ШІ'}</span>
+        </button>
+      </div>
+
+      {/* Висувний кабінет учня (Drawer справа) */}
       {user && (
         <div
           className={`fixed inset-0 z-50 transition-opacity duration-300 ${
