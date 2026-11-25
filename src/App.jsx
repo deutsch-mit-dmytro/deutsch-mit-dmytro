@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import {
   Volume2, Flame, Trophy, CheckCircle2, XCircle,
   Share2, Sparkles, BookOpen, BrainCircuit, ArrowRight,
-  RotateCcw, Crown, Check, Copy, X, Loader2, LogOut, User, ShieldCheck, FileText, ExternalLink, Search, Keyboard, Compass
+  RotateCcw, Crown, Check, Copy, X, Loader2, LogOut, User, ShieldCheck, FileText, ExternalLink, Search, Keyboard, Compass, Camera, Pencil
 } from 'lucide-react';
 
 const SUPABASE_URL = 'https://vdjduptyloghojeqaglw.supabase.co';
@@ -16,7 +16,7 @@ const FREE_WORDS_LIMIT = 5;
 
 const PRIVACY_TEXT = [
   { title: '1. Загальні положення', body: 'Ця Політика конфіденційності визначає порядок обробки персональних даних користувачів платформи deutsch mit Dmytro, володільцем якої є Горішняк Дмитро Володимирович.' },
-  { title: '2. Які дані збираються', body: 'Для створення акаунта та збереження навчального прогресу збираються лише email, зашифрований хеш пароля та статистика навчання (бали XP, вивчені слова, статус підписки).' },
+  { title: '2. Які дані збираються', body: 'Для створення акаунта та збереження навчального прогресу збираються лише email, ім’я профілю, фото аватара, зашифрований хеш пароля та статистика навчання (бали XP, вивчені слова, статус підписки).' },
   { title: '3. Платіжні дані', body: 'Сервіс не зберігає дані банківських карток. Оплата відбувається на захищеній сторінці сертифікованого платіжного провайдера.' },
   { title: '4. Захист та видалення даних', body: 'Дані зберігаються у захищеній базі Supabase (HTTPS/TLS, Row Level Security) згідно із законодавством України та GDPR. Запит на видалення даних: sirobabadima9@gmail.com.' }
 ];
@@ -88,19 +88,33 @@ const getYesterdayDateStr = () => {
   return getLocalDateStr(d);
 };
 
-const calculateStreakState = (currentStreak, lastActiveDate) => {
+// Перевірка актуальності стріку при завантаженні (НЕ змінює lastActiveDate до першої навчальної дії сьогодні)
+const resolveStreakOnLoad = (savedStreak, savedDate) => {
   const today = getLocalDateStr();
   const yesterday = getYesterdayDateStr();
-  const safeStreak = Math.max(Number(currentStreak) || 0, 1);
+  const numStreak = Math.max(Number(savedStreak) || 0, 0);
 
-  if (!lastActiveDate) {
-    return { streak: safeStreak, lastActiveDate: today };
+  if (!savedDate) {
+    return { streak: numStreak || 1, lastActiveDate: null };
   }
+  if (savedDate === today || savedDate === yesterday) {
+    return { streak: Math.max(numStreak, 1), lastActiveDate: savedDate };
+  }
+  // Пропущено більше 1 дня — стрік обнуляється до 1
+  return { streak: 1, lastActiveDate: null };
+};
+
+// Нарахування +1 дня під час реальної навчальної дії (вивчене слово / правильна відповідь)
+const advanceStreakOnActivity = (currentStreak, lastActiveDate) => {
+  const today = getLocalDateStr();
+  const yesterday = getYesterdayDateStr();
+  const numStreak = Math.max(Number(currentStreak) || 0, 0);
+
   if (lastActiveDate === today) {
-    return { streak: safeStreak, lastActiveDate: today };
+    return { streak: Math.max(numStreak, 1), lastActiveDate: today };
   }
   if (lastActiveDate === yesterday) {
-    return { streak: safeStreak + 1, lastActiveDate: today };
+    return { streak: Math.max(numStreak, 1) + 1, lastActiveDate: today };
   }
   return { streak: 1, lastActiveDate: today };
 };
@@ -111,6 +125,30 @@ const formatProUntilDate = (isoString) => {
   if (Number.isNaN(date.getTime())) return '';
   return `до ${date.toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric' })}`;
 };
+
+const resizeAvatarFile = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const size = 240;
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        const minSide = Math.min(img.width, img.height);
+        const sx = (img.width - minSide) / 2;
+        const sy = (img.height - minSide) / 2;
+        ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, size, size);
+        resolve(canvas.toDataURL('image/jpeg', 0.82));
+      };
+      img.onerror = reject;
+      img.src = event.target?.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 
 export default function App() {
   const [vocabulary, setVocabulary] = useState(FALLBACK_DATA);
@@ -128,11 +166,19 @@ export default function App() {
   const [authError, setAuthError] = useState('');
 
   const [legalModal, setLegalModal] = useState(null);
-  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showProfileDrawer, setShowProfileDrawer] = useState(false);
   const [profileTab, setProfileTab] = useState('overview');
   const [achFilter, setAchFilter] = useState('all');
   const [dictSearch, setDictSearch] = useState('');
   const [dictLevelFilter, setDictLevelFilter] = useState('ALL');
+
+  const [fullName, setFullName] = useState(() => localStorage.getItem('dmd_full_name') || '');
+  const [nameDraft, setNameDraft] = useState('');
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(() => localStorage.getItem('dmd_avatar_url') || '');
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileSavedMsg, setProfileSavedMsg] = useState('');
+  const avatarInputRef = useRef(null);
 
   const [selectedLevel, setSelectedLevel] = useState('A1');
   const [selectedCategory, setSelectedCategory] = useState('colloquial');
@@ -151,13 +197,18 @@ export default function App() {
   const [streak, setStreak] = useState(() => {
     const savedStreak = Number(localStorage.getItem('dmd_streak')) || 1;
     const savedDate = localStorage.getItem('dmd_last_active');
-    return calculateStreakState(savedStreak, savedDate).streak;
+    return resolveStreakOnLoad(savedStreak, savedDate).streak;
   });
   const [lastActiveDate, setLastActiveDate] = useState(() => {
     const savedStreak = Number(localStorage.getItem('dmd_streak')) || 1;
     const savedDate = localStorage.getItem('dmd_last_active');
-    return calculateStreakState(savedStreak, savedDate).lastActiveDate;
+    return resolveStreakOnLoad(savedStreak, savedDate).lastActiveDate;
   });
+  const lastActiveDateRef = useRef(lastActiveDate);
+  useEffect(() => {
+    lastActiveDateRef.current = lastActiveDate;
+  }, [lastActiveDate]);
+
   const [learnedIds, setLearnedIds] = useState(() => JSON.parse(localStorage.getItem('dmd_learned') || '[]'));
   const [isPro, setIsPro] = useState(() => localStorage.getItem('dmd_pro') === 'true');
   const [proUntil, setProUntil] = useState(() => localStorage.getItem('dmd_pro_until') || null);
@@ -181,7 +232,8 @@ export default function App() {
 
   const touchDailyStreak = () => {
     setStreak((prevStreak) => {
-      const next = calculateStreakState(prevStreak, lastActiveDate);
+      const next = advanceStreakOnActivity(prevStreak, lastActiveDateRef.current);
+      lastActiveDateRef.current = next.lastActiveDate;
       setLastActiveDate(next.lastActiveDate);
       return next.streak;
     });
@@ -216,37 +268,49 @@ export default function App() {
 
       const baseStreak = Math.max(profile.streak || 1, Number(localStorage.getItem('dmd_streak')) || 1);
       const latestDate = profile.last_active_date || localStorage.getItem('dmd_last_active') || null;
-      const computedStreak = calculateStreakState(baseStreak, latestDate);
+      const resolved = resolveStreakOnLoad(baseStreak, latestDate);
+
+      const resolvedName = profile.full_name || localStorage.getItem('dmd_full_name') || '';
+      const resolvedAvatar = profile.avatar_url || localStorage.getItem('dmd_avatar_url') || '';
 
       setXp(mergedXp);
-      setStreak(computedStreak.streak);
-      setLastActiveDate(computedStreak.lastActiveDate);
+      setStreak(resolved.streak);
+      lastActiveDateRef.current = resolved.lastActiveDate;
+      setLastActiveDate(resolved.lastActiveDate);
       setLearnedIds(mergedLearned);
       setIsPro(proActive);
       setProUntil(proActive ? (profile.pro_until || null) : null);
+      setFullName(resolvedName);
+      setAvatarUrl(resolvedAvatar);
 
       await supabase.from('profiles').update({
         xp: mergedXp,
-        streak: computedStreak.streak,
-        last_active_date: computedStreak.lastActiveDate,
+        streak: resolved.streak,
+        last_active_date: resolved.lastActiveDate,
         learned_ids: mergedLearned,
+        full_name: resolvedName || null,
+        avatar_url: resolvedAvatar || null,
         updated_at: new Date().toISOString()
       }).eq('id', authUser.id);
 
       return proActive;
     } else {
-      const today = getLocalDateStr();
       const initialStreak = Number(localStorage.getItem('dmd_streak')) || 1;
+      const savedName = localStorage.getItem('dmd_full_name') || '';
+      const savedAvatar = localStorage.getItem('dmd_avatar_url') || '';
       setStreak(initialStreak);
-      setLastActiveDate(today);
+      lastActiveDateRef.current = null;
+      setLastActiveDate(null);
       setProUntil(null);
 
       await supabase.from('profiles').insert({
         id: authUser.id,
         email: authUser.email,
+        full_name: savedName || null,
+        avatar_url: savedAvatar || null,
         xp: Number(localStorage.getItem('dmd_xp')) || 0,
         streak: initialStreak,
-        last_active_date: today,
+        last_active_date: null,
         learned_ids: JSON.parse(localStorage.getItem('dmd_learned') || '[]'),
         is_pro: false
       });
@@ -281,6 +345,7 @@ export default function App() {
     localStorage.setItem('dmd_xp', xp);
     localStorage.setItem('dmd_streak', streak);
     if (lastActiveDate) localStorage.setItem('dmd_last_active', lastActiveDate);
+    else localStorage.removeItem('dmd_last_active');
     localStorage.setItem('dmd_learned', JSON.stringify(learnedIds));
     localStorage.setItem('dmd_pro', isPro);
     if (proUntil) localStorage.setItem('dmd_pro_until', proUntil);
@@ -290,12 +355,65 @@ export default function App() {
       supabase.from('profiles').update({
         xp,
         streak,
-        last_active_date: lastActiveDate || getLocalDateStr(),
+        last_active_date: lastActiveDate || null,
         learned_ids: learnedIds,
         updated_at: new Date().toISOString()
       }).eq('id', user.id).then(() => {});
     }
   }, [xp, streak, lastActiveDate, learnedIds, isPro, proUntil, user]);
+
+  const handleSaveProfileName = async (e) => {
+    e.preventDefault();
+    const trimmed = nameDraft.trim();
+    setSavingProfile(true);
+    setFullName(trimmed);
+    localStorage.setItem('dmd_full_name', trimmed);
+    if (user) {
+      await supabase.from('profiles').update({
+        full_name: trimmed || null,
+        updated_at: new Date().toISOString()
+      }).eq('id', user.id);
+    }
+    setSavingProfile(false);
+    setIsEditingName(false);
+    setProfileSavedMsg('Ім’я збережено!');
+    setTimeout(() => setProfileSavedMsg(''), 2000);
+  };
+
+  const handleAvatarFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setSavingProfile(true);
+    try {
+      const compressedDataUrl = await resizeAvatarFile(file);
+      setAvatarUrl(compressedDataUrl);
+      localStorage.setItem('dmd_avatar_url', compressedDataUrl);
+      if (user) {
+        await supabase.from('profiles').update({
+          avatar_url: compressedDataUrl,
+          updated_at: new Date().toISOString()
+        }).eq('id', user.id);
+      }
+      setProfileSavedMsg('Фото оновлено!');
+      setTimeout(() => setProfileSavedMsg(''), 2000);
+    } finally {
+      setSavingProfile(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    setSavingProfile(true);
+    setAvatarUrl('');
+    localStorage.removeItem('dmd_avatar_url');
+    if (user) {
+      await supabase.from('profiles').update({
+        avatar_url: null,
+        updated_at: new Date().toISOString()
+      }).eq('id', user.id);
+    }
+    setSavingProfile(false);
+  };
 
   const handleCheckProStatus = async () => {
     if (!user) return;
@@ -385,9 +503,13 @@ export default function App() {
     setUser(null);
     setIsPro(false);
     setProUntil(null);
-    setShowProfileModal(false);
+    setFullName('');
+    setAvatarUrl('');
+    setShowProfileDrawer(false);
     localStorage.removeItem('dmd_pro');
     localStorage.removeItem('dmd_pro_until');
+    localStorage.removeItem('dmd_full_name');
+    localStorage.removeItem('dmd_avatar_url');
   };
 
   const addXp = (points) => {
@@ -651,8 +773,19 @@ export default function App() {
     setCurrentIndex(0);
     setIsFlipped(false);
     setQuizAnswer(null);
-    setShowProfileModal(false);
+    setShowProfileDrawer(false);
   };
+
+  const openProfileDrawer = (tab = 'overview') => {
+    setProfileTab(tab);
+    setNameDraft(fullName);
+    setIsEditingName(false);
+    setProfileSavedMsg('');
+    setShowProfileDrawer(true);
+  };
+
+  const displayUserName = fullName.trim() || (user?.email ? user.email.split('@')[0] : 'Учень');
+  const userInitial = displayUserName.charAt(0).toUpperCase();
 
   const shareText = `🇩🇪 Мій прогрес у deutsch mit Dmytro:\n✨ ${xp} XP балів\n📚 Вивчено слів: ${learnedIds.length}\n🔥 Серія: ${streak} дн.\n🏅 Досягнень: ${unlockedCount}/${userAchievements.length}`;
 
@@ -700,7 +833,7 @@ export default function App() {
               )}
             </div>
 
-            <div className="hidden xs:flex items-center gap-1 bg-orange-50 text-orange-700 px-2.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold border border-orange-200">
+            <div className="flex items-center gap-1 bg-orange-50 text-orange-700 px-2.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold border border-orange-200">
               <Flame className="w-3.5 h-3.5 text-orange-500 fill-orange-500" />
               <span>{streak}</span>
             </div>
@@ -715,20 +848,21 @@ export default function App() {
                 <span>Увійти</span>
               </button>
             ) : (
-              <div className="flex items-center gap-1 bg-slate-100 px-2.5 py-1 rounded-full text-xs font-medium text-slate-700">
-                <button
-                  type="button"
-                  onClick={() => { setProfileTab('overview'); setShowProfileModal(true); }}
-                  className="flex items-center gap-1.5 hover:text-amber-700 transition text-left"
-                  title="Відкрити кабінет учня"
-                >
-                  <User className="w-3.5 h-3.5 text-slate-600 shrink-0" />
-                  <span className="max-w-[90px] sm:max-w-[140px] truncate underline decoration-slate-300 underline-offset-2">{user.email}</span>
-                </button>
-                <button onClick={handleLogout} className="p-1 rounded-full hover:bg-slate-200 text-slate-500 hover:text-rose-600" title="Вийти">
-                  <LogOut className="w-3.5 h-3.5" />
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => openProfileDrawer('overview')}
+                className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 pl-1.5 pr-3 py-1 rounded-full text-xs font-semibold text-slate-800 transition"
+                title="Відкрити кабінет учня"
+              >
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt={displayUserName} className="w-6 h-6 rounded-full object-cover border border-slate-300 shrink-0" />
+                ) : (
+                  <span className="w-6 h-6 rounded-full bg-slate-900 text-white text-[11px] font-bold flex items-center justify-center shrink-0">
+                    {userInitial}
+                  </span>
+                )}
+                <span className="max-w-[85px] sm:max-w-[130px] truncate">{displayUserName}</span>
+              </button>
             )}
 
             {!isPro ? (
@@ -921,7 +1055,7 @@ export default function App() {
               {user && (
                 <button
                   type="button"
-                  onClick={() => { setProfileTab('overview'); setShowProfileModal(true); }}
+                  onClick={() => openProfileDrawer('overview')}
                   className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs sm:text-sm transition"
                 >
                   Кабінет учня
@@ -1237,86 +1371,193 @@ export default function App() {
         </div>
       </footer>
 
-      {showProfileModal && user && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-7 shadow-2xl relative flex flex-col max-h-[90vh]">
-            <button onClick={() => setShowProfileModal(false)} className="absolute top-5 right-5 p-2 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200">
-              <X className="w-4 h-4" />
-            </button>
+      {/* Висувний кабінет учня (Drawer справа) */}
+      {user && (
+        <div
+          className={`fixed inset-0 z-50 transition-opacity duration-300 ${
+            showProfileDrawer ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          }`}
+        >
+          <div
+            onClick={() => setShowProfileDrawer(false)}
+            className="absolute inset-0 bg-slate-900/50 backdrop-blur-xs"
+          />
 
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pr-9 pb-4 border-b border-slate-100">
-              <div>
-                <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full mb-1">
-                  <User className="w-3.5 h-3.5" /> Кабінет учня
+          <aside
+            className={`absolute top-0 right-0 h-full w-full max-w-md sm:max-w-lg bg-white shadow-2xl flex flex-col transition-transform duration-300 ease-out ${
+              showProfileDrawer ? 'translate-x-0' : 'translate-x-full'
+            }`}
+          >
+            <div className="p-5 sm:p-6 border-b border-slate-100 flex items-start justify-between gap-3 shrink-0 bg-gradient-to-br from-slate-50 to-amber-50/40">
+              <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                <div className="relative shrink-0">
+                  {avatarUrl ? (
+                    <img
+                      src={avatarUrl}
+                      alt={displayUserName}
+                      className="w-16 h-16 rounded-2xl object-cover border-2 border-white shadow-md"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 via-red-500 to-slate-900 text-white text-2xl font-extrabold flex items-center justify-center shadow-md">
+                      {userInitial}
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => avatarInputRef.current?.click()}
+                    disabled={savingProfile}
+                    className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-full bg-slate-900 hover:bg-slate-800 text-white flex items-center justify-center shadow-md transition"
+                    title="Змінити фото"
+                  >
+                    <Camera className="w-3.5 h-3.5" />
+                  </button>
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarFileChange}
+                    className="hidden"
+                  />
                 </div>
-                <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 break-all">{user.email}</h3>
-                <p className="text-xs text-slate-500 font-medium">{getRank()}</p>
+
+                <div className="min-w-0 flex-1">
+                  {!isEditingName ? (
+                    <div className="flex items-center gap-1.5">
+                      <h3 className="text-lg font-extrabold text-slate-900 truncate">{displayUserName}</h3>
+                      <button
+                        type="button"
+                        onClick={() => { setNameDraft(fullName); setIsEditingName(true); }}
+                        className="p-1 rounded-lg text-slate-400 hover:text-amber-700 hover:bg-amber-100/60 transition shrink-0"
+                        title="Змінити ім’я"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleSaveProfileName} className="flex items-center gap-1.5">
+                      <input
+                        type="text"
+                        maxLength={40}
+                        autoFocus
+                        value={nameDraft}
+                        onChange={(e) => setNameDraft(e.target.value)}
+                        placeholder="Твоє ім’я..."
+                        className="w-full px-2.5 py-1 rounded-lg border border-amber-400 bg-white text-sm font-bold text-slate-900 focus:outline-none"
+                      />
+                      <button
+                        type="submit"
+                        disabled={savingProfile}
+                        className="p-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 shrink-0"
+                        title="Зберегти"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingName(false)}
+                        className="p-1.5 rounded-lg bg-slate-200 text-slate-600 hover:bg-slate-300 shrink-0"
+                        title="Скасувати"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </form>
+                  )}
+
+                  <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                  <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                    {isPro ? (
+                      <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full text-[11px] font-bold">
+                        <Crown className="w-3 h-3" /> PRO {formatProUntilDate(proUntil)}
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => { setShowProfileDrawer(false); setProCheckMsg(''); setShowPaywall(true); }}
+                        className="inline-flex items-center gap-1 bg-slate-900 hover:bg-slate-800 text-white px-2.5 py-0.5 rounded-full text-[11px] font-bold transition"
+                      >
+                        <Crown className="w-3 h-3 text-amber-400" /> Активувати PRO
+                      </button>
+                    )}
+                    {avatarUrl && (
+                      <button
+                        type="button"
+                        onClick={handleRemoveAvatar}
+                        className="text-[11px] text-slate-400 hover:text-rose-600 underline"
+                      >
+                        Видалити фото
+                      </button>
+                    )}
+                  </div>
+                  {profileSavedMsg && (
+                    <p className="text-[11px] font-semibold text-emerald-600 mt-1">{profileSavedMsg}</p>
+                  )}
+                </div>
               </div>
-              {isPro ? (
-                <div className="flex flex-col items-start sm:items-end gap-1 self-start">
-                  <span className="inline-flex items-center gap-1.5 bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-xs font-bold">
-                    <Crown className="w-3.5 h-3.5" /> Активний PRO
-                  </span>
-                  <span className="text-[11px] font-semibold text-emerald-700 px-1">
-                    {formatProUntilDate(proUntil)}
-                  </span>
-                </div>
-              ) : (
+
+              <button
+                type="button"
+                onClick={() => setShowProfileDrawer(false)}
+                className="p-2 rounded-full bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="px-5 pt-3 pb-2 shrink-0">
+              <div className="grid grid-cols-3 gap-1.5 bg-slate-100 p-1 rounded-xl">
                 <button
                   type="button"
-                  onClick={() => { setShowProfileModal(false); setProCheckMsg(''); setShowPaywall(true); }}
-                  className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white px-3.5 py-2 rounded-xl text-xs font-bold self-start"
+                  onClick={() => setProfileTab('overview')}
+                  className={`py-2 px-2 rounded-lg text-xs font-bold transition ${
+                    profileTab === 'overview' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                  }`}
                 >
-                  <Crown className="w-3.5 h-3.5 text-amber-400" /> Отримати PRO
+                  Огляд
                 </button>
-              )}
+                <button
+                  type="button"
+                  onClick={() => setProfileTab('achievements')}
+                  className={`py-2 px-2 rounded-lg text-xs font-bold transition ${
+                    profileTab === 'achievements' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Ачівки ({unlockedCount}/{userAchievements.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setProfileTab('dictionary')}
+                  className={`py-2 px-2 rounded-lg text-xs font-bold transition ${
+                    profileTab === 'dictionary' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Словник ({learnedWordsList.length})
+                </button>
+              </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-1.5 bg-slate-100 p-1 rounded-xl my-4 shrink-0">
-              <button
-                type="button"
-                onClick={() => setProfileTab('overview')}
-                className={`py-2 px-2 rounded-lg text-xs font-bold transition ${
-                  profileTab === 'overview' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Огляд
-              </button>
-              <button
-                type="button"
-                onClick={() => setProfileTab('achievements')}
-                className={`py-2 px-2 rounded-lg text-xs font-bold transition ${
-                  profileTab === 'achievements' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Досягнення ({unlockedCount}/{userAchievements.length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setProfileTab('dictionary')}
-                className={`py-2 px-2 rounded-lg text-xs font-bold transition ${
-                  profileTab === 'dictionary' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Мій словник ({learnedWordsList.length})
-              </button>
-            </div>
-
-            <div className="overflow-y-auto flex-1 pr-1 space-y-5">
+            <div className="overflow-y-auto flex-1 px-5 py-3 space-y-5">
               {profileTab === 'overview' && (
                 <>
-                  <div className="grid grid-cols-3 gap-3 text-center">
-                    <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3.5">
-                      <div className="text-2xl font-extrabold text-amber-900">{xp}</div>
-                      <div className="text-[11px] font-semibold text-amber-700 uppercase">Балів XP</div>
+                  <div className="bg-slate-900 text-white rounded-2xl p-4 flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-[11px] uppercase tracking-wider text-slate-400 font-bold">Поточний ранг</div>
+                      <div className="text-sm sm:text-base font-extrabold text-amber-400 mt-0.5">{getRank()}</div>
                     </div>
-                    <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3.5">
-                      <div className="text-2xl font-extrabold text-emerald-900">{learnedIds.length}</div>
-                      <div className="text-[11px] font-semibold text-emerald-700 uppercase">Вивчено слів</div>
+                    <Trophy className="w-7 h-7 text-amber-400 shrink-0" />
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2.5 text-center">
+                    <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3">
+                      <div className="text-xl sm:text-2xl font-extrabold text-amber-900">{xp}</div>
+                      <div className="text-[10px] font-semibold text-amber-700 uppercase">Балів XP</div>
                     </div>
-                    <div className="bg-orange-50 border border-orange-200 rounded-2xl p-3.5">
-                      <div className="text-2xl font-extrabold text-orange-900">{streak} 🔥</div>
-                      <div className="text-[11px] font-semibold text-orange-700 uppercase">Днів серії</div>
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3">
+                      <div className="text-xl sm:text-2xl font-extrabold text-emerald-900">{learnedIds.length}</div>
+                      <div className="text-[10px] font-semibold text-emerald-700 uppercase">Вивчено слів</div>
+                    </div>
+                    <div className="bg-orange-50 border border-orange-200 rounded-2xl p-3">
+                      <div className="text-xl sm:text-2xl font-extrabold text-orange-900">{streak} 🔥</div>
+                      <div className="text-[10px] font-semibold text-orange-700 uppercase">Днів серії</div>
                     </div>
                   </div>
 
@@ -1375,7 +1616,7 @@ export default function App() {
                     <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3.5 space-y-2">
                       <div className="flex items-center justify-between text-xs">
                         <span className="font-bold text-amber-950">
-                          Найближче досягнення: {nextAchievement.icon} {nextAchievement.title}
+                          Найближча ачівка: {nextAchievement.icon} {nextAchievement.title}
                         </span>
                         <span className="font-bold text-amber-800">
                           {nextAchievement.current} / {nextAchievement.target} ({nextAchievement.percent}%)
@@ -1415,7 +1656,7 @@ export default function App() {
                     ))}
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div className="grid grid-cols-1 gap-2.5">
                     {filteredAchievements.map((ach) => (
                       <div
                         key={ach.id}
@@ -1456,8 +1697,8 @@ export default function App() {
                     </button>
                   )}
 
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <div className="relative flex-1">
+                  <div className="flex flex-col gap-2">
+                    <div className="relative">
                       <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                       <input
                         type="text"
@@ -1473,7 +1714,7 @@ export default function App() {
                           key={lvl}
                           type="button"
                           onClick={() => setDictLevelFilter(lvl)}
-                          className={`px-2.5 py-2 rounded-xl text-xs font-bold transition shrink-0 ${
+                          className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition shrink-0 ${
                             dictLevelFilter === lvl
                               ? 'bg-slate-900 text-white'
                               : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -1496,12 +1737,12 @@ export default function App() {
                   ) : (
                     <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl bg-slate-50/60">
                       {filteredDictionaryWords.map((w) => (
-                        <div key={w.id} className="flex items-center justify-between gap-3 px-4 py-2.5 text-xs">
+                        <div key={w.id} className="flex items-center justify-between gap-2 px-3.5 py-2.5 text-xs">
                           <div className="min-w-0">
                             <span className="font-bold text-slate-900">
                               {w.article ? `${w.article} ` : ''}{w.word}
                             </span>
-                            <span className="text-slate-500 ml-2">— {w.translation}</span>
+                            <span className="text-slate-500 ml-1.5">— {w.translation}</span>
                           </div>
                           <div className="flex items-center gap-1.5 shrink-0">
                             <button
@@ -1522,13 +1763,13 @@ export default function App() {
                                 setMode('cards');
                                 setCurrentIndex(0);
                                 setIsFlipped(false);
-                                setShowProfileModal(false);
+                                setShowProfileDrawer(false);
                               }}
-                              className="px-2.5 py-1 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-[10px] font-bold text-slate-700 transition"
+                              className="px-2 py-1 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-[10px] font-bold text-slate-700 transition"
                             >
                               Повторити
                             </button>
-                            <span className="px-2 py-0.5 rounded-md bg-white border border-slate-200 text-[10px] font-bold text-slate-600">
+                            <span className="px-1.5 py-0.5 rounded-md bg-white border border-slate-200 text-[10px] font-bold text-slate-600">
                               {w.level}
                             </span>
                           </div>
@@ -1540,7 +1781,7 @@ export default function App() {
               )}
             </div>
 
-            <div className="pt-3 mt-4 border-t border-slate-100 flex items-center justify-between gap-3 shrink-0">
+            <div className="p-4 border-t border-slate-100 flex items-center justify-between gap-3 shrink-0 bg-white">
               <button
                 type="button"
                 onClick={handleLogout}
@@ -1550,13 +1791,13 @@ export default function App() {
               </button>
               <button
                 type="button"
-                onClick={() => setShowProfileModal(false)}
+                onClick={() => setShowProfileDrawer(false)}
                 className="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition"
               >
                 Закрити
               </button>
             </div>
-          </div>
+          </aside>
         </div>
       )}
 
