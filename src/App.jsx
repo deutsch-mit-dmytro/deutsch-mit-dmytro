@@ -83,7 +83,9 @@ const DEFAULT_PET = {
   spellingDone: 0,
   ownedItems: [],
   equippedAccessory: null,
-  freeHintDate: null
+  freeHintDate: null,
+  lastFedDate: null,
+  lastDecayDate: null
 };
 
 const ACHIEVEMENTS = [
@@ -108,7 +110,6 @@ const ACHIEVEMENTS = [
   { id: 'level_b', icon: '🚀', title: 'Рівень B1–B2 у грі', desc: 'Вивчити перше слово рівня B1 або B2', check: (s) => s.hasLevelB1OrB2, getProgress: (s) => ({ current: s.hasLevelB1OrB2 ? 1 : 0, target: 1 }) },
   { id: 'pro_member', icon: '👑', title: 'Учень PRO', desc: 'Активувати повний абонемент PRO', check: (s) => s.isPro, getProgress: (s) => ({ current: s.isPro ? 1 : 0, target: 1 }) },
 
-  // Нові досягнення для кота, правопису, монет і підказок (16 шт.)
   { id: 'cat_feed_1', icon: '🥛', title: 'Перший сніданок кота', desc: 'Погодувати або погратися з котом уперше', check: (s) => s.feedsCount >= 1, getProgress: (s) => ({ current: Math.min(s.feedsCount, 1), target: 1 }) },
   { id: 'cat_feed_5', icon: '🥨', title: 'Турботливий господар', desc: 'Погодувати кота 5 разів', check: (s) => s.feedsCount >= 5, getProgress: (s) => ({ current: Math.min(s.feedsCount, 5), target: 5 }) },
   { id: 'cat_feed_15', icon: '🍣', title: 'Шеф-кухар для кота', desc: 'Погодувати кота 15 разів', check: (s) => s.feedsCount >= 15, getProgress: (s) => ({ current: Math.min(s.feedsCount, 15), target: 15 }) },
@@ -138,6 +139,76 @@ const getYesterdayDateStr = () => {
   const d = new Date();
   d.setDate(d.getDate() - 1);
   return getLocalDateStr(d);
+};
+
+const getDaysDiffFromToday = (dateStr) => {
+  if (!dateStr) return 0;
+  const parts = String(dateStr).split('-').map(Number);
+  if (parts.length !== 3 || parts.some(Number.isNaN)) return 0;
+  const past = new Date(parts[0], parts[1] - 1, parts[2]);
+  const now = new Date();
+  const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diffMs = todayMidnight.getTime() - past.getTime();
+  return Math.max(0, Math.floor(diffMs / 86400000));
+};
+
+// Природне зниження ситості кота: -10% за кожну добу без годування (мінімум 10%)
+const applyCatTimeDecay = (petObj) => {
+  const today = getLocalDateStr();
+  const base = { ...DEFAULT_PET, ...(petObj || {}) };
+  const referenceDate = base.lastDecayDate || base.lastFedDate;
+
+  if (!referenceDate) {
+    return {
+      pet: { ...base, lastDecayDate: today },
+      daysMissed: 0,
+      hungerDropped: 0,
+    };
+  }
+
+  const daysPassed = getDaysDiffFromToday(referenceDate);
+  if (daysPassed <= 0) {
+    return { pet: base, daysMissed: 0, hungerDropped: 0 };
+  }
+
+  const drop = daysPassed * 10;
+  const prevHunger = base.hunger ?? 80;
+  const nextHunger = Math.max(10, prevHunger - drop);
+  return {
+    pet: {
+      ...base,
+      hunger: nextHunger,
+      lastDecayDate: today,
+    },
+    daysMissed: daysPassed,
+    hungerDropped: Math.max(0, prevHunger - nextHunger),
+  };
+};
+
+// Ранкове / денне / вечірнє привітання від кота з урахуванням ситості
+const buildCatGreeting = (petObj, daysMissed = 0, hungerDropped = 0) => {
+  const name = petObj?.name || 'Schnurri';
+  const hunger = petObj?.hunger ?? 80;
+  const hour = new Date().getHours();
+
+  let timeGreeting = 'Guten Tag! ☀️';
+  if (hour >= 5 && hour < 12) timeGreeting = 'Guten Morgen! ☕';
+  else if (hour >= 18 && hour < 23) timeGreeting = 'Guten Abend! 🌙';
+  else if (hour >= 23 || hour < 5) timeGreeting = 'Gute Nacht! 🦉';
+
+  if (daysMissed >= 1 && hungerDropped > 0) {
+    return `${timeGreeting} Ти не заходив ${daysMissed} дн., ситість впала до ${hunger}%. Погодуєш ${name}? 🥨`;
+  }
+  if (hunger <= 30) {
+    return `${timeGreeting} Мяу... ${name} дуже зголоднів (${hunger}%). Заглянь у крамничку! 🥛`;
+  }
+  if (hunger < 70) {
+    return `${timeGreeting} ${name} чекає на тебе! Підгодуй до 70%, щоб відкрити безкоштовну підказку 💡`;
+  }
+  if (hour >= 5 && hour < 12) {
+    return `${timeGreeting} ${name} ситий (${hunger}%) і готовий до ранкової порції німецької! 🐾`;
+  }
+  return `${timeGreeting} ${name} ситий (${hunger}%) і готовий вчити нові слова разом із тобою! 🐾`;
 };
 
 const resolveStreakOnLoad = (savedStreak, savedDate) => {
@@ -263,7 +334,7 @@ export default function App() {
 
   const [legalModal, setLegalModal] = useState(null);
   const [showProfileDrawer, setShowProfileDrawer] = useState(false);
-  const [profileTab, setProfileTab] = useState('pet'); // 'pet' | 'overview' | 'achievements' | 'dictionary'
+  const [profileTab, setProfileTab] = useState('pet');
   const [achFilter, setAchFilter] = useState('all');
   const [dictSearch, setDictSearch] = useState('');
   const [dictLevelFilter, setDictLevelFilter] = useState('ALL');
@@ -284,7 +355,7 @@ export default function App() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const audioRef = useRef(null);
 
-  const [mode, setMode] = useState('cards'); // 'cards' | 'quiz' | 'spelling'
+  const [mode, setMode] = useState('cards');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
 
@@ -295,18 +366,21 @@ export default function App() {
   });
   const [xpGain, setXpGain] = useState(null);
 
-  // Стан улюбленця-кота
-  const [pet, setPet] = useState(() => {
+  const initialCatState = useMemo(() => {
     try {
       const saved = JSON.parse(localStorage.getItem('dmd_pet') || 'null');
-      return saved ? { ...DEFAULT_PET, ...saved } : DEFAULT_PET;
+      return applyCatTimeDecay(saved);
     } catch {
-      return DEFAULT_PET;
+      return applyCatTimeDecay(null);
     }
-  });
+  }, []);
+
+  const [pet, setPet] = useState(initialCatState.pet);
   const [isEditingPetName, setIsEditingPetName] = useState(false);
   const [petNameDraft, setPetNameDraft] = useState('');
-  const [catReaction, setCatReaction] = useState('Мяу! Готовий вчити нові німецькі слова? 🐾');
+  const [catReaction, setCatReaction] = useState(() =>
+    buildCatGreeting(initialCatState.pet, initialCatState.daysMissed, initialCatState.hungerDropped)
+  );
   const [activeHint, setActiveHint] = useState('');
 
   const [streak, setStreak] = useState(() => {
@@ -393,7 +467,7 @@ export default function App() {
 
       const dbPet = profile.pet_data && typeof profile.pet_data === 'object' ? profile.pet_data : {};
       const localPet = JSON.parse(localStorage.getItem('dmd_pet') || '{}');
-      const mergedPet = {
+      const combinedRawPet = {
         ...DEFAULT_PET,
         ...localPet,
         ...dbPet,
@@ -405,9 +479,13 @@ export default function App() {
         ownedItems: Array.from(new Set([...(dbPet.ownedItems || []), ...(localPet.ownedItems || [])])),
       };
 
+      const decayed = applyCatTimeDecay(combinedRawPet);
+      const mergedPet = decayed.pet;
+
       setXp(mergedXp);
       setCoins(mergedCoins);
       setPet(mergedPet);
+      setCatReaction(buildCatGreeting(mergedPet, decayed.daysMissed, decayed.hungerDropped));
       setStreak(resolved.streak);
       lastActiveDateRef.current = resolved.lastActiveDate;
       setLastActiveDate(resolved.lastActiveDate);
@@ -435,8 +513,11 @@ export default function App() {
       const initialXp = Number(localStorage.getItem('dmd_xp')) || 0;
       const savedName = localStorage.getItem('dmd_full_name') || '';
       const savedAvatar = localStorage.getItem('dmd_avatar_url') || '';
+      const freshPet = { ...DEFAULT_PET, lastDecayDate: getLocalDateStr() };
       setStreak(initialStreak);
       setCoins(initialXp);
+      setPet(freshPet);
+      setCatReaction(buildCatGreeting(freshPet, 0, 0));
       lastActiveDateRef.current = null;
       setLastActiveDate(null);
       setProUntil(null);
@@ -448,7 +529,7 @@ export default function App() {
         avatar_url: savedAvatar || null,
         xp: initialXp,
         coins: initialXp,
-        pet_data: DEFAULT_PET,
+        pet_data: freshPet,
         streak: initialStreak,
         last_active_date: null,
         learned_ids: JSON.parse(localStorage.getItem('dmd_learned') || '[]'),
@@ -686,18 +767,22 @@ export default function App() {
     }
 
     if (coins < item.price) return;
+    const today = getLocalDateStr();
+    const newHunger = Math.min(100, (pet.hunger ?? 80) + (item.hunger || 20));
     setCoins((prev) => prev - item.price);
     setPet((prev) => ({
       ...prev,
-      hunger: Math.min(100, (prev.hunger ?? 80) + (item.hunger || 20)),
+      hunger: newHunger,
       xp: (prev.xp || 0) + (item.petXp || 15),
       feedsCount: (prev.feedsCount || 0) + 1,
       coinsSpent: (prev.coinsSpent || 0) + item.price,
+      lastFedDate: today,
+      lastDecayDate: today,
     }));
     setCatReaction(
       item.type === 'toy'
-        ? `Муррр! Класна гра з «${item.name}»! +${item.petXp} досвіду кота 🧶`
-        : `Ням-ням! «${item.name}» — смакота! Ситість зросла 😻`
+        ? `Муррр! Класна гра з «${item.name}»! Ситість ${newHunger}% 🧶`
+        : `Ням-ням! «${item.name}» — смакота! Ситість тепер ${newHunger}% 😻`
     );
   };
 
@@ -1072,7 +1157,6 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-2">
-            {/* Баланс монет для кота */}
             <button
               type="button"
               onClick={() => user ? openProfileDrawer('pet') : openAuth('login')}
@@ -1141,13 +1225,13 @@ export default function App() {
       </header>
 
       <main className="max-w-4xl w-full mx-auto px-4 pt-6 pb-12 space-y-6 flex-1">
-        {/* Міні-панель кота-помічника */}
-        <section className="bg-white px-4 py-3 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
+        {/* Міні-панель кота-помічника з ранковим привітанням і шкалою ситості */}
+        <section className="bg-white px-4 py-3.5 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
             <button
               type="button"
               onClick={() => user ? openProfileDrawer('pet') : openAuth('login')}
-              className="relative w-11 h-11 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-2xl shrink-0 hover:scale-105 transition"
+              className="relative w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-2xl shrink-0 hover:scale-105 transition"
               title="Перейти до кота"
             >
               <span>{catStageInfo.current.emoji}</span>
@@ -1163,11 +1247,19 @@ export default function App() {
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900">
                   {catStageInfo.current.badge}
                 </span>
-                <span className="text-[11px] font-semibold text-rose-600 flex items-center gap-0.5">
+                <span
+                  className={`text-[11px] font-bold flex items-center gap-0.5 ${
+                    (pet.hunger ?? 80) <= 30
+                      ? 'text-rose-600'
+                      : (pet.hunger ?? 80) < 70
+                        ? 'text-amber-700'
+                        : 'text-emerald-700'
+                  }`}
+                >
                   <Heart className="w-3 h-3 fill-rose-500 text-rose-500" /> {pet.hunger ?? 80}%
                 </span>
               </div>
-              <p className="text-xs text-slate-600 truncate mt-0.5">{catReaction}</p>
+              <p className="text-xs text-slate-600 leading-snug mt-0.5">{catReaction}</p>
             </div>
           </div>
 
@@ -1848,7 +1940,6 @@ export default function App() {
               </button>
             </div>
 
-            {/* 4 вкладки висувного кабінету */}
             <div className="px-5 pt-3 pb-2 shrink-0">
               <div className="grid grid-cols-4 gap-1 bg-slate-100 p-1 rounded-xl">
                 <button
@@ -1893,7 +1984,6 @@ export default function App() {
             <div className="overflow-y-auto flex-1 px-5 py-3 space-y-5">
               {profileTab === 'pet' && (
                 <div className="space-y-4">
-                  {/* Картка кота */}
                   <div className="bg-gradient-to-br from-amber-50 via-orange-50/70 to-white border-2 border-amber-200 rounded-3xl p-5 text-center space-y-3 relative">
                     <div className="flex items-center justify-between text-xs">
                       <span className="px-2.5 py-1 rounded-full bg-amber-200/70 text-amber-950 font-extrabold">
@@ -1947,7 +2037,6 @@ export default function App() {
                       <p className="text-xs text-slate-600 mt-1">{catReaction}</p>
                     </div>
 
-                    {/* Шкали ситості та росту кота */}
                     <div className="grid grid-cols-2 gap-3 text-left pt-1">
                       <div className="bg-white/90 p-3 rounded-2xl border border-rose-100 space-y-1.5">
                         <div className="flex items-center justify-between text-[11px] font-bold">
@@ -1963,7 +2052,9 @@ export default function App() {
                           />
                         </div>
                         <p className="text-[10px] text-slate-400">
-                          {(pet.hunger ?? 80) >= 70 ? 'Від 70% — 1 підказка на день безкоштовно!' : 'Погодуй до 70% для бонусу'}
+                          {(pet.hunger ?? 80) >= 70
+                            ? 'Від 70% — 1 безкоштовна підказка на день (-10%/добу без їжі)'
+                            : 'Погодуй до 70% для бонусу (-10%/добу без їжі)'}
                         </p>
                       </div>
 
@@ -1987,7 +2078,6 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* Крамничка для кота */}
                   <div className="space-y-2.5">
                     <div className="flex items-center justify-between">
                       <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">Крамничка смаколиків та аксесуарів</h4>
