@@ -45,7 +45,7 @@ ${textInput ? `Текст учня: "${textInput}"` : 'Учень відпові
 
     parts.push({ text: promptText });
 
-    const models = ['gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-2.5-flash-lite'];
+    const models = ['gemini-3.8-flash', 'gemini-3.5-flash-lite'];
     const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
     let lastError = 'Сервіс тимчасово перевантажений. Спробуй ще раз за кілька секунд.';
@@ -55,7 +55,7 @@ ${textInput ? `Текст учня: "${textInput}"` : 'Учень відпові
       for (let attempt = 0; attempt < 2; attempt++) {
         try {
           const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 12000);
+          const timeout = setTimeout(() => controller.abort(), 20000);
 
           const response = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
@@ -109,7 +109,7 @@ ${textInput ? `Текст учня: "${textInput}"` : 'Учень відпові
               /high demand|overloaded|try again later|quota|rate limit/i.test(apiMsg)) &&
             attempt === 0
           ) {
-            await sleep(600);
+            await sleep(500);
             continue;
           }
 
