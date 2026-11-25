@@ -1,3 +1,58 @@
+let cachedModels = null;
+let cachedAt = 0;
+const CACHE_TTL_MS = 10 * 60 * 1000;
+
+async function getAvailableGeminiModels(apiKey) {
+  const now = Date.now();
+  if (cachedModels && now - cachedAt < CACHE_TTL_MS) {
+    return cachedModels;
+  }
+
+  const fallbackList = ['gemini-3.8-flash', 'gemini-3.5-flash-lite'];
+
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
+    );
+    const data = await res.json().catch(() => ({}));
+
+    if (res.ok && Array.isArray(data.models)) {
+      const supported = data.models
+        .filter(
+          (m) =>
+            Array.isArray(m.supportedGenerationMethods) &&
+            m.supportedGenerationMethods.includes('generateContent') &&
+            !/embedding|imagen|veo|aqa/i.test(m.name || '')
+        )
+        .map((m) => String(m.name).replace(/^models\//, ''));
+
+      const score = (name) => {
+        let s = 0;
+        if (name === 'gemini-3.8-flash') s += 500;
+        if (name === 'gemini-3.5-flash-lite') s += 450;
+        if (/gemini/i.test(name)) s += 100;
+        if (/flash/i.test(name)) s += 50;
+        if (!/lite/i.test(name)) s += 10;
+        const verMatch = name.match(/(\d+(?:\.\d+)?)/);
+        if (verMatch) s += parseFloat(verMatch[1]) * 20;
+        if (/exp|preview/i.test(name)) s -= 5;
+        return s;
+      };
+
+      supported.sort((a, b) => score(b) - score(a));
+
+      const merged = [...new Set([...fallbackList, ...supported])];
+      if (merged.length > 0) {
+        cachedModels = merged;
+        cachedAt = now;
+        return merged;
+      }
+    }
+  } catch (_) {}
+
+  return fallbackList;
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -41,7 +96,7 @@ ${isTestActive && forbiddenWord ? `- ЗАБОРОНЕНЕ СЛОВО ЗАРАЗ 
 
     const contents = messages
       .filter((msg) => msg && String(msg.text || '').trim().length > 0)
-      .slice(-6)
+      .slice(-8)
       .map((msg) => ({
         role: msg.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: String(msg.text).trim() }],
@@ -51,54 +106,75 @@ ${isTestActive && forbiddenWord ? `- ЗАБОРОНЕНЕ СЛОВО ЗАРАЗ 
       return res.status(400).json({ error: 'Порожнє повідомлення' });
     }
 
-    const models = ['gemini-3.8-flash', 'gemini-2.5-flash'];
+    const models = await getAvailableGeminiModels(apiKey);
+    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
     let lastErrorMessage = 'Сервіс тимчасово перевантажений. Спробуй ще раз за кілька секунд.';
     let lastStatus = 503;
 
-    for (const model of models) {
-      try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 9000);
-
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            signal: controller.signal,
-            body: JSON.stringify({
-              system_instruction: {
-                parts: [{ text: systemInstruction }],
-              },
-              contents,
-              generationConfig: {
-                temperature: 0.4,
-                maxOutputTokens: 900,
-                thinkingConfig: {
-                  thinkingBudget: 0,
+    for (const model of models.slice(0, 6)) {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                system_instruction: {
+                  parts: [{ text: systemInstruction }],
                 },
-              },
-            }),
+                contents,
+                generationConfig: {
+                  temperature: 0.5,
+                  maxOutputTokens: 1200,
+                },
+              }),
+            }
+          );
+
+          const data = await response.json().catch(() => ({}));
+
+          if (response.ok) {
+            const rawReply =
+              data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ||
+              'Вибач, зараз не вдалося сформувати відповідь. Спробуй переформулювати питання.';
+
+            const reply = rawReply.replace(/\*\*/g, '').trim();
+
+            return res.status(200).json({ reply, modelUsed: model });
           }
-        );
 
-        clearTimeout(timeout);
-        const data = await response.json().catch(() => ({}));
+          lastStatus = response.status;
+          const apiMessage = data?.error?.message || lastErrorMessage;
+          lastErrorMessage = apiMessage;
 
-        if (response.ok) {
-          const rawReply =
-            data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ||
-            'Вибач, зараз не вдалося сформувати відповідь. Спробуй переформулювати питання.';
+          const isNotFound =
+            response.status === 404 || /not found|not supported/i.test(apiMessage);
+          if (isNotFound) {
+            break;
+          }
 
-          const reply = rawReply.replace(/\*\*/g, '').trim();
-          return res.status(200).json({ reply, modelUsed: model });
+          const isTransientOverload =
+            response.status === 429 ||
+            response.status === 503 ||
+            /high demand|overloaded|try again later|quota|rate limit/i.test(apiMessage);
+
+          if (isTransientOverload && attempt === 0) {
+            await sleep(800);
+            continue;
+          }
+
+          break;
+        } catch (fetchErr) {
+          lastStatus = 502;
+          lastErrorMessage = 'Помилка зʼєднання з Gemini API';
+          if (attempt === 0) {
+            await sleep(500);
+            continue;
+          }
+          break;
         }
-
-        lastStatus = response.status;
-        lastErrorMessage = data?.error?.message || lastErrorMessage;
-      } catch (err) {
-        lastStatus = 504;
-        lastErrorMessage = 'Час очікування відповіді від ШІ вичерпано. Спробуй ще раз.';
       }
     }
 
