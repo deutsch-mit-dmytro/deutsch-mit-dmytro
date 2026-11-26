@@ -14,6 +14,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const FREE_WORDS_LIMIT = 5;
 const FREE_DAILY_AI_LIMIT = 10;
+const HUNGER_DROP_INTERVAL_MS = 10 * 60 * 1000; // -1% кожні 10 хвилин (-6%/год)
 
 const normalizeSpeechText = (rawText) => {
   let text = (rawText || '').trim();
@@ -150,7 +151,8 @@ const DEFAULT_PET = {
   hintsDate: null,
   hintsTodayCount: 0,
   lastFedDate: null,
-  lastDecayDate: null
+  lastDecayDate: null,
+  lastDecayAt: null
 };
 
 const QUICK_AI_PROMPTS = [
@@ -223,45 +225,54 @@ const getLocalDateStr = (date = new Date()) => {
   return `${y}-${m}-${d}`;
 };
 
-const getDaysDiffFromToday = (dateStr) => {
-  if (!dateStr) return 0;
-  const parts = String(dateStr).split('-').map(Number);
-  if (parts.length !== 3 || parts.some(Number.isNaN)) return 0;
-  const past = new Date(parts[0], parts[1] - 1, parts[2]);
-  const now = new Date();
-  const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const diffMs = todayMidnight.getTime() - past.getTime();
-  return Math.max(0, Math.floor(diffMs / 86400000));
-};
-
 const applyCatTimeDecay = (petObj) => {
+  const now = Date.now();
   const today = getLocalDateStr();
   const base = { ...DEFAULT_PET, ...(petObj || {}) };
-  const referenceDate = base.lastDecayDate || base.lastFedDate;
 
-  if (!referenceDate) {
+  let lastTs = base.lastDecayAt ? Date.parse(base.lastDecayAt) : NaN;
+
+  if (Number.isNaN(lastTs)) {
+    const legacyDate = base.lastDecayDate || base.lastFedDate;
+    if (legacyDate) {
+      const parts = String(legacyDate).split('-').map(Number);
+      if (parts.length === 3 && !parts.some(Number.isNaN)) {
+        lastTs = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0).getTime();
+      }
+    }
+  }
+
+  if (Number.isNaN(lastTs)) {
     return {
-      pet: { ...base, lastDecayDate: today },
+      pet: { ...base, lastDecayDate: today, lastDecayAt: new Date(now).toISOString() },
       daysMissed: 0,
       hungerDropped: 0,
     };
   }
 
-  const daysPassed = getDaysDiffFromToday(referenceDate);
-  if (daysPassed <= 0) {
-    return { pet: base, daysMissed: 0, hungerDropped: 0 };
+  const elapsedMs = Math.max(0, now - lastTs);
+  const drop = Math.floor(elapsedMs / HUNGER_DROP_INTERVAL_MS);
+
+  if (drop <= 0) {
+    return {
+      pet: { ...base, lastDecayAt: new Date(lastTs).toISOString() },
+      daysMissed: 0,
+      hungerDropped: 0,
+    };
   }
 
-  const drop = daysPassed * 10;
   const prevHunger = base.hunger ?? 80;
   const nextHunger = Math.max(10, prevHunger - drop);
+  const updatedLastTs = lastTs + drop * HUNGER_DROP_INTERVAL_MS;
+
   return {
     pet: {
       ...base,
       hunger: nextHunger,
       lastDecayDate: today,
+      lastDecayAt: new Date(updatedLastTs).toISOString(),
     },
-    daysMissed: daysPassed,
+    daysMissed: Math.floor(elapsedMs / 86400000),
     hungerDropped: Math.max(0, prevHunger - nextHunger),
   };
 };
@@ -501,6 +512,16 @@ export default function App() {
   );
   const [activeHint, setActiveHint] = useState('');
 
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setPet((prev) => {
+        const res = applyCatTimeDecay(prev);
+        return res.hungerDropped > 0 ? res.pet : prev;
+      });
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
+
   const [showAiChat, setShowAiChat] = useState(false);
   const [aiMessages, setAiMessages] = useState([
     {
@@ -641,6 +662,11 @@ export default function App() {
 
       const dbPet = profile.pet_data && typeof profile.pet_data === 'object' ? profile.pet_data : {};
       const localPet = JSON.parse(localStorage.getItem('dmd_pet') || '{}');
+      const latestDecayAt =
+        Date.parse(dbPet.lastDecayAt || 0) >= Date.parse(localPet.lastDecayAt || 0)
+          ? (dbPet.lastDecayAt || localPet.lastDecayAt || null)
+          : localPet.lastDecayAt;
+
       const combinedRawPet = {
         ...DEFAULT_PET,
         ...localPet,
@@ -651,6 +677,7 @@ export default function App() {
         coinsSpent: Math.max(dbPet.coinsSpent || 0, localPet.coinsSpent || 0),
         spellingDone: Math.max(dbPet.spellingDone || 0, localPet.spellingDone || 0),
         ownedItems: Array.from(new Set([...(dbPet.ownedItems || []), ...(localPet.ownedItems || [])])),
+        lastDecayAt: latestDecayAt,
       };
 
       const decayed = applyCatTimeDecay(combinedRawPet);
@@ -685,12 +712,13 @@ export default function App() {
 
       return proActive;
     } else {
+      const nowIso = new Date().toISOString();
       const initialStreak = Number(localStorage.getItem('dmd_streak')) || 1;
       const initialXp = Number(localStorage.getItem('dmd_xp')) || 0;
       const savedName = localStorage.getItem('dmd_full_name') || '';
       const savedAvatar = localStorage.getItem('dmd_avatar_url') || '';
       const savedCustom = JSON.parse(localStorage.getItem('dmd_custom_words') || '[]');
-      const freshPet = { ...DEFAULT_PET, lastDecayDate: getLocalDateStr() };
+      const freshPet = { ...DEFAULT_PET, lastDecayDate: getLocalDateStr(), lastDecayAt: nowIso };
       setStreak(initialStreak);
       setCoins(initialXp);
       setPet(freshPet);
@@ -959,6 +987,7 @@ export default function App() {
     }
 
     if (coins < item.price) return;
+    const nowIso = new Date().toISOString();
     const today = getLocalDateStr();
     const newHunger = Math.min(100, (pet.hunger ?? 80) + (item.hunger || 20));
     setCoins((prev) => prev - item.price);
@@ -970,6 +999,7 @@ export default function App() {
       coinsSpent: (prev.coinsSpent || 0) + item.price,
       lastFedDate: today,
       lastDecayDate: today,
+      lastDecayAt: nowIso,
     }));
     setCatReaction(
       item.type === 'toy'
@@ -2759,8 +2789,8 @@ export default function App() {
                         </div>
                         <p className="text-[10px] text-slate-400">
                           {(pet.hunger ?? 80) >= 70
-                            ? 'Від 70% — 1-ша підказка безкоштовно, далі +20 🪙'
-                            : 'Погодуй до 70% для бонусу (-10%/добу без їжі)'}
+                            ? 'Від 70% — 1-ша підказка безкоштовно, далі +20 🪙 (-6%/год)'
+                            : 'Погодуй до 70% для бонусу (-6%/год без їжі)'}
                         </p>
                       </div>
 
