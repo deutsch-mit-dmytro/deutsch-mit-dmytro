@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import {
   Volume2, Flame, Trophy, CheckCircle2, XCircle,
   Share2, Sparkles, BookOpen, BrainCircuit, ArrowRight,
-  RotateCcw, Crown, Check, Copy, X, Loader2, LogOut, User, ShieldCheck, FileText, ExternalLink, Search, Keyboard, Compass, Camera, Pencil, Coins, Lightbulb, ShoppingBag, Heart, HelpCircle, MessageCircle, Send, Plus, Trash2, ClipboardList
+  RotateCcw, Crown, Check, Copy, X, Loader2, LogOut, User, ShieldCheck, FileText, ExternalLink, Search, Keyboard, Compass, Camera, Pencil, Coins, Lightbulb, ShoppingBag, Heart, HelpCircle, MessageCircle, Send, Plus, Trash2, ClipboardList, Snowflake
 } from 'lucide-react';
 
 const SUPABASE_URL = 'https://vdjduptyloghojeqaglw.supabase.co';
@@ -223,12 +223,6 @@ const getLocalDateStr = (date = new Date()) => {
   return `${y}-${m}-${d}`;
 };
 
-const getYesterdayDateStr = () => {
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  return getLocalDateStr(d);
-};
-
 const getDaysDiffFromToday = (dateStr) => {
   if (!dateStr) return 0;
   const parts = String(dateStr).split('-').map(Number);
@@ -299,30 +293,27 @@ const buildCatGreeting = (petObj, daysMissed = 0, hungerDropped = 0) => {
 
 const resolveStreakOnLoad = (savedStreak, savedDate) => {
   const today = getLocalDateStr();
-  const yesterday = getYesterdayDateStr();
-  const numStreak = Math.max(Number(savedStreak) || 0, 0);
-
-  if (!savedDate) {
-    return { streak: numStreak || 1, lastActiveDate: null };
-  }
-  if (savedDate === today || savedDate === yesterday) {
-    return { streak: Math.max(numStreak, 1), lastActiveDate: savedDate };
-  }
-  return { streak: 1, lastActiveDate: null };
+  const numStreak = Math.max(Number(savedStreak) || 0, 1);
+  return {
+    streak: numStreak,
+    lastActiveDate: savedDate || null,
+    isFrozenToday: savedDate !== today,
+  };
 };
 
 const advanceStreakOnActivity = (currentStreak, lastActiveDate) => {
   const today = getLocalDateStr();
-  const yesterday = getYesterdayDateStr();
-  const numStreak = Math.max(Number(currentStreak) || 0, 0);
+  const numStreak = Math.max(Number(currentStreak) || 0, 1);
 
   if (lastActiveDate === today) {
-    return { streak: Math.max(numStreak, 1), lastActiveDate: today };
+    return { streak: numStreak, lastActiveDate: today, isFrozenToday: false };
   }
-  if (lastActiveDate === yesterday) {
-    return { streak: Math.max(numStreak, 1) + 1, lastActiveDate: today };
-  }
-  return { streak: 1, lastActiveDate: today };
+
+  return {
+    streak: numStreak + 1,
+    lastActiveDate: today,
+    isFrozenToday: false,
+  };
 };
 
 const formatProUntilDate = (isoString) => {
@@ -479,7 +470,7 @@ export default function App() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const audioRef = useRef(null);
 
-  const [mode, setMode] = useState('cards'); // 'cards' | 'quiz' | 'spelling'
+  const [mode, setMode] = useState('cards');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
 
@@ -550,6 +541,8 @@ export default function App() {
     lastActiveDateRef.current = lastActiveDate;
   }, [lastActiveDate]);
 
+  const isStreakFrozenToday = lastActiveDate !== getLocalDateStr();
+
   const [learnedIds, setLearnedIds] = useState(() => JSON.parse(localStorage.getItem('dmd_learned') || '[]'));
   const [isPro, setIsPro] = useState(() => localStorage.getItem('dmd_pro') === 'true');
   const [proUntil, setProUntil] = useState(() => localStorage.getItem('dmd_pro_until') || null);
@@ -577,12 +570,28 @@ export default function App() {
   };
 
   const touchDailyStreak = () => {
-    setStreak((prevStreak) => {
-      const next = advanceStreakOnActivity(prevStreak, lastActiveDateRef.current);
-      lastActiveDateRef.current = next.lastActiveDate;
-      setLastActiveDate(next.lastActiveDate);
-      return next.streak;
-    });
+    const today = getLocalDateStr();
+    const currentNum = Math.max(Number(streak) || 0, 1);
+    const next = advanceStreakOnActivity(currentNum, lastActiveDateRef.current);
+
+    lastActiveDateRef.current = next.lastActiveDate;
+    setStreak(next.streak);
+    setLastActiveDate(next.lastActiveDate);
+
+    localStorage.setItem('dmd_streak', String(next.streak));
+    localStorage.setItem('dmd_last_active', today);
+
+    if (user) {
+      supabase
+        .from('profiles')
+        .update({
+          streak: next.streak,
+          last_active_date: today,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id)
+        .then(() => {});
+    }
   };
 
   useEffect(() => {
@@ -1551,9 +1560,25 @@ export default function App() {
               <span>{xp} XP</span>
             </div>
 
-            <div className="flex items-center gap-1 bg-orange-50 text-orange-700 px-2.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold border border-orange-200">
-              <Flame className="w-3.5 h-3.5 text-orange-500 fill-orange-500" />
+            <div
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold border transition ${
+                isStreakFrozenToday
+                  ? 'bg-sky-50 text-sky-800 border-sky-200'
+                  : 'bg-orange-50 text-orange-700 border-orange-200'
+              }`}
+              title={
+                isStreakFrozenToday
+                  ? 'Серія заморожена до першого виконаного завдання або вивченого слова сьогодні'
+                  : 'Серія активна сьогодні'
+              }
+            >
+              <Flame
+                className={`w-3.5 h-3.5 ${
+                  isStreakFrozenToday ? 'text-sky-400 fill-sky-200' : 'text-orange-500 fill-orange-500'
+                }`}
+              />
               <span>{streak}</span>
+              {isStreakFrozenToday && <Snowflake className="w-3 h-3 text-sky-500" />}
             </div>
 
             <button onClick={() => setShowShareModal(true)} className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 transition hidden sm:inline-flex" title="Поділитися прогресом">
@@ -1695,6 +1720,11 @@ export default function App() {
                 >
                   <Heart className="w-3 h-3 fill-rose-500 text-rose-500" /> {pet.hunger ?? 80}%
                 </span>
+                {isStreakFrozenToday && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 inline-flex items-center gap-1">
+                    <Snowflake className="w-3 h-3" /> Серія на паузі до першого завдання
+                  </span>
+                )}
               </div>
               <p className="text-xs text-slate-600 leading-snug mt-0.5">{catReaction}</p>
             </div>
@@ -2836,7 +2866,9 @@ export default function App() {
                     </div>
                     <div className="bg-orange-50 border border-orange-200 rounded-2xl p-3">
                       <div className="text-lg font-extrabold text-orange-900">{streak} 🔥</div>
-                      <div className="text-[10px] font-semibold text-orange-700 uppercase">Серія</div>
+                      <div className="text-[10px] font-semibold text-orange-700 uppercase">
+                        {isStreakFrozenToday ? 'Серія (пауза)' : 'Серія'}
+                      </div>
                     </div>
                   </div>
 
