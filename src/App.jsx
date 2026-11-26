@@ -513,13 +513,30 @@ export default function App() {
   const [activeHint, setActiveHint] = useState('');
 
   useEffect(() => {
-    const timer = setInterval(() => {
+    const recalculateHunger = () => {
       setPet((prev) => {
         const res = applyCatTimeDecay(prev);
         return res.hungerDropped > 0 ? res.pet : prev;
       });
-    }, 60000);
-    return () => clearInterval(timer);
+    };
+
+    recalculateHunger();
+    const timer = setInterval(recalculateHunger, 15000);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        recalculateHunger();
+      }
+    };
+
+    window.addEventListener('focus', recalculateHunger);
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('focus', recalculateHunger);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
   }, []);
 
   const [showAiChat, setShowAiChat] = useState(false);
