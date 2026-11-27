@@ -443,6 +443,8 @@ export default function App() {
   const [grammarBuiltTokens, setGrammarBuiltTokens] = useState([]);
   const [grammarChecked, setGrammarChecked] = useState(null); // { isCorrect, userAnswer }
   const [grammarCorrectCount, setGrammarCorrectCount] = useState(0);
+  const [grammarQueue, setGrammarQueue] = useState([]);
+  const [grammarRemedialTopics, setGrammarRemedialTopics] = useState([]);
   const grammarInputRef = useRef(null);
 
   const [showOnboarding, setShowOnboarding] = useState(() => localStorage.getItem('dmd_hide_intro') !== 'true');
@@ -1140,6 +1142,8 @@ export default function App() {
       return;
     }
     setActiveGrammarLesson(lesson);
+    setGrammarQueue(Array.isArray(lesson.exercises) ? [...lesson.exercises] : []);
+    setGrammarRemedialTopics([]);
     setGrammarStep('rule');
     setGrammarExIndex(0);
     setGrammarAnswerInput('');
@@ -1148,10 +1152,7 @@ export default function App() {
     setGrammarCorrectCount(0);
   };
 
-  const currentGrammarExercise =
-    activeGrammarLesson && Array.isArray(activeGrammarLesson.exercises)
-      ? activeGrammarLesson.exercises[grammarExIndex] || null
-      : null;
+  const currentGrammarExercise = grammarQueue[grammarExIndex] || null;
 
   const shuffledBuilderTokens = useMemo(() => {
     if (!currentGrammarExercise || currentGrammarExercise.type !== 'builder') return [];
@@ -1187,13 +1188,29 @@ export default function App() {
       setCatReaction('Richtig! +10 монет за граматику 🧩');
       speakGerman(currentGrammarExercise.answer);
     } else {
+      if (currentGrammarExercise.sourceLessonId && !currentGrammarExercise.isRemedial) {
+        const sourceLesson = GRAMMAR_LESSONS.find((l) => l.id === currentGrammarExercise.sourceLessonId);
+        if (sourceLesson && Array.isArray(sourceLesson.exercises)) {
+          const topicLabel = currentGrammarExercise.topicTag || sourceLesson.title;
+          const extraTasks = sourceLesson.exercises.slice(0, 2).map((ex) => ({
+            ...ex,
+            isRemedial: true,
+            topicTag: topicLabel,
+            prompt: `🔄 Закріплення (${topicLabel}): ${ex.prompt}`,
+          }));
+          setGrammarQueue((prev) => [...prev, ...extraTasks]);
+          setGrammarRemedialTopics((prev) => Array.from(new Set([...prev, topicLabel])));
+          setCatReaction(`Помилка в темі «${topicLabel}» — я додав 2 вправи на закріплення в кінець тесту! 🐾`);
+          return;
+        }
+      }
       setCatReaction('Майже! Подивись пояснення нижче — воно все розставить на місця 🐱');
     }
   };
 
   const handleNextGrammarExercise = () => {
     if (!activeGrammarLesson) return;
-    const total = activeGrammarLesson.exercises.length;
+    const total = grammarQueue.length;
     if (grammarExIndex + 1 < total) {
       setGrammarExIndex((prev) => prev + 1);
       setGrammarAnswerInput('');
@@ -1202,13 +1219,14 @@ export default function App() {
     } else {
       const accuracy = Math.round((grammarCorrectCount / Math.max(total, 1)) * 100);
       const alreadyDone = completedGrammarIds.includes(activeGrammarLesson.id);
+      const bonus = activeGrammarLesson.isFinalExam ? 75 : 35;
       if (accuracy >= 70 && !alreadyDone) {
         setPet((prev) => ({
           ...prev,
           completedGrammarIds: [...(prev.completedGrammarIds || []), activeGrammarLesson.id],
         }));
-        addXpAndCoins(35);
-        setCatReaction(`Урок «${activeGrammarLesson.title}» засвоєно! +35 бонусних монет 🏆`);
+        addXpAndCoins(bonus);
+        setCatReaction(`Урок «${activeGrammarLesson.title}» засвоєно! +${bonus} бонусних монет 🏆`);
       }
       setGrammarStep('done');
     }
@@ -2024,6 +2042,7 @@ export default function App() {
                     {levelGrammarLessons.map((lesson) => {
                       const isDone = completedGrammarIds.includes(lesson.id);
                       const isLocked = !lesson.isFree && !isPro;
+                      const isFinal = Boolean(lesson.isFinalExam);
 
                       return (
                         <div
@@ -2032,9 +2051,11 @@ export default function App() {
                           className={`bg-white border-2 rounded-2xl p-4 sm:p-5 transition cursor-pointer flex items-center justify-between gap-4 ${
                             isDone
                               ? 'border-emerald-300 bg-emerald-50/30 hover:border-emerald-400'
-                              : isLocked
-                                ? 'border-slate-200 opacity-85 hover:border-amber-300'
-                                : 'border-slate-200 hover:border-slate-900 shadow-xs'
+                              : isFinal
+                                ? 'border-amber-400 bg-gradient-to-r from-amber-50/70 to-white hover:border-amber-500 shadow-sm'
+                                : isLocked
+                                  ? 'border-slate-200 opacity-85 hover:border-amber-300'
+                                  : 'border-slate-200 hover:border-slate-900 shadow-xs'
                           }`}
                         >
                           <div className="flex items-start gap-3.5 min-w-0">
@@ -2042,12 +2063,14 @@ export default function App() {
                               className={`w-10 h-10 rounded-xl font-extrabold text-sm flex items-center justify-center shrink-0 ${
                                 isDone
                                   ? 'bg-emerald-600 text-white'
-                                  : isLocked
-                                    ? 'bg-slate-100 text-slate-400'
-                                    : 'bg-slate-900 text-amber-400'
+                                  : isFinal
+                                    ? 'bg-amber-500 text-slate-950'
+                                    : isLocked
+                                      ? 'bg-slate-100 text-slate-400'
+                                      : 'bg-slate-900 text-amber-400'
                               }`}
                             >
-                              {isDone ? <Check className="w-5 h-5" /> : lesson.order}
+                              {isDone ? <Check className="w-5 h-5" /> : isFinal ? '🎓' : lesson.order}
                             </div>
 
                             <div className="min-w-0 space-y-1">
@@ -2062,6 +2085,11 @@ export default function App() {
                                 ) : (
                                   <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-extrabold inline-flex items-center gap-1">
                                     <Crown className="w-2.5 h-2.5" /> PRO
+                                  </span>
+                                )}
+                                {isFinal && (
+                                  <span className="px-2 py-0.5 rounded-full bg-slate-900 text-amber-300 text-[10px] font-extrabold">
+                                    Фінальний іспит
                                   </span>
                                 )}
                                 {isDone && (
@@ -2082,7 +2110,7 @@ export default function App() {
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 px-3.5 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold">
-                                <span>{isDone ? 'Повторити' : 'Вчити'}</span>
+                                <span>{isDone ? 'Повторити' : isFinal ? 'Скласти іспит' : 'Вчити'}</span>
                                 <ArrowRight className="w-3.5 h-3.5" />
                               </span>
                             )}
@@ -2113,7 +2141,7 @@ export default function App() {
                         grammarStep === 'rule' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600'
                       }`}
                     >
-                      1. Правило-шпаргалка
+                      1. {activeGrammarLesson.isFinalExam ? 'Інструкція' : 'Правило-шпаргалка'}
                     </button>
                     <button
                       type="button"
@@ -2127,7 +2155,7 @@ export default function App() {
                           : 'text-slate-600'
                       }`}
                     >
-                      2. Практика ({activeGrammarLesson.exercises.length})
+                      2. Практика ({grammarQueue.length || activeGrammarLesson.exercises.length})
                     </button>
                   </div>
                 </div>
@@ -2136,7 +2164,7 @@ export default function App() {
                   <div className="space-y-5">
                     <div>
                       <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-extrabold">
-                        Урок {activeGrammarLesson.order} • {activeGrammarLesson.level}
+                        {activeGrammarLesson.isFinalExam ? `Фінальний іспит • ${activeGrammarLesson.level}` : `Урок ${activeGrammarLesson.order} • ${activeGrammarLesson.level}`}
                       </span>
                       <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1.5">
                         {activeGrammarLesson.title}
@@ -2146,7 +2174,7 @@ export default function App() {
 
                     <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-1.5">
                       <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
-                        Суть правила без води
+                        {activeGrammarLesson.isFinalExam ? 'Як працює фінальний іспит' : 'Суть правила без води'}
                       </div>
                       <p className="text-xs sm:text-sm text-slate-800 leading-relaxed">
                         {activeGrammarLesson.ruleSummary}
@@ -2155,7 +2183,7 @@ export default function App() {
 
                     <div className="space-y-2.5">
                       <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
-                        Візуальні формули та приклади
+                        {activeGrammarLesson.isFinalExam ? 'Умови зарахування' : 'Візуальні формули та приклади'}
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                         {activeGrammarLesson.visualFormula.map((item, idx) => (
@@ -2169,14 +2197,16 @@ export default function App() {
                             </div>
                             <div className="flex items-center justify-between gap-2 pt-0.5">
                               <span className="text-xs text-slate-700 italic">«{item.example}»</span>
-                              <button
-                                type="button"
-                                onClick={() => speakGerman(item.example)}
-                                className="p-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 shrink-0"
-                                title="Прослухати приклад"
-                              >
-                                <Volume2 className="w-3.5 h-3.5" />
-                              </button>
+                              {!activeGrammarLesson.isFinalExam && (
+                                <button
+                                  type="button"
+                                  onClick={() => speakGerman(item.example)}
+                                  className="p-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 shrink-0"
+                                  title="Прослухати приклад"
+                                >
+                                  <Volume2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
                             </div>
                           </div>
                         ))}
@@ -2207,15 +2237,22 @@ export default function App() {
                       <button
                         type="button"
                         onClick={() => {
+                          setGrammarQueue([...activeGrammarLesson.exercises]);
+                          setGrammarRemedialTopics([]);
                           setGrammarStep('practice');
                           setGrammarExIndex(0);
                           setGrammarChecked(null);
                           setGrammarBuiltTokens([]);
                           setGrammarAnswerInput('');
+                          setGrammarCorrectCount(0);
                         }}
                         className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-sm transition"
                       >
-                        <span>Зрозуміло, перейти до вправ ({activeGrammarLesson.exercises.length})</span>
+                        <span>
+                          {activeGrammarLesson.isFinalExam
+                            ? `Почати фінальний іспит (${activeGrammarLesson.exercises.length} завдань)`
+                            : `Зрозуміло, перейти до вправ (${activeGrammarLesson.exercises.length})`}
+                        </span>
                         <ArrowRight className="w-4 h-4" />
                       </button>
                     </div>
@@ -2224,10 +2261,17 @@ export default function App() {
 
                 {grammarStep === 'practice' && currentGrammarExercise && (
                   <div className="space-y-5">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-extrabold text-slate-500">
-                        Завдання <strong className="text-slate-900">{grammarExIndex + 1}</strong> з {activeGrammarLesson.exercises.length}
-                      </span>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-extrabold text-slate-500">
+                          Завдання <strong className="text-slate-900">{grammarExIndex + 1}</strong> з {grammarQueue.length}
+                        </span>
+                        {currentGrammarExercise.isRemedial && (
+                          <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-extrabold">
+                            🔄 Додаткове відпрацювання
+                          </span>
+                        )}
+                      </div>
                       <button
                         type="button"
                         onClick={() => setGrammarStep('rule')}
@@ -2241,7 +2285,7 @@ export default function App() {
                       <div
                         className="h-full bg-emerald-500 rounded-full transition-all"
                         style={{
-                          width: `${Math.round(((grammarExIndex + 1) / activeGrammarLesson.exercises.length) * 100)}%`,
+                          width: `${Math.round(((grammarExIndex + 1) / Math.max(grammarQueue.length, 1)) * 100)}%`,
                         }}
                       />
                     </div>
@@ -2435,6 +2479,12 @@ export default function App() {
                           </button>
                         </div>
 
+                        {!grammarChecked.isCorrect && currentGrammarExercise.sourceLessonId && !currentGrammarExercise.isRemedial && (
+                          <div className="text-xs font-bold text-amber-900 bg-amber-100/90 px-3 py-2 rounded-xl">
+                            🔄 Додано 2 додаткові вправи з теми «{currentGrammarExercise.topicTag}» у кінець цього іспиту!
+                          </div>
+                        )}
+
                         <p className="text-xs leading-relaxed bg-white/80 p-3 rounded-xl text-slate-800">
                           💡 <strong>Пояснення:</strong> {currentGrammarExercise.explanation}
                         </p>
@@ -2446,7 +2496,7 @@ export default function App() {
                             className="bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2"
                           >
                             <span>
-                              {grammarExIndex + 1 < activeGrammarLesson.exercises.length
+                              {grammarExIndex + 1 < grammarQueue.length
                                 ? 'Наступне завдання'
                                 : 'Завершити урок'}
                             </span>
@@ -2463,20 +2513,36 @@ export default function App() {
                     <div className="w-16 h-16 rounded-3xl bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto text-3xl">
                       🏆
                     </div>
-                    <div className="space-y-1">
+                    <div className="space-y-1.5">
                       <h3 className="text-2xl font-extrabold text-slate-900">
-                        Урок завершено: {grammarCorrectCount} з {activeGrammarLesson.exercises.length}
+                        {activeGrammarLesson.isFinalExam ? 'Фінальний іспит завершено' : 'Урок завершено'}: {grammarCorrectCount} з {grammarQueue.length}
                       </h3>
                       <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto">
-                        {Math.round((grammarCorrectCount / activeGrammarLesson.exercises.length) * 100) >= 70
+                        {Math.round((grammarCorrectCount / Math.max(grammarQueue.length, 1)) * 100) >= 70
                           ? 'Тему зараховано як засвоєну! Рухайся до наступної теми або закріпи слова у розділі «Лексика».'
                           : 'Щоб отримати позначку «Засвоєно ✓», потрібно набрати від 70% правильних відповідей. Переглянь правило ще раз і спробуй знову!'}
                       </p>
                     </div>
+
+                    {grammarRemedialTopics.length > 0 && (
+                      <div className="max-w-md mx-auto bg-amber-50 border border-amber-200 rounded-2xl p-4 text-left space-y-1.5">
+                        <div className="text-xs font-extrabold text-amber-950">
+                          🔄 Теми, які ти додатково закріпив під час іспиту ({grammarRemedialTopics.length}):
+                        </div>
+                        <ul className="text-xs text-amber-900 list-disc pl-4 space-y-0.5">
+                          {grammarRemedialTopics.map((topic, idx) => (
+                            <li key={idx}>{topic}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
                     <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
                       <button
                         type="button"
                         onClick={() => {
+                          setGrammarQueue([...activeGrammarLesson.exercises]);
+                          setGrammarRemedialTopics([]);
                           setGrammarStep('practice');
                           setGrammarExIndex(0);
                           setGrammarChecked(null);
