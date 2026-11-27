@@ -3,8 +3,9 @@ import { createClient } from '@supabase/supabase-js';
 import {
   Volume2, Flame, Trophy, CheckCircle2, XCircle,
   Share2, Sparkles, BookOpen, BrainCircuit, ArrowRight,
-  RotateCcw, Crown, Check, Copy, X, Loader2, LogOut, User, ShieldCheck, FileText, ExternalLink, Search, Keyboard, Compass, Camera, Pencil, Coins, Lightbulb, ShoppingBag, Heart, HelpCircle, MessageCircle, Send, Plus, Trash2, ClipboardList, Snowflake
+  RotateCcw, Crown, Check, Copy, X, Loader2, LogOut, User, ShieldCheck, FileText, ExternalLink, Search, Keyboard, Compass, Camera, Pencil, Coins, Lightbulb, ShoppingBag, Heart, HelpCircle, MessageCircle, Send, Plus, Trash2, ClipboardList, Snowflake, Puzzle, Lock, ArrowLeft
 } from 'lucide-react';
+import { GRAMMAR_LESSONS } from './grammarData';
 
 const SUPABASE_URL = 'https://vdjduptyloghojeqaglw.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_L9Gw77mlbgOdzYt4-a6nEA_ZqeNxiui';
@@ -34,7 +35,7 @@ const PRIVACY_TEXT = [
 
 const OFFER_TEXT = [
   { title: '1. Предмет договору', body: 'Виконавець (Горішняк Дмитро Володимирович) надає Користувачеві доступ до інтерактивного тренажера німецької мови deutsch mit Dmytro на умовах обраного тарифу PRO.' },
-  { title: '2. Порядок надання доступу', body: 'Ознайомчий доступ (перші 5 слів у кожній категорії всіх рівнів A1–B2 — усього 60 слів) надається безкоштовно. Повний доступ до всієї бази слів рівнів A1–B2 активується після оплати на 1, 3 або 6 місяців.' },
+  { title: '2. Порядок надання доступу', body: 'Ознайомчий доступ (перші 5 слів у кожній категорії всіх рівнів A1–B2 — усього 60 слів та базові уроки граматики) надається безкоштовно. Повний доступ до всієї бази слів і граматики рівнів A1–B2 активується після оплати на 1, 3 або 6 місяців.' },
   { title: '3. Повернення коштів', body: 'Оскільки цифровий доступ надається миттєво у повному обсязі, повернення коштів можливе протягом 14 днів лише у разі технічної неможливості надання доступу з вини Виконавця. Контакт: sirobabadima9@gmail.com.' }
 ];
 
@@ -152,7 +153,8 @@ const DEFAULT_PET = {
   hintsTodayCount: 0,
   lastFedDate: null,
   lastDecayDate: null,
-  lastDecayAt: null
+  lastDecayAt: null,
+  completedGrammarIds: []
 };
 
 const QUICK_AI_PROMPTS = [
@@ -170,6 +172,9 @@ const ACHIEVEMENTS = [
   { id: 'words_200', icon: '🎓', title: 'Словниковий запас PRO', desc: 'Вивчити 200 німецьких слів', check: (s) => s.learnedCount >= 200, getProgress: (s) => ({ current: Math.min(s.learnedCount, 200), target: 200 }) },
   { id: 'words_300', icon: '🏛️', title: 'Енциклопедія слів', desc: 'Вивчити 300 німецьких слів', check: (s) => s.learnedCount >= 300, getProgress: (s) => ({ current: Math.min(s.learnedCount, 300), target: 300 }) },
   { id: 'words_500', icon: '👑', title: 'Повна база майстра', desc: 'Вивчити 500+ слів із бази', check: (s) => s.learnedCount >= 500, getProgress: (s) => ({ current: Math.min(s.learnedCount, 500), target: 500 }) },
+
+  { id: 'grammar_1', icon: '🧩', title: 'Перша граматика', desc: 'Пройти перший урок граматики', check: (s) => s.grammarCompletedCount >= 1, getProgress: (s) => ({ current: Math.min(s.grammarCompletedCount, 1), target: 1 }) },
+  { id: 'grammar_5', icon: '📐', title: 'Будівельник речень', desc: 'Засвоїти 5 граматичних тем', check: (s) => s.grammarCompletedCount >= 5, getProgress: (s) => ({ current: Math.min(s.grammarCompletedCount, 5), target: 5 }) },
 
   { id: 'xp_100', icon: '⚡', title: 'Розминка', desc: 'Набрати 100 балів XP', check: (s) => s.xp >= 100, getProgress: (s) => ({ current: Math.min(s.xp, 100), target: 100 }) },
   { id: 'xp_300', icon: '✨', title: 'Перші 300 XP', desc: 'Набрати 300 балів XP', check: (s) => s.xp >= 300, getProgress: (s) => ({ current: Math.min(s.xp, 300), target: 300 }) },
@@ -428,6 +433,17 @@ const resizeAvatarFile = (file) =>
 export default function App() {
   const [vocabulary, setVocabulary] = useState(FALLBACK_DATA);
   const [loading, setLoading] = useState(true);
+
+  const [courseSection, setCourseSection] = useState('vocabulary'); // 'vocabulary' | 'grammar'
+  const [grammarLevel, setGrammarLevel] = useState('A1');
+  const [activeGrammarLesson, setActiveGrammarLesson] = useState(null);
+  const [grammarStep, setGrammarStep] = useState('rule'); // 'rule' | 'practice' | 'done'
+  const [grammarExIndex, setGrammarExIndex] = useState(0);
+  const [grammarAnswerInput, setGrammarAnswerInput] = useState('');
+  const [grammarBuiltTokens, setGrammarBuiltTokens] = useState([]);
+  const [grammarChecked, setGrammarChecked] = useState(null); // { isCorrect, userAnswer }
+  const [grammarCorrectCount, setGrammarCorrectCount] = useState(0);
+  const grammarInputRef = useRef(null);
 
   const [showOnboarding, setShowOnboarding] = useState(() => localStorage.getItem('dmd_hide_intro') !== 'true');
 
@@ -694,6 +710,7 @@ export default function App() {
         coinsSpent: Math.max(dbPet.coinsSpent || 0, localPet.coinsSpent || 0),
         spellingDone: Math.max(dbPet.spellingDone || 0, localPet.spellingDone || 0),
         ownedItems: Array.from(new Set([...(dbPet.ownedItems || []), ...(localPet.ownedItems || [])])),
+        completedGrammarIds: Array.from(new Set([...(dbPet.completedGrammarIds || []), ...(localPet.completedGrammarIds || [])])),
         lastDecayAt: latestDecayAt,
       };
 
@@ -1065,6 +1082,7 @@ export default function App() {
 
   const handleStartCustomPractice = (targetMode = 'cards') => {
     if (customWords.length === 0) return;
+    setCourseSection('vocabulary');
     setPracticeCustomMode(true);
     setPracticeAllLearnedMode(false);
     setReviewLearnedInModule(false);
@@ -1102,6 +1120,115 @@ export default function App() {
     if (nextMode === 'quiz' || nextMode === 'spelling') {
       setSessionResults([]);
     }
+  };
+
+  // --- Граматика: керування уроком та вправами ---
+  const completedGrammarIds = useMemo(
+    () => (Array.isArray(pet.completedGrammarIds) ? pet.completedGrammarIds : []),
+    [pet.completedGrammarIds]
+  );
+
+  const levelGrammarLessons = useMemo(
+    () => GRAMMAR_LESSONS.filter((l) => l.level === grammarLevel).sort((a, b) => a.order - b.order),
+    [grammarLevel]
+  );
+
+  const handleOpenGrammarLesson = (lesson) => {
+    if (!lesson.isFree && !isPro) {
+      setProCheckMsg('');
+      setShowPaywall(true);
+      return;
+    }
+    setActiveGrammarLesson(lesson);
+    setGrammarStep('rule');
+    setGrammarExIndex(0);
+    setGrammarAnswerInput('');
+    setGrammarBuiltTokens([]);
+    setGrammarChecked(null);
+    setGrammarCorrectCount(0);
+  };
+
+  const currentGrammarExercise =
+    activeGrammarLesson && Array.isArray(activeGrammarLesson.exercises)
+      ? activeGrammarLesson.exercises[grammarExIndex] || null
+      : null;
+
+  const shuffledBuilderTokens = useMemo(() => {
+    if (!currentGrammarExercise || currentGrammarExercise.type !== 'builder') return [];
+    return currentGrammarExercise.tokens.map((text, idx) => ({ id: `${grammarExIndex}_${idx}`, text }));
+  }, [currentGrammarExercise, grammarExIndex]);
+
+  const handleCheckGrammarExercise = (directChoiceValue = null) => {
+    if (!currentGrammarExercise || grammarChecked) return;
+
+    let userAnswer = '';
+    if (currentGrammarExercise.type === 'choice') {
+      userAnswer = directChoiceValue || '';
+    } else if (currentGrammarExercise.type === 'builder') {
+      userAnswer = grammarBuiltTokens.map((t) => t.text).join(' ').trim();
+    } else {
+      userAnswer = grammarAnswerInput.trim();
+    }
+
+    if (!userAnswer) return;
+
+    const normalizeAns = (str) => str.replace(/\s+/g, ' ').trim();
+    const isCorrect =
+      currentGrammarExercise.type === 'fill'
+        ? normalizeAns(userAnswer).toLowerCase() === normalizeAns(currentGrammarExercise.answer).toLowerCase()
+        : normalizeAns(userAnswer) === normalizeAns(currentGrammarExercise.answer);
+
+    setGrammarChecked({ isCorrect, userAnswer });
+
+    if (isCorrect) {
+      setGrammarCorrectCount((prev) => prev + 1);
+      touchDailyStreak();
+      addXpAndCoins(10);
+      setCatReaction('Richtig! +10 монет за граматику 🧩');
+      speakGerman(currentGrammarExercise.answer);
+    } else {
+      setCatReaction('Майже! Подивись пояснення нижче — воно все розставить на місця 🐱');
+    }
+  };
+
+  const handleNextGrammarExercise = () => {
+    if (!activeGrammarLesson) return;
+    const total = activeGrammarLesson.exercises.length;
+    if (grammarExIndex + 1 < total) {
+      setGrammarExIndex((prev) => prev + 1);
+      setGrammarAnswerInput('');
+      setGrammarBuiltTokens([]);
+      setGrammarChecked(null);
+    } else {
+      const accuracy = Math.round((grammarCorrectCount / Math.max(total, 1)) * 100);
+      const alreadyDone = completedGrammarIds.includes(activeGrammarLesson.id);
+      if (accuracy >= 70 && !alreadyDone) {
+        setPet((prev) => ({
+          ...prev,
+          completedGrammarIds: [...(prev.completedGrammarIds || []), activeGrammarLesson.id],
+        }));
+        addXpAndCoins(35);
+        setCatReaction(`Урок «${activeGrammarLesson.title}» засвоєно! +35 бонусних монет 🏆`);
+      }
+      setGrammarStep('done');
+    }
+  };
+
+  const handleInsertGrammarUmlaut = (char) => {
+    if (grammarChecked) return;
+    const input = grammarInputRef.current;
+    if (!input) {
+      setGrammarAnswerInput((prev) => prev + char);
+      return;
+    }
+    const start = input.selectionStart ?? grammarAnswerInput.length;
+    const end = input.selectionEnd ?? grammarAnswerInput.length;
+    const updated = grammarAnswerInput.slice(0, start) + char + grammarAnswerInput.slice(end);
+    setGrammarAnswerInput(updated);
+    requestAnimationFrame(() => {
+      input.focus();
+      input.setSelectionRange(start + char.length, start + char.length);
+    });
   };
 
   const learnedWordsList = useMemo(
@@ -1439,6 +1566,7 @@ export default function App() {
     xp: xp || 0,
     coins: coins || 0,
     learnedCount: learnedIds.length,
+    grammarCompletedCount: completedGrammarIds.length,
     streakDays: streak || 0,
     isPro: Boolean(isPro),
     hasLevelA2: learnedWordsList.some((word) => word.level === 'A2'),
@@ -1451,7 +1579,7 @@ export default function App() {
     hintsUsed: pet.hintsUsed || 0,
     spellingDone: pet.spellingDone || 0,
     customWordsCount: customWords.length,
-  }), [xp, coins, learnedIds.length, streak, isPro, learnedWordsList, pet, catStageInfo.current.level, ownedAccessoriesCount, customWords.length]);
+  }), [xp, coins, learnedIds.length, completedGrammarIds.length, streak, isPro, learnedWordsList, pet, catStageInfo.current.level, ownedAccessoriesCount, customWords.length]);
 
   const userAchievements = useMemo(() => {
     return ACHIEVEMENTS.map((ach) => {
@@ -1508,6 +1636,7 @@ export default function App() {
 
   const handleStartLearnedQuizFromProfile = () => {
     if (learnedWordsList.length === 0) return;
+    setCourseSection('vocabulary');
     setPracticeLevelFilter(dictLevelFilter);
     setPracticeAllLearnedMode(true);
     setPracticeCustomMode(false);
@@ -1535,7 +1664,7 @@ export default function App() {
   const displayUserName = fullName.trim() || (user?.email ? user.email.split('@')[0] : 'Учень');
   const userInitial = displayUserName.charAt(0).toUpperCase();
 
-  const shareText = `🇩🇪 Мій прогрес у deutsch mit Dmytro:\n✨ ${xp} XP балів • 🪙 ${coins} монет\n📚 Вивчено слів: ${learnedIds.length}\n🔥 Серія: ${streak} дн.\n🐱 Кіт ${pet.name}: ${catStageInfo.current.title}\n🏅 Досягнень: ${unlockedCount}/${userAchievements.length}`;
+  const shareText = `🇩🇪 Мій прогрес у deutsch mit Dmytro:\n✨ ${xp} XP балів • 🪙 ${coins} монет\n📚 Вивчено слів: ${learnedIds.length} • 🧩 Тем граматики: ${completedGrammarIds.length}\n🔥 Серія: ${streak} дн.\n🐱 Кіт ${pet.name}: ${catStageInfo.current.title}`;
 
   const handleCopyShare = () => {
     navigator.clipboard.writeText(shareText);
@@ -1571,7 +1700,7 @@ export default function App() {
               <h1 className="font-bold text-sm sm:text-lg leading-tight tracking-tight">
                 deutsch mit <span className="text-amber-600">Dmytro</span>
               </h1>
-              <p className="text-[11px] text-slate-500 hidden sm:block">Інтерактивний словник-тренажер • A1–B2</p>
+              <p className="text-[11px] text-slate-500 hidden sm:block">Курс та тренажер німецької • A1–B2</p>
             </div>
           </div>
 
@@ -1684,33 +1813,33 @@ export default function App() {
 
             <div className="space-y-1.5 pr-8">
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 text-[11px] font-bold">
-                <Sparkles className="w-3 h-3" /> Тренажер живої німецької лексики
+                <Sparkles className="w-3 h-3" /> Повноцінний курс німецької мови
               </span>
               <h2 className="text-lg sm:text-xl font-extrabold leading-snug">
-                Вчи німецькі слова для життя, роботи та іспитів без зубріння
+                Вчи лексику та граматику для життя, роботи та іспитів без зубріння
               </h2>
               <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                Тут зібрані найпотрібніші слова рівнів <strong className="text-white">A1–B2</strong> з озвученням носія, артиклями та прикладами вживання. Перші <strong className="text-amber-300">60 слів</strong> (по 5 у кожному блоці) відкриті безкоштовно.
+                Обирай між <strong className="text-white">Лексикою</strong> (картки, тести, правопис з озвученням носія) та <strong className="text-amber-300">Граматикою</strong> (короткі шпаргалки без води + конструктор речень).
               </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
               <div className="bg-white/10 rounded-2xl p-3 space-y-1">
-                <div className="font-extrabold text-amber-300">1. Обери рівень і тему</div>
+                <div className="font-extrabold text-amber-300">1. Лексика A1–B2</div>
                 <p className="text-slate-300 leading-snug">
-                  Від початкового A1 до впевненого B2: розмовна лексика, підготовка до іспитів або офіційна мова.
+                  Живі слова для побуту, навчання та іспитів Goethe/telc з прикладами.
                 </p>
               </div>
               <div className="bg-white/10 rounded-2xl p-3 space-y-1">
-                <div className="font-extrabold text-emerald-300">2. Тренуйся у 3 режимах</div>
+                <div className="font-extrabold text-emerald-300">2. Граматика без води</div>
                 <p className="text-slate-300 leading-snug">
-                  Картки, тести з розбором помилок та правопис з артиклями й умлаутами.
+                  Формули порядку слів, типові пастки для українців та інтерактивна практика.
                 </p>
               </div>
               <div className="bg-white/10 rounded-2xl p-3 space-y-1">
-                <div className="font-extrabold text-sky-300">3. Заробляй монети 🪙</div>
+                <div className="font-extrabold text-sky-300">3. Кіт {pet.name} та монети 🪙</div>
                 <p className="text-slate-300 leading-snug">
-                  Годуй кота {pet.name}, збирай преміум-аксесуари, відкривай ачівки і веди власний словник.
+                  Виконуй завдання, годуй кота, збирай нагороди і веди власний словник.
                 </p>
               </div>
             </div>
@@ -1735,6 +1864,7 @@ export default function App() {
           </section>
         )}
 
+        {/* Картка кота */}
         <section className="bg-white px-4 py-3.5 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <button
@@ -1778,7 +1908,7 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            {currentWord && !showSessionSummary && (mode === 'quiz' || mode === 'spelling') && (
+            {courseSection === 'vocabulary' && currentWord && !showSessionSummary && (mode === 'quiz' || mode === 'spelling') && (
               <button
                 type="button"
                 onClick={handleRequestCatHint}
@@ -1801,643 +1931,1218 @@ export default function App() {
           </div>
         </section>
 
-        <section className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2.5">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">1. Обери свій рівень</h2>
-              <a
-                href={LEVEL_TEST_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 px-3 py-1 rounded-full text-xs font-bold transition"
-              >
-                <Compass className="w-3.5 h-3.5" />
-                <span>Визначити рівень</span>
-                <ExternalLink className="w-3 h-3" />
-              </a>
-            </div>
-            <span className="text-xs text-slate-500 font-medium">Статус: <strong className="text-slate-800">{getRank()}</strong></span>
-          </div>
+        {/* Головний перемикач курсу: Лексика / Граматика */}
+        <section className="grid grid-cols-2 gap-2.5 bg-white p-2 rounded-2xl border border-slate-200 shadow-xs">
+          <button
+            type="button"
+            onClick={() => setCourseSection('vocabulary')}
+            className={`py-3 px-4 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition ${
+              courseSection === 'vocabulary'
+                ? 'bg-slate-900 text-white shadow-sm'
+                : 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+            }`}
+          >
+            <BookOpen className="w-4 h-4 text-amber-400" />
+            <span>Лексика ({learnedIds.length}/{vocabulary.length})</span>
+          </button>
 
-          <div className="grid grid-cols-4 gap-2.5">
-            {LEVELS.map((lvl) => {
-              const active = !practiceAllLearnedMode && !practiceCustomMode && !mistakeOnlyWords && selectedLevel === lvl;
-              const theme = LEVEL_STYLES[lvl] || LEVEL_STYLES.A1;
-              return (
-                <button
-                  key={lvl}
-                  onClick={() => handleSelectModule(lvl, selectedCategory)}
-                  className={`relative py-2.5 px-2 rounded-xl transition flex flex-col items-center justify-center border-2 ${
-                    active ? theme.activeBtn : theme.idleBtn
-                  }`}
-                >
-                  <span className="font-extrabold text-base sm:text-lg leading-tight">{lvl}</span>
-                  <span className={`text-[10px] font-semibold ${active ? 'opacity-90' : 'opacity-75'}`}>
-                    {theme.subtitle}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="pt-2">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-2.5">2. Обери ціль та категорію</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-              {CATEGORIES.map((cat) => {
-                const active = !practiceAllLearnedMode && !practiceCustomMode && !mistakeOnlyWords && selectedCategory === cat.id;
-                const catWordsCount = vocabulary.filter((w) => w.level === selectedLevel && w.category === cat.id).length;
-                return (
-                  <button
-                    key={cat.id}
-                    onClick={() => handleSelectModule(selectedLevel, cat.id)}
-                    className={`p-3 rounded-xl border-2 text-left transition flex items-center justify-between ${
-                      active ? activeLevelTheme.activeCat : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <span className="text-xl">{cat.icon}</span>
-                      <div>
-                        <div className="font-semibold text-sm">{cat.label}</div>
-                        <div className="text-[11px] text-slate-400">
-                          {!isPro
-                            ? `Перші ${FREE_WORDS_LIMIT} слів безкоштовно`
-                            : `Рівень ${selectedLevel} (${catWordsCount} сл.)`}
-                        </div>
-                      </div>
-                    </div>
-                    {active && <CheckCircle2 className={`w-4 h-4 shrink-0 ${activeLevelTheme.checkColor}`} />}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          <button
+            type="button"
+            onClick={() => setCourseSection('grammar')}
+            className={`py-3 px-4 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition ${
+              courseSection === 'grammar'
+                ? 'bg-slate-900 text-white shadow-sm'
+                : 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+            }`}
+          >
+            <Puzzle className="w-4 h-4 text-emerald-400" />
+            <span>Граматика ({completedGrammarIds.length}/{GRAMMAR_LESSONS.length})</span>
+          </button>
         </section>
 
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="inline-flex flex-wrap bg-slate-200/70 p-1 rounded-xl gap-1">
-              <button
-                onClick={() => handleModeChange('cards')}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition ${
-                  mode === 'cards' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <BookOpen className="w-4 h-4" /> Картки
-              </button>
-              <button
-                onClick={() => handleModeChange('quiz')}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition ${
-                  mode === 'quiz' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <BrainCircuit className="w-4 h-4" /> Тест (+20)
-              </button>
-              <button
-                onClick={() => handleModeChange('spelling')}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition ${
-                  mode === 'spelling' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <Keyboard className="w-4 h-4" /> Правопис (+25)
-              </button>
-            </div>
-
-            {(reviewLearnedInModule || practiceAllLearnedMode || practiceCustomMode || mistakeOnlyWords) && (
-              <button
-                type="button"
-                onClick={() => {
-                  setReviewLearnedInModule(false);
-                  setPracticeAllLearnedMode(false);
-                  setPracticeCustomMode(false);
-                  setMistakeOnlyWords(null);
-                  setSessionResults([]);
-                  setShowSessionSummary(false);
-                  setCurrentIndex(0);
-                  setIsFlipped(false);
-                }}
-                className="px-3 py-2 rounded-xl bg-amber-100 text-amber-900 text-xs font-bold hover:bg-amber-200 transition"
-              >
-                Повернутися до нових слів
-              </button>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2 text-xs sm:text-sm font-medium text-slate-500">
-            {loading && <Loader2 className="w-4 h-4 animate-spin text-amber-600" />}
-            {filteredWords.length > 0 ? (
-              <span>
-                {mistakeOnlyWords
-                  ? 'Робота над помилками: '
-                  : practiceCustomMode
-                    ? 'Мій словник: '
-                    : practiceAllLearnedMode
-                      ? `Тренування словника${practiceLevelFilter !== 'ALL' ? ` (${practiceLevelFilter})` : ''}: `
-                      : reviewLearnedInModule
-                        ? 'Повторення: слово '
-                        : 'Слово '}
-                <strong className="text-slate-900">{currentIndex + 1}</strong> з {filteredWords.length}
-                {hasMoreWordsInPro && (
-                  <button onClick={() => setShowPaywall(true)} className="ml-1.5 text-amber-700 font-semibold hover:underline">
-                    (усього {allCategoryWords.length} у PRO)
-                  </button>
-                )}
-              </span>
-            ) : (
-              <span>Нових слів у доступі: <strong className="text-slate-900">0</strong></span>
-            )}
-
-            {(mode === 'quiz' || mode === 'spelling') && sessionResults.length > 0 && !showSessionSummary && (
-              <button
-                type="button"
-                onClick={() => setShowSessionSummary(true)}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition"
-              >
-                <ClipboardList className="w-3.5 h-3.5 text-amber-400" />
-                <span>Розбір ({sessionResults.length})</span>
-              </button>
-            )}
-          </div>
-        </div>
-
-        {showSessionSummary && (mode === 'quiz' || mode === 'spelling') && (
-          <section className="bg-white border-2 border-slate-900 rounded-3xl p-6 sm:p-8 shadow-lg space-y-5">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
-              <div>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 text-xs font-extrabold">
-                  <ClipboardList className="w-3.5 h-3.5" /> Підсумок тренування
-                </span>
-                <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1">
-                  Результат: {sessionCorrectCount} з {sessionResults.length} ({sessionAccuracy}%)
-                </h3>
-              </div>
-
-              <div className="flex items-center gap-2 text-center">
-                <div className="px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200">
-                  <div className="text-sm font-extrabold text-emerald-700">{sessionCorrectCount}</div>
-                  <div className="text-[10px] font-bold text-emerald-600 uppercase">Вірно</div>
-                </div>
-                <div className="px-3 py-1.5 rounded-xl bg-rose-50 border border-rose-200">
-                  <div className="text-sm font-extrabold text-rose-700">{sessionWrongList.length}</div>
-                  <div className="text-[10px] font-bold text-rose-600 uppercase">Помилки</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-amber-50/90 border border-amber-200 rounded-2xl p-4 space-y-1">
-              <div className="text-xs font-extrabold text-amber-950 uppercase tracking-wider">💡 На що звернути увагу далі</div>
-              <p className="text-xs sm:text-sm text-amber-900 leading-relaxed">{buildSessionAdvice(sessionResults)}</p>
-            </div>
-
-            {sessionWrongList.length > 0 && (
-              <div className="space-y-2.5">
-                <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
-                  Слова, де були помилки ({sessionWrongList.length}):
-                </h4>
-                <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl bg-slate-50/70">
-                  {sessionWrongList.map((item, idx) => (
-                    <div key={idx} className="p-3.5 flex items-center justify-between gap-3 text-xs">
-                      <div className="space-y-0.5 min-w-0">
-                        <div className="font-extrabold text-slate-900">
-                          {item.wordObj.article ? `${item.wordObj.article} ` : ''}{item.wordObj.word}
-                          <span className="font-normal text-slate-500 ml-1.5">— {item.wordObj.translation}</span>
-                        </div>
-                        <div className="text-[11px] text-rose-600">
-                          Твоя відповідь: <strong>«{item.userAnswerText}»</strong>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => speakGerman(item.wordObj.word, item.wordObj.article)}
-                        className="p-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 shrink-0 transition"
-                        title="Прослухати правильну вимову"
-                      >
-                        <Volume2 className="w-4 h-4" />
-                      </button>
+        {/* ==================== РОЗДІЛ 1: ГРАМАТИКА ==================== */}
+        {courseSection === 'grammar' && (
+          <div className="space-y-5">
+            {!activeGrammarLesson ? (
+              <>
+                <section className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">Курс граматики німецької</h2>
+                      <p className="text-xs text-slate-600 mt-0.5">
+                        Короткі правила без води + формули порядку слів + інтерактивна практика
+                      </p>
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="flex flex-wrap items-center justify-end gap-2.5 pt-2">
-              {sessionWrongList.length > 0 && (
-                <button
-                  type="button"
-                  onClick={handlePracticeMistakesOnly}
-                  className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs sm:text-sm transition"
-                >
-                  Відпрацювати лише помилки ({sessionWrongList.length})
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => {
-                  setMistakeOnlyWords(null);
-                  setSessionResults([]);
-                  setShowSessionSummary(false);
-                  setCurrentIndex(0);
-                }}
-                className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm transition"
-              >
-                Продовжити навчання
-              </button>
-            </div>
-          </section>
-        )}
-
-        {!showSessionSummary && !currentWord && (
-          <section className="bg-white border border-slate-200 rounded-3xl p-8 text-center space-y-4 shadow-sm">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto">
-              <CheckCircle2 className="w-6 h-6" />
-            </div>
-            <div className="space-y-1">
-              <h3 className="text-xl font-extrabold text-slate-900">
-                {hasMoreWordsInPro
-                  ? 'Ознайомчі 5 слів цієї категорії пройдено!'
-                  : 'Усі слова цієї категорії вже вивчені!'}
-              </h3>
-              <p className="text-sm text-slate-600 max-w-md mx-auto">
-                {hasMoreWordsInPro
-                  ? `Ти вже вивчив усі 5 безкоштовних слів у цій категорії (загалом доступно 60 безкоштовних слів по всіх рівнях і категоріях). Відкрий PRO, щоб отримати доступ до всіх ${allCategoryWords.length} слів категорії.`
-                  : 'Вивчені слова вже збережені у твоєму кабінеті. Можеш повторити їх тут або додати власні слова у приватному словнику.'}
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
-              {hasMoreWordsInPro && (
-                <button
-                  type="button"
-                  onClick={() => { setProCheckMsg(''); setShowPaywall(true); }}
-                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm transition"
-                >
-                  <Crown className="w-4 h-4 text-amber-400" /> Відкрити всі слова PRO
-                </button>
-              )}
-              {learnedCategoryWords.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => { setReviewLearnedInModule(true); setCurrentIndex(0); setIsFlipped(false); }}
-                  className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs sm:text-sm transition"
-                >
-                  Повторити вивчені ({learnedCategoryWords.length})
-                </button>
-              )}
-              {user && (
-                <button
-                  type="button"
-                  onClick={() => { setDictSubTab('custom'); openProfileDrawer('dictionary'); }}
-                  className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs sm:text-sm transition"
-                >
-                  Мій власний словник
-                </button>
-              )}
-            </div>
-          </section>
-        )}
-
-        {!showSessionSummary && currentWord && mode === 'cards' && (
-          <section className="space-y-4">
-            <div
-              onClick={() => setIsFlipped(!isFlipped)}
-              className="bg-white border-2 border-slate-200 hover:border-amber-300 rounded-3xl p-6 sm:p-10 min-h-[300px] flex flex-col justify-between cursor-pointer transition shadow-sm relative"
-            >
-              <div className="flex items-center justify-between">
-                <span className={`px-3 py-1 rounded-full text-xs font-extrabold border ${(LEVEL_STYLES[currentWord.level] || LEVEL_STYLES.A1).badge}`}>
-                  {currentWord.level === 'OWN' ? 'Мій словник' : `${currentWord.level} • ${CATEGORIES.find((c) => c.id === currentWord.category)?.label}`}
-                </span>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    speakGerman(currentWord.word, currentWord.article);
-                  }}
-                  className={`p-3 rounded-full transition ${
-                    isSpeaking ? 'bg-amber-500 text-white scale-105' : 'bg-amber-100 hover:bg-amber-200 text-amber-800'
-                  }`}
-                  title="Прослухати вимову"
-                >
-                  <Volume2 className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="text-center my-6 space-y-3">
-                {currentWord.article && (
-                  <span className={`inline-block px-3 py-0.5 rounded-lg text-sm font-bold border ${getArticleColor(currentWord.article)}`}>
-                    {currentWord.article}
-                  </span>
-                )}
-                <h3 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900">{currentWord.word}</h3>
-                {currentWord.plural && <p className="text-sm text-slate-400">Множина: {currentWord.plural}</p>}
-
-                {isFlipped ? (
-                  <div className="pt-6 mt-6 border-t border-slate-100 space-y-3">
-                    <p className="text-2xl font-bold text-amber-600">{currentWord.translation}</p>
-                    {currentWord.example && (
-                      <div className="bg-slate-50 p-4 rounded-2xl max-w-lg mx-auto text-left space-y-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="text-sm font-semibold text-slate-800">«{currentWord.example}»</p>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              speakGerman(currentWord.example);
-                            }}
-                            className="text-slate-400 hover:text-amber-600 p-1"
-                          >
-                            <Volume2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                        {currentWord.exampleUa && <p className="text-xs text-slate-500">{currentWord.exampleUa}</p>}
-                      </div>
-                    )}
+                    <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                      Засвоєно: {completedGrammarIds.length} з {GRAMMAR_LESSONS.length}
+                    </span>
                   </div>
-                ) : (
-                  <p className="text-xs text-slate-400 pt-6">Натисни на картку, щоб побачити переклад і приклад</p>
-                )}
-              </div>
 
-              <div className="flex justify-center">
-                {isCurrentLearned && !practiceCustomMode && (
-                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Вивчено
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <button onClick={goToNextWord} className="flex-1 py-3.5 px-4 rounded-2xl border border-slate-300 bg-white hover:bg-slate-50 font-semibold text-slate-700 transition flex items-center justify-center gap-2">
-                <RotateCcw className="w-4 h-4" /> Повторити пізніше
-              </button>
-              <button onClick={handleMarkLearned} className="flex-1 py-3.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition flex items-center justify-center gap-2 shadow-sm">
-                <span>{isCurrentLearned || practiceCustomMode ? 'Закріпити (+5 🪙)' : 'Знаю (+15 🪙)'}</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </section>
-        )}
-
-        {!showSessionSummary && currentWord && mode === 'quiz' && (
-          <section className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
-            <div className="flex items-center justify-between gap-2">
-              <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-extrabold border ${(LEVEL_STYLES[currentWord.level] || LEVEL_STYLES.A1).badge}`}>
-                {currentWord.level === 'OWN' ? 'Мій словник' : currentWord.level} • Обери переклад
-              </span>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleRequestCatHint}
-                  disabled={Boolean(activeHint)}
-                  className="flex items-center gap-1 text-xs font-bold text-amber-800 bg-amber-100 px-3 py-1.5 rounded-full hover:bg-amber-200 disabled:opacity-50"
-                >
-                  <Lightbulb className="w-3.5 h-3.5" /> {hintCost === 0 ? 'Підказка (0 🪙)' : `Підказка (${hintCost} 🪙)`}
-                </button>
-                <button onClick={() => speakGerman(currentWord.word, currentWord.article)} className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-full hover:bg-amber-100">
-                  <Volume2 className="w-4 h-4" /> Озвучити
-                </button>
-              </div>
-            </div>
-
-            {activeHint && (
-              <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-2.5 text-xs text-amber-950 font-medium flex items-center gap-2">
-                <span>{catStageInfo.current.emoji}</span>
-                <span>{activeHint}</span>
-              </div>
-            )}
-
-            <div className="text-center py-4">
-              <h3 className="text-3xl sm:text-4xl font-extrabold text-slate-900">
-                {currentWord.article && <span className="text-slate-400 font-semibold mr-2">{currentWord.article}</span>}
-                {currentWord.word}
-              </h3>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {quizOptions.map((option) => {
-                const isSelected = quizAnswer === option.id;
-                const isCorrect = option.id === currentWord.id;
-                let btnStyle = 'bg-slate-50 border-slate-200 hover:border-slate-400 text-slate-800';
-                if (quizAnswer) {
-                  if (isCorrect) btnStyle = 'bg-emerald-50 border-emerald-500 text-emerald-900 font-bold';
-                  else if (isSelected) btnStyle = 'bg-rose-50 border-rose-500 text-rose-900';
-                  else btnStyle = 'bg-slate-50 border-slate-200 opacity-50';
-                }
-                return (
-                  <button key={option.id} onClick={() => handleQuizChoice(option)} className={`p-4 rounded-2xl border-2 text-left transition flex items-center justify-between ${btnStyle}`}>
-                    <span>{option.translation}</span>
-                    {quizAnswer && isCorrect && <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />}
-                    {quizAnswer && isSelected && !isCorrect && <XCircle className="w-5 h-5 text-rose-600 shrink-0" />}
-                  </button>
-                );
-              })}
-            </div>
-
-            {quizAnswer && (
-              <div className="pt-2 flex flex-wrap items-center justify-between gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowSessionSummary(true)}
-                  className="text-xs font-bold text-slate-600 hover:text-slate-900 underline"
-                >
-                  Завершити й переглянути розбір
-                </button>
-                <button onClick={goToNextWord} className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 rounded-xl font-semibold flex items-center gap-2">
-                  {currentIndex + 1 >= filteredWords.length ? 'Завершити і розібрати' : 'Наступне слово'} <ArrowRight className="w-4 h-4" />
-                </button>
-              </div>
-            )}
-          </section>
-        )}
-
-        {!showSessionSummary && currentWord && mode === 'spelling' && (
-          <section className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                {currentNeedsArticle ? 'Обери артикль і напиши слово німецькою' : 'Напиши слово німецькою'}
-              </span>
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={handleRequestCatHint}
-                  disabled={Boolean(activeHint) || Boolean(spellingResult)}
-                  className="flex items-center gap-1 text-xs font-bold text-amber-800 bg-amber-100 px-3 py-1.5 rounded-full hover:bg-amber-200 disabled:opacity-50"
-                >
-                  <Lightbulb className="w-3.5 h-3.5" /> {hintCost === 0 ? 'Підказка (0 🪙)' : `Підказка (${hintCost} 🪙)`}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => speakGerman(currentWord.word, currentWord.article)}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-full hover:bg-amber-100"
-                >
-                  <Volume2 className="w-4 h-4" /> Озвучити
-                </button>
-              </div>
-            </div>
-
-            {activeHint && (
-              <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-2.5 text-xs text-amber-950 font-medium flex items-center gap-2 max-w-lg mx-auto">
-                <span>{catStageInfo.current.emoji}</span>
-                <span>{activeHint}</span>
-              </div>
-            )}
-
-            <div className="text-center py-3 space-y-1.5">
-              <span className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-extrabold border ${(LEVEL_STYLES[currentWord.level] || LEVEL_STYLES.A1).badge}`}>
-                {currentWord.level === 'OWN' ? 'Мій словник' : `${currentWord.level} • ${CATEGORIES.find((c) => c.id === currentWord.category)?.label}`}
-              </span>
-              <h3 className="text-2xl sm:text-4xl font-extrabold text-slate-900">{currentWord.translation}</h3>
-              <p className="text-xs text-slate-400">Іменники пиши з великої літери (напр. Kumpel)</p>
-            </div>
-
-            <form onSubmit={handleSpellingSubmit} className="space-y-4 max-w-lg mx-auto">
-              {currentNeedsArticle && (
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">1. Артикль</label>
-                  <div className="grid grid-cols-3 gap-2.5">
-                    {ARTICLES.map((art) => {
-                      const isSelected = selectedArticle === art;
+                  <div className="grid grid-cols-4 gap-2.5">
+                    {LEVELS.map((lvl) => {
+                      const active = grammarLevel === lvl;
+                      const theme = LEVEL_STYLES[lvl] || LEVEL_STYLES.A1;
+                      const countInLvl = GRAMMAR_LESSONS.filter((l) => l.level === lvl).length;
                       return (
                         <button
-                          key={art}
+                          key={lvl}
                           type="button"
-                          disabled={Boolean(spellingResult)}
-                          onClick={() => setSelectedArticle(art)}
-                          className={`py-2.5 rounded-xl border-2 font-bold text-sm transition ${getArticleSelectStyle(art, isSelected)}`}
+                          onClick={() => setGrammarLevel(lvl)}
+                          className={`relative py-2.5 px-2 rounded-xl transition flex flex-col items-center justify-center border-2 ${
+                            active ? theme.activeBtn : theme.idleBtn
+                          }`}
                         >
-                          {art}
+                          <span className="font-extrabold text-base sm:text-lg leading-tight">{lvl}</span>
+                          <span className={`text-[10px] font-semibold ${active ? 'opacity-90' : 'opacity-75'}`}>
+                            {countInLvl > 0 ? `${countInLvl} тем` : 'Скоро'}
+                          </span>
                         </button>
                       );
                     })}
                   </div>
-                </div>
-              )}
+                </section>
 
-              <div className="space-y-2">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  {currentNeedsArticle ? '2. Німецьке слово' : 'Німецьке слово'}
-                </label>
-                <input
-                  ref={spellingInputRef}
-                  type="text"
-                  autoComplete="off"
-                  autoCorrect="off"
-                  spellCheck="false"
-                  disabled={Boolean(spellingResult)}
-                  value={spellingInput}
-                  onChange={(e) => setSpellingInput(e.target.value)}
-                  placeholder="Введи слово німецькою..."
-                  className="w-full px-4 py-3.5 rounded-2xl border-2 border-slate-200 focus:border-amber-400 focus:outline-none text-base sm:text-lg font-bold text-slate-900 bg-slate-50/60"
-                />
+                {levelGrammarLessons.length === 0 ? (
+                  <section className="bg-white border border-slate-200 rounded-3xl p-8 text-center space-y-3 shadow-sm">
+                    <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center mx-auto">
+                      <Puzzle className="w-6 h-6" />
+                    </div>
+                    <h3 className="text-lg font-extrabold text-slate-900">Уроки рівня {grammarLevel} готуються</h3>
+                    <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto">
+                      Зараз повністю відкриті базові теми рівня <strong>A1</strong>. Почни з них, щоб закріпити фундамент порядку слів, дієслів і відмінків!
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setGrammarLevel('A1')}
+                      className="px-4 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition"
+                    >
+                      Перейти до уроків A1
+                    </button>
+                  </section>
+                ) : (
+                  <section className="space-y-3">
+                    {levelGrammarLessons.map((lesson) => {
+                      const isDone = completedGrammarIds.includes(lesson.id);
+                      const isLocked = !lesson.isFree && !isPro;
 
-                {!spellingResult && (
-                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                    <span className="text-[11px] text-slate-400 mr-1">Умлаути:</span>
-                    {UMLAUT_CHARS.map((char) => (
-                      <button
-                        key={char}
-                        type="button"
-                        onClick={() => handleInsertUmlaut(char)}
-                        className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-amber-100 hover:text-amber-900 border border-slate-200 text-sm font-bold text-slate-700 transition"
-                      >
-                        {char}
-                      </button>
-                    ))}
+                      return (
+                        <div
+                          key={lesson.id}
+                          onClick={() => handleOpenGrammarLesson(lesson)}
+                          className={`bg-white border-2 rounded-2xl p-4 sm:p-5 transition cursor-pointer flex items-center justify-between gap-4 ${
+                            isDone
+                              ? 'border-emerald-300 bg-emerald-50/30 hover:border-emerald-400'
+                              : isLocked
+                                ? 'border-slate-200 opacity-85 hover:border-amber-300'
+                                : 'border-slate-200 hover:border-slate-900 shadow-xs'
+                          }`}
+                        >
+                          <div className="flex items-start gap-3.5 min-w-0">
+                            <div
+                              className={`w-10 h-10 rounded-xl font-extrabold text-sm flex items-center justify-center shrink-0 ${
+                                isDone
+                                  ? 'bg-emerald-600 text-white'
+                                  : isLocked
+                                    ? 'bg-slate-100 text-slate-400'
+                                    : 'bg-slate-900 text-amber-400'
+                              }`}
+                            >
+                              {isDone ? <Check className="w-5 h-5" /> : lesson.order}
+                            </div>
+
+                            <div className="min-w-0 space-y-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h3 className="text-sm sm:text-base font-extrabold text-slate-900">
+                                  {lesson.title}
+                                </h3>
+                                {lesson.isFree ? (
+                                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-extrabold">
+                                    Безкоштовно
+                                  </span>
+                                ) : (
+                                  <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-extrabold inline-flex items-center gap-1">
+                                    <Crown className="w-2.5 h-2.5" /> PRO
+                                  </span>
+                                )}
+                                {isDone && (
+                                  <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-bold">
+                                    Засвоєно ✓
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[11px] font-semibold text-slate-400">{lesson.germanTitle}</p>
+                              <p className="text-xs text-slate-600 leading-snug">{lesson.goal}</p>
+                            </div>
+                          </div>
+
+                          <div className="shrink-0">
+                            {isLocked ? (
+                              <span className="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-slate-100 text-slate-600 text-xs font-bold">
+                                <Lock className="w-3.5 h-3.5" /> PRO
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-3.5 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold">
+                                <span>{isDone ? 'Повторити' : 'Вчити'}</span>
+                                <ArrowRight className="w-3.5 h-3.5" />
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </section>
+                )}
+              </>
+            ) : (
+              /* Внутрішній екран уроку граматики */
+              <section className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-8 shadow-sm space-y-6">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-4">
+                  <button
+                    type="button"
+                    onClick={() => setActiveGrammarLesson(null)}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-slate-900 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 transition"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" /> До списку тем
+                  </button>
+
+                  <div className="inline-flex bg-slate-100 p-1 rounded-xl gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setGrammarStep('rule')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                        grammarStep === 'rule' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600'
+                      }`}
+                    >
+                      1. Правило-шпаргалка
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setGrammarStep('practice');
+                        setGrammarChecked(null);
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                        grammarStep === 'practice' || grammarStep === 'done'
+                          ? 'bg-white text-slate-900 shadow-xs'
+                          : 'text-slate-600'
+                      }`}
+                    >
+                      2. Практика ({activeGrammarLesson.exercises.length})
+                    </button>
                   </div>
+                </div>
+
+                {grammarStep === 'rule' && (
+                  <div className="space-y-5">
+                    <div>
+                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-extrabold">
+                        Урок {activeGrammarLesson.order} • {activeGrammarLesson.level}
+                      </span>
+                      <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1.5">
+                        {activeGrammarLesson.title}
+                      </h2>
+                      <p className="text-xs font-semibold text-slate-400">{activeGrammarLesson.germanTitle}</p>
+                    </div>
+
+                    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-1.5">
+                      <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
+                        Суть правила без води
+                      </div>
+                      <p className="text-xs sm:text-sm text-slate-800 leading-relaxed">
+                        {activeGrammarLesson.ruleSummary}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2.5">
+                      <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
+                        Візуальні формули та приклади
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        {activeGrammarLesson.visualFormula.map((item, idx) => (
+                          <div
+                            key={idx}
+                            className="p-3.5 rounded-2xl border border-amber-200 bg-amber-50/50 space-y-1.5"
+                          >
+                            <div className="text-[11px] font-extrabold text-amber-900">{item.label}</div>
+                            <div className="text-xs font-mono font-bold text-slate-900 bg-white px-2.5 py-1.5 rounded-lg border border-amber-100">
+                              {item.formula}
+                            </div>
+                            <div className="flex items-center justify-between gap-2 pt-0.5">
+                              <span className="text-xs text-slate-700 italic">«{item.example}»</span>
+                              <button
+                                type="button"
+                                onClick={() => speakGerman(item.example)}
+                                className="p-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 shrink-0"
+                                title="Прослухати приклад"
+                              >
+                                <Volume2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="bg-rose-50/80 border border-rose-200 rounded-2xl p-4 space-y-1">
+                      <div className="text-xs font-extrabold text-rose-900">
+                        ⚠️ Типова пастка для українців
+                      </div>
+                      <p className="text-xs sm:text-sm text-rose-950 leading-relaxed">
+                        {activeGrammarLesson.ukrainianTrap}
+                      </p>
+                    </div>
+
+                    {activeGrammarLesson.examTip && (
+                      <div className="bg-sky-50/80 border border-sky-200 rounded-2xl p-4 space-y-1">
+                        <div className="text-xs font-extrabold text-sky-900">
+                          🎓 Фокус на іспиті Goethe-Zertifikat A1
+                        </div>
+                        <p className="text-xs sm:text-sm text-sky-950 leading-relaxed">
+                          {activeGrammarLesson.examTip}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="pt-2 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setGrammarStep('practice');
+                          setGrammarExIndex(0);
+                          setGrammarChecked(null);
+                          setGrammarBuiltTokens([]);
+                          setGrammarAnswerInput('');
+                        }}
+                        className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-sm transition"
+                      >
+                        <span>Зрозуміло, перейти до вправ ({activeGrammarLesson.exercises.length})</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {grammarStep === 'practice' && currentGrammarExercise && (
+                  <div className="space-y-5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-extrabold text-slate-500">
+                        Завдання <strong className="text-slate-900">{grammarExIndex + 1}</strong> з {activeGrammarLesson.exercises.length}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setGrammarStep('rule')}
+                        className="text-xs font-bold text-amber-700 hover:underline"
+                      >
+                        📖 Підглянути в правило
+                      </button>
+                    </div>
+
+                    <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
+                      <div
+                        className="h-full bg-emerald-500 rounded-full transition-all"
+                        style={{
+                          width: `${Math.round(((grammarExIndex + 1) / activeGrammarLesson.exercises.length) * 100)}%`,
+                        }}
+                      />
+                    </div>
+
+                    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 sm:p-5">
+                      <span className="inline-block px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-extrabold uppercase mb-2">
+                        {currentGrammarExercise.type === 'builder'
+                          ? 'Конструктор речення'
+                          : currentGrammarExercise.type === 'fill'
+                            ? 'Впиши форму'
+                            : 'Обери варіант'}
+                      </span>
+                      <h3 className="text-base sm:text-lg font-extrabold text-slate-900 leading-snug">
+                        {currentGrammarExercise.prompt}
+                      </h3>
+                    </div>
+
+                    {/* Тип 1: Choice */}
+                    {currentGrammarExercise.type === 'choice' && (
+                      <div className="space-y-2.5">
+                        {currentGrammarExercise.options.map((opt, idx) => {
+                          const isSelected = grammarChecked?.userAnswer === opt;
+                          const isRight = opt === currentGrammarExercise.answer;
+                          let style = 'bg-white border-slate-200 hover:border-slate-400 text-slate-800';
+                          if (grammarChecked) {
+                            if (isRight) style = 'bg-emerald-50 border-emerald-500 text-emerald-950 font-bold';
+                            else if (isSelected) style = 'bg-rose-50 border-rose-500 text-rose-950';
+                            else style = 'bg-slate-50 border-slate-200 opacity-50';
+                          }
+                          return (
+                            <button
+                              key={idx}
+                              type="button"
+                              disabled={Boolean(grammarChecked)}
+                              onClick={() => handleCheckGrammarExercise(opt)}
+                              className={`w-full p-4 rounded-2xl border-2 text-left text-sm transition flex items-center justify-between ${style}`}
+                            >
+                              <span>{opt}</span>
+                              {grammarChecked && isRight && <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />}
+                              {grammarChecked && isSelected && !isRight && <XCircle className="w-5 h-5 text-rose-600 shrink-0" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Тип 2: Builder */}
+                    {currentGrammarExercise.type === 'builder' && (
+                      <div className="space-y-4">
+                        <div className="min-h-[64px] p-3.5 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/70 flex flex-wrap items-center gap-2">
+                          {grammarBuiltTokens.length === 0 ? (
+                            <span className="text-xs text-slate-400">Натискай на слова нижче, щоб зібрати речення...</span>
+                          ) : (
+                            grammarBuiltTokens.map((tok) => (
+                              <button
+                                key={tok.id}
+                                type="button"
+                                disabled={Boolean(grammarChecked)}
+                                onClick={() =>
+                                  setGrammarBuiltTokens((prev) => prev.filter((item) => item.id !== tok.id))
+                                }
+                                className="px-3.5 py-2 rounded-xl bg-slate-900 text-white text-xs sm:text-sm font-bold shadow-xs hover:bg-slate-700 transition"
+                              >
+                                {tok.text}
+                              </button>
+                            ))
+                          )}
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2">
+                          {shuffledBuilderTokens.map((tok) => {
+                            const used = grammarBuiltTokens.some((item) => item.id === tok.id);
+                            return (
+                              <button
+                                key={tok.id}
+                                type="button"
+                                disabled={used || Boolean(grammarChecked)}
+                                onClick={() => setGrammarBuiltTokens((prev) => [...prev, tok])}
+                                className={`px-3.5 py-2 rounded-xl border-2 text-xs sm:text-sm font-bold transition ${
+                                  used
+                                    ? 'bg-slate-100 border-slate-200 text-slate-300 cursor-not-allowed'
+                                    : 'bg-white border-slate-300 hover:border-amber-400 text-slate-800 shadow-2xs'
+                                }`}
+                              >
+                                {tok.text}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {!grammarChecked && (
+                          <div className="flex items-center gap-2.5 pt-1">
+                            <button
+                              type="button"
+                              onClick={() => setGrammarBuiltTokens([])}
+                              disabled={grammarBuiltTokens.length === 0}
+                              className="px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-600 disabled:opacity-40"
+                            >
+                              Очистити
+                            </button>
+                            <button
+                              type="button"
+                              disabled={grammarBuiltTokens.length === 0}
+                              onClick={() => handleCheckGrammarExercise()}
+                              className="flex-1 py-3 px-5 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white font-bold text-sm transition"
+                            >
+                              Перевірити речення
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Тип 3: Fill */}
+                    {currentGrammarExercise.type === 'fill' && (
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          handleCheckGrammarExercise();
+                        }}
+                        className="space-y-3"
+                      >
+                        <input
+                          ref={grammarInputRef}
+                          type="text"
+                          autoComplete="off"
+                          autoCorrect="off"
+                          spellCheck="false"
+                          disabled={Boolean(grammarChecked)}
+                          value={grammarAnswerInput}
+                          onChange={(e) => setGrammarAnswerInput(e.target.value)}
+                          placeholder={currentGrammarExercise.placeholder || 'Введи відповідь...'}
+                          className="w-full px-4 py-3.5 rounded-2xl border-2 border-slate-200 focus:border-amber-400 focus:outline-none text-base font-bold text-slate-900 bg-slate-50/60"
+                        />
+
+                        {!grammarChecked && (
+                          <>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className="text-[11px] text-slate-400 mr-1">Умлаути:</span>
+                              {UMLAUT_CHARS.map((char) => (
+                                <button
+                                  key={char}
+                                  type="button"
+                                  onClick={() => handleInsertGrammarUmlaut(char)}
+                                  className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-amber-100 border border-slate-200 text-sm font-bold text-slate-700"
+                                >
+                                  {char}
+                                </button>
+                              ))}
+                            </div>
+                            <button
+                              type="submit"
+                              disabled={!grammarAnswerInput.trim()}
+                              className="w-full py-3 px-5 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white font-bold text-sm transition"
+                            >
+                              Перевірити відповідь
+                            </button>
+                          </>
+                        )}
+                      </form>
+                    )}
+
+                    {grammarChecked && (
+                      <div
+                        className={`p-4 rounded-2xl border-2 space-y-2.5 ${
+                          grammarChecked.isCorrect
+                            ? 'bg-emerald-50 border-emerald-400 text-emerald-950'
+                            : 'bg-rose-50 border-rose-400 text-rose-950'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 font-extrabold text-sm">
+                            {grammarChecked.isCorrect ? (
+                              <>
+                                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                                <span>Правильно! +10 XP • +10 🪙</span>
+                              </>
+                            ) : (
+                              <>
+                                <XCircle className="w-5 h-5 text-rose-600 shrink-0" />
+                                <span>Правильна відповідь: «{currentGrammarExercise.answer}»</span>
+                              </>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => speakGerman(currentGrammarExercise.answer)}
+                            className="p-1.5 rounded-lg bg-white/80 hover:bg-white text-slate-700"
+                          >
+                            <Volume2 className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        <p className="text-xs leading-relaxed bg-white/80 p-3 rounded-xl text-slate-800">
+                          💡 <strong>Пояснення:</strong> {currentGrammarExercise.explanation}
+                        </p>
+
+                        <div className="flex justify-end pt-1">
+                          <button
+                            type="button"
+                            onClick={handleNextGrammarExercise}
+                            className="bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2"
+                          >
+                            <span>
+                              {grammarExIndex + 1 < activeGrammarLesson.exercises.length
+                                ? 'Наступне завдання'
+                                : 'Завершити урок'}
+                            </span>
+                            <ArrowRight className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {grammarStep === 'done' && (
+                  <div className="text-center py-6 space-y-4">
+                    <div className="w-16 h-16 rounded-3xl bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto text-3xl">
+                      🏆
+                    </div>
+                    <div className="space-y-1">
+                      <h3 className="text-2xl font-extrabold text-slate-900">
+                        Урок завершено: {grammarCorrectCount} з {activeGrammarLesson.exercises.length}
+                      </h3>
+                      <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto">
+                        {Math.round((grammarCorrectCount / activeGrammarLesson.exercises.length) * 100) >= 70
+                          ? 'Тему зараховано як засвоєну! Рухайся до наступної теми або закріпи слова у розділі «Лексика».'
+                          : 'Щоб отримати позначку «Засвоєно ✓», потрібно набрати від 70% правильних відповідей. Переглянь правило ще раз і спробуй знову!'}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setGrammarStep('practice');
+                          setGrammarExIndex(0);
+                          setGrammarChecked(null);
+                          setGrammarBuiltTokens([]);
+                          setGrammarAnswerInput('');
+                          setGrammarCorrectCount(0);
+                        }}
+                        className="px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50"
+                      >
+                        Пройти вправи ще раз
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveGrammarLesson(null)}
+                        className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-bold"
+                      >
+                        До списку тем граматики
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </section>
+            )}
+          </div>
+        )}
+
+        {/* ==================== РОЗДІЛ 2: ЛЕКСИКА ==================== */}
+        {courseSection === 'vocabulary' && (
+          <>
+            <section className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5">
+                  <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">1. Обери свій рівень</h2>
+                  <a
+                    href={LEVEL_TEST_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 px-3 py-1 rounded-full text-xs font-bold transition"
+                  >
+                    <Compass className="w-3.5 h-3.5" />
+                    <span>Визначити рівень</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+                <span className="text-xs text-slate-500 font-medium">Статус: <strong className="text-slate-800">{getRank()}</strong></span>
+              </div>
+
+              <div className="grid grid-cols-4 gap-2.5">
+                {LEVELS.map((lvl) => {
+                  const active = !practiceAllLearnedMode && !practiceCustomMode && !mistakeOnlyWords && selectedLevel === lvl;
+                  const theme = LEVEL_STYLES[lvl] || LEVEL_STYLES.A1;
+                  return (
+                    <button
+                      key={lvl}
+                      onClick={() => handleSelectModule(lvl, selectedCategory)}
+                      className={`relative py-2.5 px-2 rounded-xl transition flex flex-col items-center justify-center border-2 ${
+                        active ? theme.activeBtn : theme.idleBtn
+                      }`}
+                    >
+                      <span className="font-extrabold text-base sm:text-lg leading-tight">{lvl}</span>
+                      <span className={`text-[10px] font-semibold ${active ? 'opacity-90' : 'opacity-75'}`}>
+                        {theme.subtitle}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="pt-2">
+                <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-2.5">2. Обери ціль та категорію</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {CATEGORIES.map((cat) => {
+                    const active = !practiceAllLearnedMode && !practiceCustomMode && !mistakeOnlyWords && selectedCategory === cat.id;
+                    const catWordsCount = vocabulary.filter((w) => w.level === selectedLevel && w.category === cat.id).length;
+                    return (
+                      <button
+                        key={cat.id}
+                        onClick={() => handleSelectModule(selectedLevel, cat.id)}
+                        className={`p-3 rounded-xl border-2 text-left transition flex items-center justify-between ${
+                          active ? activeLevelTheme.activeCat : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-xl">{cat.icon}</span>
+                          <div>
+                            <div className="font-semibold text-sm">{cat.label}</div>
+                            <div className="text-[11px] text-slate-400">
+                              {!isPro
+                                ? `Перші ${FREE_WORDS_LIMIT} слів безкоштовно`
+                                : `Рівень ${selectedLevel} (${catWordsCount} сл.)`}
+                            </div>
+                          </div>
+                        </div>
+                        {active && <CheckCircle2 className={`w-4 h-4 shrink-0 ${activeLevelTheme.checkColor}`} />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </section>
+
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="inline-flex flex-wrap bg-slate-200/70 p-1 rounded-xl gap-1">
+                  <button
+                    onClick={() => handleModeChange('cards')}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition ${
+                      mode === 'cards' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <BookOpen className="w-4 h-4" /> Картки
+                  </button>
+                  <button
+                    onClick={() => handleModeChange('quiz')}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition ${
+                      mode === 'quiz' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <BrainCircuit className="w-4 h-4" /> Тест (+20)
+                  </button>
+                  <button
+                    onClick={() => handleModeChange('spelling')}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition ${
+                      mode === 'spelling' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <Keyboard className="w-4 h-4" /> Правопис (+25)
+                  </button>
+                </div>
+
+                {(reviewLearnedInModule || practiceAllLearnedMode || practiceCustomMode || mistakeOnlyWords) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setReviewLearnedInModule(false);
+                      setPracticeAllLearnedMode(false);
+                      setPracticeCustomMode(false);
+                      setMistakeOnlyWords(null);
+                      setSessionResults([]);
+                      setShowSessionSummary(false);
+                      setCurrentIndex(0);
+                      setIsFlipped(false);
+                    }}
+                    className="px-3 py-2 rounded-xl bg-amber-100 text-amber-900 text-xs font-bold hover:bg-amber-200 transition"
+                  >
+                    Повернутися до нових слів
+                  </button>
                 )}
               </div>
 
-              {!spellingResult ? (
-                <div className="flex items-center gap-2.5 pt-1">
+              <div className="flex items-center gap-2 text-xs sm:text-sm font-medium text-slate-500">
+                {loading && <Loader2 className="w-4 h-4 animate-spin text-amber-600" />}
+                {filteredWords.length > 0 ? (
+                  <span>
+                    {mistakeOnlyWords
+                      ? 'Робота над помилками: '
+                      : practiceCustomMode
+                        ? 'Мій словник: '
+                        : practiceAllLearnedMode
+                          ? `Тренування словника${practiceLevelFilter !== 'ALL' ? ` (${practiceLevelFilter})` : ''}: `
+                          : reviewLearnedInModule
+                            ? 'Повторення: слово '
+                            : 'Слово '}
+                    <strong className="text-slate-900">{currentIndex + 1}</strong> з {filteredWords.length}
+                    {hasMoreWordsInPro && (
+                      <button onClick={() => setShowPaywall(true)} className="ml-1.5 text-amber-700 font-semibold hover:underline">
+                        (усього {allCategoryWords.length} у PRO)
+                      </button>
+                    )}
+                  </span>
+                ) : (
+                  <span>Нових слів у доступі: <strong className="text-slate-900">0</strong></span>
+                )}
+
+                {(mode === 'quiz' || mode === 'spelling') && sessionResults.length > 0 && !showSessionSummary && (
                   <button
                     type="button"
-                    onClick={goToNextWord}
-                    className="py-3 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-xs sm:text-sm font-semibold text-slate-600 transition"
+                    onClick={() => setShowSessionSummary(true)}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition"
                   >
-                    Пропустити
+                    <ClipboardList className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Розбір ({sessionResults.length})</span>
                   </button>
-                  <button
-                    type="submit"
-                    disabled={(currentNeedsArticle && !selectedArticle) || !spellingInput.trim()}
-                    className="flex-1 py-3 px-5 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white font-bold text-sm transition shadow-sm"
-                  >
-                    Перевірити відповідь
-                  </button>
-                </div>
-              ) : (
-                <div
-                  className={`p-4 rounded-2xl border-2 space-y-2.5 ${
-                    spellingResult.allOk
-                      ? 'bg-emerald-50 border-emerald-400 text-emerald-950'
-                      : 'bg-rose-50 border-rose-400 text-rose-950'
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 font-extrabold text-sm sm:text-base">
-                      {spellingResult.allOk ? (
-                        <>
-                          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                          <span>Ідеально! +25 XP • +25 🪙</span>
-                        </>
-                      ) : (
-                        <>
-                          <XCircle className="w-5 h-5 text-rose-600 shrink-0" />
-                          <span>Є помилка — перевір написання</span>
-                        </>
-                      )}
+                )}
+              </div>
+            </div>
+
+            {showSessionSummary && (mode === 'quiz' || mode === 'spelling') && (
+              <section className="bg-white border-2 border-slate-900 rounded-3xl p-6 sm:p-8 shadow-lg space-y-5">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                  <div>
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 text-xs font-extrabold">
+                      <ClipboardList className="w-3.5 h-3.5" /> Підсумок тренування
+                    </span>
+                    <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-1">
+                      Результат: {sessionCorrectCount} з {sessionResults.length} ({sessionAccuracy}%)
+                    </h3>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-center">
+                    <div className="px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200">
+                      <div className="text-sm font-extrabold text-emerald-700">{sessionCorrectCount}</div>
+                      <div className="text-[10px] font-bold text-emerald-600 uppercase">Вірно</div>
                     </div>
+                    <div className="px-3 py-1.5 rounded-xl bg-rose-50 border border-rose-200">
+                      <div className="text-sm font-extrabold text-rose-700">{sessionWrongList.length}</div>
+                      <div className="text-[10px] font-bold text-rose-600 uppercase">Помилки</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-amber-50/90 border border-amber-200 rounded-2xl p-4 space-y-1">
+                  <div className="text-xs font-extrabold text-amber-950 uppercase tracking-wider">💡 На що звернути увагу далі</div>
+                  <p className="text-xs sm:text-sm text-amber-900 leading-relaxed">{buildSessionAdvice(sessionResults)}</p>
+                </div>
+
+                {sessionWrongList.length > 0 && (
+                  <div className="space-y-2.5">
+                    <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
+                      Слова, де були помилки ({sessionWrongList.length}):
+                    </h4>
+                    <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl bg-slate-50/70">
+                      {sessionWrongList.map((item, idx) => (
+                        <div key={idx} className="p-3.5 flex items-center justify-between gap-3 text-xs">
+                          <div className="space-y-0.5 min-w-0">
+                            <div className="font-extrabold text-slate-900">
+                              {item.wordObj.article ? `${item.wordObj.article} ` : ''}{item.wordObj.word}
+                              <span className="font-normal text-slate-500 ml-1.5">— {item.wordObj.translation}</span>
+                            </div>
+                            <div className="text-[11px] text-rose-600">
+                              Твоя відповідь: <strong>«{item.userAnswerText}»</strong>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => speakGerman(item.wordObj.word, item.wordObj.article)}
+                            className="p-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 shrink-0 transition"
+                            title="Прослухати правильну вимову"
+                          >
+                            <Volume2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex flex-wrap items-center justify-end gap-2.5 pt-2">
+                  {sessionWrongList.length > 0 && (
                     <button
                       type="button"
-                      onClick={() => speakGerman(currentWord.word, currentWord.article)}
-                      className="p-1.5 rounded-lg bg-white/80 hover:bg-white text-slate-700"
+                      onClick={handlePracticeMistakesOnly}
+                      className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs sm:text-sm transition"
                     >
-                      <Volume2 className="w-4 h-4" />
+                      Відпрацювати лише помилки ({sessionWrongList.length})
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMistakeOnlyWords(null);
+                      setSessionResults([]);
+                      setShowSessionSummary(false);
+                      setCurrentIndex(0);
+                    }}
+                    className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm transition"
+                  >
+                    Продовжити навчання
+                  </button>
+                </div>
+              </section>
+            )}
+
+            {!showSessionSummary && !currentWord && (
+              <section className="bg-white border border-slate-200 rounded-3xl p-8 text-center space-y-4 shadow-sm">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto">
+                  <CheckCircle2 className="w-6 h-6" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-xl font-extrabold text-slate-900">
+                    {hasMoreWordsInPro
+                      ? 'Ознайомчі 5 слів цієї категорії пройдено!'
+                      : 'Усі слова цієї категорії вже вивчені!'}
+                  </h3>
+                  <p className="text-sm text-slate-600 max-w-md mx-auto">
+                    {hasMoreWordsInPro
+                      ? `Ти вже вивчив усі 5 безкоштовних слів у цій категорії (загалом доступно 60 безкоштовних слів по всіх рівнях і категоріях). Відкрий PRO, щоб отримати доступ до всіх ${allCategoryWords.length} слів категорії.`
+                      : 'Вивчені слова вже збережені у твоєму кабінеті. Можеш повторити їх тут або перейти до граматики.'}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
+                  {hasMoreWordsInPro && (
+                    <button
+                      type="button"
+                      onClick={() => { setProCheckMsg(''); setShowPaywall(true); }}
+                      className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm transition"
+                    >
+                      <Crown className="w-4 h-4 text-amber-400" /> Відкрити всі слова PRO
+                    </button>
+                  )}
+                  {learnedCategoryWords.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => { setReviewLearnedInModule(true); setCurrentIndex(0); setIsFlipped(false); }}
+                      className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs sm:text-sm transition"
+                    >
+                      Повторити вивчені ({learnedCategoryWords.length})
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setCourseSection('grammar')}
+                    className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm transition"
+                  >
+                    Перейти до граматики →
+                  </button>
+                </div>
+              </section>
+            )}
+
+            {!showSessionSummary && currentWord && mode === 'cards' && (
+              <section className="space-y-4">
+                <div
+                  onClick={() => setIsFlipped(!isFlipped)}
+                  className="bg-white border-2 border-slate-200 hover:border-amber-300 rounded-3xl p-6 sm:p-10 min-h-[300px] flex flex-col justify-between cursor-pointer transition shadow-sm relative"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className={`px-3 py-1 rounded-full text-xs font-extrabold border ${(LEVEL_STYLES[currentWord.level] || LEVEL_STYLES.A1).badge}`}>
+                      {currentWord.level === 'OWN' ? 'Мій словник' : `${currentWord.level} • ${CATEGORIES.find((c) => c.id === currentWord.category)?.label}`}
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        speakGerman(currentWord.word, currentWord.article);
+                      }}
+                      className={`p-3 rounded-full transition ${
+                        isSpeaking ? 'bg-amber-500 text-white scale-105' : 'bg-amber-100 hover:bg-amber-200 text-amber-800'
+                      }`}
+                      title="Прослухати вимову"
+                    >
+                      <Volume2 className="w-5 h-5" />
                     </button>
                   </div>
 
-                  {!spellingResult.allOk && (
-                    <div className="text-xs space-y-1">
-                      {currentNeedsArticle && !spellingResult.articleOk && (
-                        <p>
-                          Артикль: ти обрав <strong>{selectedArticle}</strong>, правильно — <strong>{currentWord.article}</strong>.
-                        </p>
-                      )}
-                      {!spellingResult.wordOk && (
-                        <p>
-                          Слово: ти написав <strong>«{spellingInput.trim()}»</strong>, правильно — <strong>«{currentWord.word}»</strong> (зверни увагу на велику літеру).
-                        </p>
-                      )}
+                  <div className="text-center my-6 space-y-3">
+                    {currentWord.article && (
+                      <span className={`inline-block px-3 py-0.5 rounded-lg text-sm font-bold border ${getArticleColor(currentWord.article)}`}>
+                        {currentWord.article}
+                      </span>
+                    )}
+                    <h3 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900">{currentWord.word}</h3>
+                    {currentWord.plural && <p className="text-sm text-slate-400">Множина: {currentWord.plural}</p>}
+
+                    {isFlipped ? (
+                      <div className="pt-6 mt-6 border-t border-slate-100 space-y-3">
+                        <p className="text-2xl font-bold text-amber-600">{currentWord.translation}</p>
+                        {currentWord.example && (
+                          <div className="bg-slate-50 p-4 rounded-2xl max-w-lg mx-auto text-left space-y-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="text-sm font-semibold text-slate-800">«{currentWord.example}»</p>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  speakGerman(currentWord.example);
+                                }}
+                                className="text-slate-400 hover:text-amber-600 p-1"
+                              >
+                                <Volume2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                            {currentWord.exampleUa && <p className="text-xs text-slate-500">{currentWord.exampleUa}</p>}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-400 pt-6">Натисни на картку, щоб побачити переклад і приклад</p>
+                    )}
+                  </div>
+
+                  <div className="flex justify-center">
+                    {isCurrentLearned && !practiceCustomMode && (
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Вивчено
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button onClick={goToNextWord} className="flex-1 py-3.5 px-4 rounded-2xl border border-slate-300 bg-white hover:bg-slate-50 font-semibold text-slate-700 transition flex items-center justify-center gap-2">
+                    <RotateCcw className="w-4 h-4" /> Повторити пізніше
+                  </button>
+                  <button onClick={handleMarkLearned} className="flex-1 py-3.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition flex items-center justify-center gap-2 shadow-sm">
+                    <span>{isCurrentLearned || practiceCustomMode ? 'Закріпити (+5 🪙)' : 'Знаю (+15 🪙)'}</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </section>
+            )}
+
+            {!showSessionSummary && currentWord && mode === 'quiz' && (
+              <section className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+                <div className="flex items-center justify-between gap-2">
+                  <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-extrabold border ${(LEVEL_STYLES[currentWord.level] || LEVEL_STYLES.A1).badge}`}>
+                    {currentWord.level === 'OWN' ? 'Мій словник' : currentWord.level} • Обери переклад
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleRequestCatHint}
+                      disabled={Boolean(activeHint)}
+                      className="flex items-center gap-1 text-xs font-bold text-amber-800 bg-amber-100 px-3 py-1.5 rounded-full hover:bg-amber-200 disabled:opacity-50"
+                    >
+                      <Lightbulb className="w-3.5 h-3.5" /> {hintCost === 0 ? 'Підказка (0 🪙)' : `Підказка (${hintCost} 🪙)`}
+                    </button>
+                    <button onClick={() => speakGerman(currentWord.word, currentWord.article)} className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-full hover:bg-amber-100">
+                      <Volume2 className="w-4 h-4" /> Озвучити
+                    </button>
+                  </div>
+                </div>
+
+                {activeHint && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-2.5 text-xs text-amber-950 font-medium flex items-center gap-2">
+                    <span>{catStageInfo.current.emoji}</span>
+                    <span>{activeHint}</span>
+                  </div>
+                )}
+
+                <div className="text-center py-4">
+                  <h3 className="text-3xl sm:text-4xl font-extrabold text-slate-900">
+                    {currentWord.article && <span className="text-slate-400 font-semibold mr-2">{currentWord.article}</span>}
+                    {currentWord.word}
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {quizOptions.map((option) => {
+                    const isSelected = quizAnswer === option.id;
+                    const isCorrect = option.id === currentWord.id;
+                    let btnStyle = 'bg-slate-50 border-slate-200 hover:border-slate-400 text-slate-800';
+                    if (quizAnswer) {
+                      if (isCorrect) btnStyle = 'bg-emerald-50 border-emerald-500 text-emerald-900 font-bold';
+                      else if (isSelected) btnStyle = 'bg-rose-50 border-rose-500 text-rose-900';
+                      else btnStyle = 'bg-slate-50 border-slate-200 opacity-50';
+                    }
+                    return (
+                      <button key={option.id} onClick={() => handleQuizChoice(option)} className={`p-4 rounded-2xl border-2 text-left transition flex items-center justify-between ${btnStyle}`}>
+                        <span>{option.translation}</span>
+                        {quizAnswer && isCorrect && <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />}
+                        {quizAnswer && isSelected && !isCorrect && <XCircle className="w-5 h-5 text-rose-600 shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {quizAnswer && (
+                  <div className="pt-2 flex flex-wrap items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowSessionSummary(true)}
+                      className="text-xs font-bold text-slate-600 hover:text-slate-900 underline"
+                    >
+                      Завершити й переглянути розбір
+                    </button>
+                    <button onClick={goToNextWord} className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 rounded-xl font-semibold flex items-center gap-2">
+                      {currentIndex + 1 >= filteredWords.length ? 'Завершити і розібрати' : 'Наступне слово'} <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+              </section>
+            )}
+
+            {!showSessionSummary && currentWord && mode === 'spelling' && (
+              <section className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                    {currentNeedsArticle ? 'Обери артикль і напиши слово німецькою' : 'Напиши слово німецькою'}
+                  </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={handleRequestCatHint}
+                      disabled={Boolean(activeHint) || Boolean(spellingResult)}
+                      className="flex items-center gap-1 text-xs font-bold text-amber-800 bg-amber-100 px-3 py-1.5 rounded-full hover:bg-amber-200 disabled:opacity-50"
+                    >
+                      <Lightbulb className="w-3.5 h-3.5" /> {hintCost === 0 ? 'Підказка (0 🪙)' : `Підказка (${hintCost} 🪙)`}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => speakGerman(currentWord.word, currentWord.article)}
+                      className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-full hover:bg-amber-100"
+                    >
+                      <Volume2 className="w-4 h-4" /> Озвучити
+                    </button>
+                  </div>
+                </div>
+
+                {activeHint && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-2.5 text-xs text-amber-950 font-medium flex items-center gap-2 max-w-lg mx-auto">
+                    <span>{catStageInfo.current.emoji}</span>
+                    <span>{activeHint}</span>
+                  </div>
+                )}
+
+                <div className="text-center py-3 space-y-1.5">
+                  <span className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-extrabold border ${(LEVEL_STYLES[currentWord.level] || LEVEL_STYLES.A1).badge}`}>
+                    {currentWord.level === 'OWN' ? 'Мій словник' : `${currentWord.level} • ${CATEGORIES.find((c) => c.id === currentWord.category)?.label}`}
+                  </span>
+                  <h3 className="text-2xl sm:text-4xl font-extrabold text-slate-900">{currentWord.translation}</h3>
+                  <p className="text-xs text-slate-400">Іменники пиши з великої літери (напр. Kumpel)</p>
+                </div>
+
+                <form onSubmit={handleSpellingSubmit} className="space-y-4 max-w-lg mx-auto">
+                  {currentNeedsArticle && (
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">1. Артикль</label>
+                      <div className="grid grid-cols-3 gap-2.5">
+                        {ARTICLES.map((art) => {
+                          const isSelected = selectedArticle === art;
+                          return (
+                            <button
+                              key={art}
+                              type="button"
+                              disabled={Boolean(spellingResult)}
+                              onClick={() => setSelectedArticle(art)}
+                              className={`py-2.5 rounded-xl border-2 font-bold text-sm transition ${getArticleSelectStyle(art, isSelected)}`}
+                            >
+                              {art}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
 
-                  <div className="bg-white/80 p-3 rounded-xl text-xs space-y-1">
-                    <div className="font-bold text-slate-900">
-                      {currentWord.article ? `${currentWord.article} ` : ''}{currentWord.word}
-                      {currentWord.plural ? ` (${currentWord.plural})` : ''} — {currentWord.translation}
-                    </div>
-                    {currentWord.example && (
-                      <div className="text-slate-600 pt-0.5">
-                        «{currentWord.example}» — <span className="text-slate-500">{currentWord.exampleUa}</span>
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      {currentNeedsArticle ? '2. Німецьке слово' : 'Німецьке слово'}
+                    </label>
+                    <input
+                      ref={spellingInputRef}
+                      type="text"
+                      autoComplete="off"
+                      autoCorrect="off"
+                      spellCheck="false"
+                      disabled={Boolean(spellingResult)}
+                      value={spellingInput}
+                      onChange={(e) => setSpellingInput(e.target.value)}
+                      placeholder="Введи слово німецькою..."
+                      className="w-full px-4 py-3.5 rounded-2xl border-2 border-slate-200 focus:border-amber-400 focus:outline-none text-base sm:text-lg font-bold text-slate-900 bg-slate-50/60"
+                    />
+
+                    {!spellingResult && (
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        <span className="text-[11px] text-slate-400 mr-1">Умлаути:</span>
+                        {UMLAUT_CHARS.map((char) => (
+                          <button
+                            key={char}
+                            type="button"
+                            onClick={() => handleInsertUmlaut(char)}
+                            className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-amber-100 hover:text-amber-900 border border-slate-200 text-sm font-bold text-slate-700 transition"
+                          >
+                            {char}
+                          </button>
+                        ))}
                       </div>
                     )}
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => setShowSessionSummary(true)}
-                      className="text-xs font-bold text-slate-700 hover:text-slate-900 underline"
+                  {!spellingResult ? (
+                    <div className="flex items-center gap-2.5 pt-1">
+                      <button
+                        type="button"
+                        onClick={goToNextWord}
+                        className="py-3 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-xs sm:text-sm font-semibold text-slate-600 transition"
+                      >
+                        Пропустити
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={(currentNeedsArticle && !selectedArticle) || !spellingInput.trim()}
+                        className="flex-1 py-3 px-5 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white font-bold text-sm transition shadow-sm"
+                      >
+                        Перевірити відповідь
+                      </button>
+                    </div>
+                  ) : (
+                    <div
+                      className={`p-4 rounded-2xl border-2 space-y-2.5 ${
+                        spellingResult.allOk
+                          ? 'bg-emerald-50 border-emerald-400 text-emerald-950'
+                          : 'bg-rose-50 border-rose-400 text-rose-950'
+                      }`}
                     >
-                      Розбір помилок ({sessionResults.length})
-                    </button>
-                    <button
-                      type="button"
-                      onClick={goToNextWord}
-                      className="bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2"
-                    >
-                      {currentIndex + 1 >= filteredWords.length ? 'Завершити і розібрати' : 'Наступне слово'} <ArrowRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              )}
-            </form>
-          </section>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 font-extrabold text-sm sm:text-base">
+                          {spellingResult.allOk ? (
+                            <>
+                              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                              <span>Ідеально! +25 XP • +25 🪙</span>
+                            </>
+                          ) : (
+                            <>
+                              <XCircle className="w-5 h-5 text-rose-600 shrink-0" />
+                              <span>Є помилка — перевір написання</span>
+                            </>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => speakGerman(currentWord.word, currentWord.article)}
+                          className="p-1.5 rounded-lg bg-white/80 hover:bg-white text-slate-700"
+                        >
+                          <Volume2 className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      {!spellingResult.allOk && (
+                        <div className="text-xs space-y-1">
+                          {currentNeedsArticle && !spellingResult.articleOk && (
+                            <p>
+                              Артикль: ти обрав <strong>{selectedArticle}</strong>, правильно — <strong>{currentWord.article}</strong>.
+                            </p>
+                          )}
+                          {!spellingResult.wordOk && (
+                            <p>
+                              Слово: ти написав <strong>«{spellingInput.trim()}»</strong>, правильно — <strong>«{currentWord.word}»</strong> (зверни увагу на велику літеру).
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="bg-white/80 p-3 rounded-xl text-xs space-y-1">
+                        <div className="font-bold text-slate-900">
+                          {currentWord.article ? `${currentWord.article} ` : ''}{currentWord.word}
+                          {currentWord.plural ? ` (${currentWord.plural})` : ''} — {currentWord.translation}
+                        </div>
+                        {currentWord.example && (
+                          <div className="text-slate-600 pt-0.5">
+                            «{currentWord.example}» — <span className="text-slate-500">{currentWord.exampleUa}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setShowSessionSummary(true)}
+                          className="text-xs font-bold text-slate-700 hover:text-slate-900 underline"
+                        >
+                          Розбір помилок ({sessionResults.length})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={goToNextWord}
+                          className="bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2"
+                        >
+                          {currentIndex + 1 >= filteredWords.length ? 'Завершити і розібрати' : 'Наступне слово'} <ArrowRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </form>
+              </section>
+            )}
+          </>
         )}
       </main>
 
@@ -2452,6 +3157,7 @@ export default function App() {
         </div>
       </footer>
 
+      {/* ШІ-чат та модальні вікна (Profile, Auth, Legal, Paywall, Share) */}
       <div className="fixed bottom-4 right-4 z-40 flex flex-col items-end">
         {showAiChat && (
           <div className="mb-3 w-[calc(100vw-2rem)] sm:w-96 bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden flex flex-col max-h-[72vh]">
@@ -2911,11 +3617,9 @@ export default function App() {
                       <div className="text-lg font-extrabold text-emerald-900">{learnedIds.length}</div>
                       <div className="text-[10px] font-semibold text-emerald-700 uppercase">Слів</div>
                     </div>
-                    <div className="bg-orange-50 border border-orange-200 rounded-2xl p-3">
-                      <div className="text-lg font-extrabold text-orange-900">{streak} 🔥</div>
-                      <div className="text-[10px] font-semibold text-orange-700 uppercase">
-                        {isStreakFrozenToday ? 'Серія (пауза)' : 'Серія'}
-                      </div>
+                    <div className="bg-sky-50 border border-sky-200 rounded-2xl p-3">
+                      <div className="text-lg font-extrabold text-sky-900">{completedGrammarIds.length}</div>
+                      <div className="text-[10px] font-semibold text-sky-700 uppercase">Граматика</div>
                     </div>
                   </div>
 
@@ -3266,6 +3970,7 @@ export default function App() {
                                 <button
                                   type="button"
                                   onClick={() => {
+                                    setCourseSection('vocabulary');
                                     setPracticeAllLearnedMode(false);
                                     setPracticeCustomMode(false);
                                     setSelectedLevel(w.level);
@@ -3410,8 +4115,8 @@ export default function App() {
             <button onClick={() => setShowPaywall(false)} className="absolute top-5 right-5 p-2 rounded-full bg-slate-100"><X className="w-4 h-4" /></button>
             <div className="space-y-1.5">
               <div className="inline-flex items-center gap-1.5 bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-xs font-bold"><Crown className="w-3.5 h-3.5" /> Повний абонемент PRO</div>
-              <h3 className="text-2xl font-extrabold">Відкрий усі слова та рівні A1–B2</h3>
-              <p className="text-sm text-slate-600">Безкоштовно доступні перші 5 слів у кожній категорії всіх рівнів A1–B2 (усього 60 слів). З підпискою відкривається вся база слів та безлімітний ШІ-помічник.</p>
+              <h3 className="text-2xl font-extrabold">Відкрий усі слова та граматику A1–B2</h3>
+              <p className="text-sm text-slate-600">Безкоштовно доступні перші 5 слів у кожній категорії всіх рівнів A1–B2 (усього 60 слів) та стартові уроки граматики. З підпискою відкривається вся база слів, усі уроки граматики та безлімітний ШІ-помічник.</p>
             </div>
 
             <div className="grid grid-cols-3 gap-2.5">
