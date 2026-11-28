@@ -144,7 +144,7 @@ const SHOP_ITEMS = [
   { id: 'acc_headphones', type: 'accessory', icon: '🎧', name: 'Навушники поліглота', desc: 'Для ідеального аудіювання Goethe/telc', price: 1100, petXp: 230 },
   { id: 'acc_bowtie', type: 'accessory', icon: '🎀', name: 'Оксамитовий метелик', desc: 'Святковий дрес-код для іспиту C1', price: 1450, petXp: 300 },
   { id: 'acc_robe', type: 'accessory', icon: '🎓', name: 'Академічна мантія', desc: 'Атрибут випускника університету', price: 1950, petXp: 420 },
-  { id: 'acc_crown', type="accessory", icon: '👑', name: 'Золота корона магістра', desc: 'Королівський статус у німецькій', price: 2600, petXp: 550 },
+  { id: 'acc_crown', type: 'accessory', icon: '👑', name: 'Золота корона магістра', desc: 'Королівський статус у німецькій', price: 2600, petXp: 550 },
   { id: 'acc_castle', type: 'accessory', icon: '🏰', name: 'Замок Нойшванштайн', desc: 'Легендарна резиденція для кота', price: 3500, petXp: 800 },
 ];
 
