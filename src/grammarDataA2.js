@@ -164,7 +164,6 @@ export const GRAMMAR_LESSONS_A2 = [
       }
     ]
   },
-
   {
     id: 'a2_3_n_deklination',
     level: 'A2',
