@@ -164,6 +164,7 @@ export const GRAMMAR_LESSONS_A2 = [
       }
     ]
   },
+
   {
     id: 'a2_3_n_deklination',
     level: 'A2',
@@ -328,8 +329,8 @@ export const GRAMMAR_LESSONS_A2 = [
         explanation: 'Haben у Präteritum для wir має форму hatten.'
       }
     ]
-  }
-];
+  },
+
   {
     id: 'a2_5_perfekt_plusquamperfekt',
     level: 'A2',
@@ -661,3 +662,663 @@ export const GRAMMAR_LESSONS_A2 = [
       }
     ]
   },
+
+  {
+    id: 'a2_9_passiv_grundlagen',
+    level: 'A2',
+    order: 9,
+    isFree: false,
+    title: 'Пасивний стан (Vorgangspassiv)',
+    germanTitle: 'Vorgangspassiv im Präsens & Präteritum',
+    goal: 'Розпізнавати та будувати прості речення у пасивному стані з werden + Partizip II у теперішньому і минулому часах.',
+    ruleSummary:
+      'Пасив вживають тоді, коли важливіша сама дія або результат, а не те, хто саме її виконує (наприклад, в інструкціях, новинах або описах процесів). У Präsens він утворюється з дієслова werden + Partizip II (Das Haus wird gebaut), а в Präteritum — з wurde/wurden + Partizip II (Das Haus wurde gebaut). Якщо потрібно вказати виконавця дії (ким/чим), часто використовують von + Dativ або durch + Akkusativ.',
+    visualFormula: [
+      {
+        label: 'Пасив у Präsens',
+        formula: 'werden (відмінюється) + ... + Partizip II (у кінці)',
+        example: 'Hier wird Deutsch gesprochen.'
+      },
+      {
+        label: 'Пасив у Präteritum',
+        formula: 'wurde / wurden + ... + Partizip II (у кінці)',
+        example: 'Das Gebäude wurde im Jahr 1995 gebaut.'
+      },
+      {
+        label: 'Виконавець дії (von + Dativ)',
+        formula: 'von + Dativ (особа або інституція)',
+        example: 'Der Brief wird von dem Lehrer korrigiert.'
+      },
+      {
+        label: 'Актив vs Пасив',
+        formula: 'Aktiv: Man repariert das Auto → Passiv: Das Auto wird repariert',
+        example: 'Die Rechnung wird online bezahlt.'
+      }
+    ],
+    ukrainianTrap:
+      'Не плутай пасив із werden + Infinitiv (майбутній час Futur I)! У пасиві в кінці стоїть саме форма Partizip II (repariert, gebaut, geschrieben), а в теперішньому часі für er/sie/es — wird (а не ist).',
+    examTip:
+      'У текстах на оголошеннях, правилах або інструкціях (наприклад, «Die Tür wird um 20 Uhr geschlossen») пасив показує дію, яка відбувається регулярно або сталася в минулому.',
+    exercises: [
+      {
+        type: 'choice',
+        prompt: 'Обери правильний пасив у Präsens: «Тут приймають картки».',
+        options: [
+          'Hier werden Kreditkarten akzeptiert.',
+          'Hier sind Kreditkarten akzeptiert.',
+          'Hier werden Kreditkarten akzeptieren.'
+        ],
+        answer: 'Hier werden Kreditkarten akzeptiert.',
+        explanation: 'Kreditkarten — множина, тому дієслово werden стоїть у формі werden + Partizip II (akzeptiert).'
+      },
+      {
+        type: 'fill',
+        prompt: 'Впиши форму дієслова werden у Präteritum: «Das Paket ___ gestern geliefert.»',
+        placeholder: 'wurde...',
+        answer: 'wurde',
+        explanation: 'Для однини в минулому часі пасиву вживається форма wurde + Partizip II (geliefert).'
+      },
+      {
+        type: 'builder',
+        prompt: 'Склади речення у пасиві: «Текст перевіряється викладачем».',
+        tokens: ['Der', 'Text', 'wird', 'vom', 'Lehrer', 'korrigiert.'],
+        answer: 'Der Text wird vom Lehrer korrigiert.',
+        explanation: 'Vom = von dem (Dativ). Дієслово wird стоїть на 2-му місці, Partizip II korrigiert — у кінці.'
+      },
+      {
+        type: 'choice',
+        prompt: 'Яке речення передає минулу дію в пасиві: «Будинок побудували взимку»?',
+        options: [
+          'Das Haus wurde im Winter gebaut.',
+          'Das Haus ist im Winter bauen.',
+          'Das Haus wird im Winter baut.'
+        ],
+        answer: 'Das Haus wurde im Winter gebaut.',
+        explanation: 'Пасив у Präteritum утворюється з wurde + Partizip II (gebaut).'
+      },
+      {
+        type: 'fill',
+        prompt: 'Доповни пасивне речення: «Die Fenster ___ jeden Morgen geöffnet.»',
+        placeholder: 'werden...',
+        answer: 'werden',
+        explanation: 'Die Fenster — множина, регулярна дія в теперішньому часі: werden ... geöffnet.'
+      }
+    ]
+  },
+
+  {
+    id: 'a2_10_infinitiv_lassen',
+    level: 'A2',
+    order: 10,
+    isFree: false,
+    title: 'Інфінітивні звороти та дієслово lassen',
+    germanTitle: 'Infinitiv mit zu, um/ohne/statt ... zu & lassen',
+    goal: 'Правильно вживати zu + Infinitiv, звороти um...zu, ohne...zu, statt...zu та конструкції з дієсловом lassen.',
+    ruleSummary:
+      'Після багатьох дієслів і виразів (vergessen, beginnen, vorhaben, es ist wichtig, Zeit haben) вживається zu + Infinitiv (якщо дієслово має відокремлюваний префікс, zu ставиться між ним і коренем: aufzustehen). Звороти um...zu (щоб / для того щоб), ohne...zu (без того, щоб) і statt...zu (замість того, щоб) вимагають однакової особи в обох частинах і ставлять інфінітив із zu у кінець. Дієслово lassen у базовому значенні A2 часто означає «дозволяти» або «давати щось зробити» (без zu).',
+    visualFormula: [
+      {
+        label: 'zu + Infinitiv (з відокремлюваним префіксом)',
+        formula: 'префікс + zu + дієслово (у кінці)',
+        example: 'Ich habe vergessen, das Licht auszumachen.'
+      },
+      {
+        label: 'Мета, відсутність дії, заміна',
+        formula: 'um ... zu (мета) | ohne ... zu (без) | statt ... zu (замість)',
+        example: 'Ich lerne Deutsch, um in Deutschland zu arbeiten.'
+      },
+      {
+        label: 'lassen («дозволяти / давати зробити»)',
+        formula: 'lassen (2-ге місце) + ... + Infinitiv (без zu, у кінці)',
+        example: 'Er lässt seine Haare schneiden.'
+      },
+      {
+        label: 'lassen у значенні «дозволяти піти/залишити»',
+        formula: 'Ich lasse den Schlüssel zu Hause.',
+        example: 'Lass mich bitte in Ruhe!'
+      }
+    ],
+    ukrainianTrap:
+      'Звороти um...zu, ohne...zu, statt...zu вживаються лише тоді, коли підмет у реченні один і той самий! Якщо дія стосується іншої людини, будують складнопідрядне речення (наприклад, з damit або dass). Після lassen інфінітив іде БЕЗ zu.',
+    examTip:
+      'У завданнях на з’єднання речень шукайте слово «щоб» (з метою): якщо особа та сама — майже завжди підходить конструкція «um ... zu + Infinitiv».',
+    exercises: [
+      {
+        type: 'choice',
+        prompt: 'Обери правильний варіант: «Він щодня бігає, щоб бути у формі».',
+        options: [
+          'Er läuft jeden Tag, um fit zu bleiben.',
+          'Er läuft jeden Tag, um fit bleiben.',
+          'Er läuft jeden Tag, ohne fit zu bleiben.'
+        ],
+        answer: 'Er läuft jeden Tag, um fit zu bleiben.',
+        explanation: 'Мета дії передається зворотом um ... zu + Infinitiv: um fit zu bleiben.'
+      },
+      {
+        type: 'fill',
+        prompt: 'Впиши форму з zu для відокремлюваного дієслова aufstehen: «Ich habe vor, morgen früh ___.»',
+        placeholder: 'aufzustehen...',
+        answer: 'aufzustehen',
+        explanation: 'У дієслів з відокремлюваним префіксом частка zu ставиться між префіксом і основою: aufzustehen.'
+      },
+      {
+        type: 'builder',
+        prompt: 'Склади речення: «Вона пішла, не сказавши ні слова».',
+        tokens: ['Sie', 'ist', 'gegangen,', 'ohne', 'ein', 'Wort', 'zu', 'sagen.'],
+        answer: 'Sie ist gegangen, ohne ein Wort zu sagen.',
+        explanation: 'Значення «не зробивши чогось / без того, щоб» передається через ohne ... zu + Infinitiv.'
+      },
+      {
+        type: 'choice',
+        prompt: 'Як правильно сказати: «Я віддаю ремонтувати телефон» (lassen)?',
+        options: [
+          'Ich lasse mein Handy reparieren.',
+          'Ich lasse mein Handy zu reparieren.',
+          'Ich lasse mein Handy repariert.'
+        ],
+        answer: 'Ich lasse mein Handy reparieren.',
+        explanation: 'Конструкція lassen + Infinitiv вживається без частки zu: lasse ... reparieren.'
+      },
+      {
+        type: 'fill',
+        prompt: 'Впиши зворот заміщення: «___ zu Hause zu bleiben, gehen wir ins Kino.»',
+        placeholder: 'Statt...',
+        answer: 'Statt',
+        explanation: '«Замість того, щоб залишатися вдома» — це Statt ... zu Hause zu bleiben.'
+      }
+    ]
+  },
+
+  {
+    id: 'a2_11_adjektivdeklination',
+    level: 'A2',
+    order: 11,
+    isFree: false,
+    title: 'Відмінювання прикметників (Adjektivdeklination)',
+    germanTitle: 'Adjektivdeklination (schwach, gemischt, stark)',
+    goal: 'Правильно добирати закінчення прикметника перед іменником у слабкому, змішаному та сильному відмінюванні.',
+    ruleSummary:
+      'Коли прикметник стоїть перед іменником, він отримує закінчення залежно від роду, числа, відмінка та слова перед ним. Якщо перед прикметником стоїть означений артикль або dieser/jeder/welcher, більшість форм мають закінчення -e або -en (слабке відмінювання). Якщо стоїть ein/kein/mein/dein, у Nom. чол./сер. та Akk. сер. закінчення прикметника показує рід (-er, -es, -e), а в інших випадках — -en (змішане відмінювання). Якщо слова-показника немає (або стоїть числівник/etwas/viele), закінчення прикметника бере на себе роль артикля (сильне відмінювання).',
+    visualFormula: [
+      {
+        label: 'Слабке (після der/die/das/dieser)',
+        formula: 'Nom/Akk одн.: -e | решта форм: -en',
+        example: 'Der neue Kollege kommt heute.'
+      },
+      {
+        label: 'Змішане (після ein/kein/mein)',
+        formula: 'ein neuer Mann (m) | eine neue Frau (f) | ein neues Kind (n)',
+        example: 'Ich habe ein neues Handy gekauft.'
+      },
+      {
+        label: 'Сильне (без артикля / після vieler/etwas)',
+        formula: 'закінчення як у der/die/das/die (у Gen. чол./сер. — -en)',
+        example: 'Ich trinke gern warmen Tee.'
+      },
+      {
+        label: 'Dativ у більшості випадків',
+        formula: 'mit dem/einem/gutem + прикметник-en / -em',
+        example: 'Sie fährt mit ihrem neuen Auto.'
+      }
+    ],
+    ukrainianTrap:
+      'В українській прикметник узгоджується з іменником незалежно від того, є перед ним займенник чи ні. У німецькій правило «хтось один має показати рід/відмінок»: якщо артикль уже показав рід (der, die, das, den, dem), прикметник найчастіше отримує -e або -en.',
+    examTip:
+      'На A2 найчастіше перевіряють Nominativ і Akkusativ однини після ein/kein/mein (ein guter Freund, einen guten Freund, ein gutes Buch) та Dativ з mit/bei/nach (mit dem neuen Wagen / mit gutem Kaffee).',
+    exercises: [
+      {
+        type: 'choice',
+        prompt: 'Обери правильне закінчення: «Він купив нову куртку» (die Jacke, Akkusativ).',
+        options: [
+          'Er hat eine neue Jacke gekauft.',
+          'Er hat eine neues Jacke gekauft.',
+          'Er hat eine neuen Jacke gekauft.'
+        ],
+        answer: 'Er hat eine neue Jacke gekauft.',
+        explanation: 'Die Jacke — жіночий рід, Akkusativ. Після eine прикметник отримує закінчення -e: eine neue Jacke.'
+      },
+      {
+        type: 'fill',
+        prompt: 'Впиши закінчення прикметника: «Das ist ein alt___ Haus.» (das Haus, Nominativ)',
+        placeholder: 'es...',
+        answer: 'es',
+        explanation: 'Das Haus — середній рід, Nominativ. Після неозначеного артикля ein прикметник має закінчення -es: ein altes Haus.'
+      },
+      {
+        type: 'builder',
+        prompt: 'Склади речення: «Я п’ю свіжу каву» (der Kaffee, без артикля).',
+        tokens: ['Ich', 'trinke', 'frischen', 'Kaffee.'],
+        answer: 'Ich trinke frischen Kaffee.',
+        explanation: 'Без артикля перед чоловічим родом в Akkusativ прикметник отримує сильне закінчення -en: frischen Kaffee.'
+      },
+      {
+        type: 'choice',
+        prompt: 'Як правильно сказати: «Ми їдемо з нашим старим другом» (der Freund, Dativ)?',
+        options: [
+          'Wir fahren mit unserem alten Freund.',
+          'Wir fahren mit unserem alter Freund.',
+          'Wir fahren mit unserem altes Freund.'
+        ],
+        answer: 'Wir fahren mit unserem alten Freund.',
+        explanation: 'Після mit + Dativ (unserem) у змішаному відмінюванні прикметник отримує закінчення -en: unserem alten Freund.'
+      },
+      {
+        type: 'fill',
+        prompt: 'Впиши закінчення: «Der klein___ Junge spielt im Garten.» (der Junge, Nominativ)',
+        placeholder: 'e...',
+        answer: 'e',
+        explanation: 'Після означеного артикля der у Nominativ однини прикметник отримує закінчення -e: Der kleine Junge.'
+      }
+    ]
+  },
+
+  {
+    id: 'a2_12_komparation_partikeln',
+    level: 'A2',
+    order: 12,
+    isFree: false,
+    title: 'Ступені порівняння та модальні частки',
+    germanTitle: 'Komparation, Vergleichssätze & Modalpartikeln',
+    goal: 'Утворювати вищий і найвищий ступені порівняння з винятками та доречно вживати прислівники й частки (deshalb, trotzdem, doch, mal).',
+    ruleSummary:
+      'Вищий ступінь (Komparativ) утворюється суфіксом -er (часто з умлаутом односкладових голосних a/o/u: alt → älter), а порівняння «ніж» передається словом als (рівність — «такий самий... як» — через so ... wie). Найвищий ступінь (Superlativ) вживається з am ... -(e)sten або з артиклем перед іменником (der/die/das ... -ste). Модальні частки та прислівники (doch, mal, eigentlich, sowieso, deshalb, trotzdem) надають мовленню природного відтінку або зв’язують речення.',
+    visualFormula: [
+      {
+        label: 'Неправильні ступені порівняння',
+        formula: 'gut → besser → am besten | gern → lieber → am liebsten',
+        example: 'Ich trinke lieber Tee als Kaffee.'
+      },
+      {
+        label: 'Умлаут та винятки (hoch, nah)',
+        formula: 'hoch → höher → am höchsten | nah → näher → am nächsten',
+        example: 'Dieser Weg ist näher als der andere.'
+      },
+      {
+        label: 'Порівняння: als vs wie',
+        formula: 'größer als ... (більший, ніж) | so groß wie ... (такий самий, як)',
+        example: 'Berlin ist größer als München.'
+      },
+      {
+        label: 'Зв’язки та частки (deshalb, trotzdem, doch, mal)',
+        formula: 'deshalb (тому) | trotzdem (попри це) | doch / mal (м’яке спонукання/підтвердження)',
+        example: 'Schau doch mal her!'
+      }
+    ],
+    ukrainianTrap:
+      'Прикметник hoch у вищому ступені втрачає «c» і отримує умлаут: höher (а не hochere!). А після порівняльного ступеня вживається «als», а не «wie» (більший, ніж — größer als).',
+    examTip:
+      'Звертайте увагу на сполучники-прислівники deshalb («тому», наслідок) і trotzdem («попри це», протиставлення): після них у реченні дієслово стоїть одразу на 2-му місці (Deshalb bleibe ich... / Trotzdem gehe ich...).',
+    exercises: [
+      {
+        type: 'choice',
+        prompt: 'Обери правильний ступінь порівняння: «Найкраще я готую ввечері».',
+        options: [
+          'Am besten koche ich am Abend.',
+          'Am gutesten koche ich am Abend.',
+          'Am mehrsten koche ich am Abend.'
+        ],
+        answer: 'Am besten koche ich am Abend.',
+        explanation: 'Gut має нерегулярні форми: gut → besser → am besten.'
+      },
+      {
+        type: 'fill',
+        prompt: 'Впиши порівняльне слово: «Meine Wohnung ist größer ___ deine.»',
+        placeholder: 'als / wie...',
+        answer: 'als',
+        explanation: 'Після вищого ступеня порівняння (größer) вживається сполучник als («ніж»).'
+      },
+      {
+        type: 'builder',
+        prompt: 'Склади речення: «Попри дощ, ми пішли гуляти».',
+        tokens: ['Trotzdem', 'sind', 'wir', 'spazieren', 'gegangen.'],
+        answer: 'Trotzdem sind wir spazieren gegangen.',
+        explanation: 'Trotzdem на 1-му місці вимагає дієслова (sind) одразу на 2-му місці.'
+      },
+      {
+        type: 'choice',
+        prompt: 'Як правильно сказати: «Я охочіше п’ю воду, ніж сік» (gern)?',
+        options: [
+          'Ich trinke lieber Wasser als Saft.',
+          'Ich trinke gerner Wasser als Saft.',
+          'Ich trinke mehr gern Wasser als Saft.'
+        ],
+        answer: 'Ich trinke lieber Wasser als Saft.',
+        explanation: 'Порівняльний ступінь від gern — lieber («охочіше»).'
+      },
+      {
+        type: 'fill',
+        prompt: 'Впиши форму від hoch: «Der Turm ist ___ als das Haus.»',
+        placeholder: 'höher...',
+        answer: 'höher',
+        explanation: 'Вищий ступінь від hoch — höher.'
+      }
+    ]
+  },
+
+  {
+    id: 'a2_13_nebensaetze_konjunktionen',
+    level: 'A2',
+    order: 13,
+    isFree: false,
+    title: 'Складнопідрядні речення та сполучники',
+    germanTitle: 'Nebensätze mit weil, da, wenn, als, obwohl, dass & ob',
+    goal: 'Правильно будувати підрядні речення з дієсловом у кінці та розрізняти сполучники часу, причини, допусту й непрямих питань.',
+    ruleSummary:
+      'У складнопідрядному реченні після сполучників weil, da (причина), wenn, als, bevor, nachdem, solange, sobald (час/умова), obwohl (допусту), dass (зміст) та ob (непряме запитання «чи») дієвідмінне дієслово переходить у самий кінець підрядного речення. Якщо підрядне речення стоїть перед головним, вони розділяються комою, а головне речення починається одразу з дієслова.',
+    visualFormula: [
+      {
+        label: 'Дієслово — у кінець підрядного речення',
+        formula: '..., weil / wenn / obwohl / dass + підмет + ... + ДІЄСЛОВО (у кінці)',
+        example: 'Ich bleibe zu Hause, weil ich krank bin.'
+      },
+      {
+        label: 'wenn (теперішнє / умова / повторення) vs als (минуле)',
+        formula: 'Als ich ein Kind war (одного разу/період у минулому) | Wenn ich Zeit habe (тепер/щоразу)',
+        example: 'Als ich in Berlin wohnte, besuchte ich viele Museen.'
+      },
+      {
+        label: 'Допусту: obwohl («хоча»)',
+        formula: 'Obwohl es regnet, gehe ich joggen.',
+        example: 'Obwohl er müde ist, arbeitet er weiter.'
+      },
+      {
+        label: 'Непряме запитання: ob («чи»)',
+        formula: 'Ich weiß nicht, ob er heute kommt.',
+        example: 'Kannst du mir sagen, wann der Zug abfährt?'
+      }
+    ],
+    ukrainianTrap:
+      'У німецькій не можна сказати «Als ich jung bin» про теперішнє або «Wenn ich gestern kam» про конкретну минулу подію! Для одноразових чи завершених подій у минулому вживають «als», а для умови чи повторюваних ситуацій — «wenn».',
+    examTip:
+      'У підрядному реченні з відокремлюваним дієсловом (наприклад, ankommen або aufstehen) префікс не відділяється і дієслово пишеться разом у кінці: «..., weil der Zug pünktlich ankommt.»',
+    exercises: [
+      {
+        type: 'choice',
+        prompt: 'Обери правильний сполучник часу: «Коли я був маленьким, я жив у селі».',
+        options: [
+          'Als ich klein war, lebte ich auf dem Dorf.',
+          'Wenn ich klein war, lebte ich auf dem Dorf.',
+          'Dass ich klein war, lebte ich auf dem Dorf.'
+        ],
+        answer: 'Als ich klein war, lebte ich auf dem Dorf.',
+        explanation: 'Для минулого періоду чи події в минулому використовується сполучник als.'
+      },
+      {
+        type: 'fill',
+        prompt: 'Впиши сполучник допусту: «___ es sehr kalt ist, geht er ohne Mütze.»',
+        placeholder: 'Obwohl...',
+        answer: 'Obwohl',
+        explanation: 'Obwohl («хоча») вводить підрядне речення з дієсловом у кінці (ist).'
+      },
+      {
+        type: 'builder',
+        prompt: 'Склади речення: «Я не знаю, чи прийде вона сьогодні».',
+        tokens: ['Ich', 'weiß', 'nicht,', 'ob', 'sie', 'heute', 'kommt.'],
+        answer: 'Ich weiß nicht, ob sie heute kommt.',
+        explanation: 'Непряме запитання без питального слова починається з ob, а дієслово kommt стоїть у кінці.'
+      },
+      {
+        type: 'choice',
+        prompt: 'Як правильно побудувати речення з weil («тому що я маю час»)?',
+        options: [
+          'Ich helfe dir gern, weil ich Zeit habe.',
+          'Ich helfe dir gern, weil ich habe Zeit.',
+          'Ich helfe dir gern, weil habe ich Zeit.'
+        ],
+        answer: 'Ich helfe dir gern, weil ich Zeit habe.',
+        explanation: 'Після weil дієвідмінне дієслово habe стоїть у самому кінці підрядного речення.'
+      },
+      {
+        type: 'fill',
+        prompt: 'Впиши сполучник змісту: «Er sagt, ___ er morgen später kommt.»',
+        placeholder: 'dass...',
+        answer: 'dass',
+        explanation: 'Сполучник dass приєднує підрядне речення змісту, дієслово kommt — у кінці.'
+      }
+    ]
+  },
+
+  {
+    id: 'a2_14_relativsaetze_wortbildung',
+    level: 'A2',
+    order: 14,
+    isFree: false,
+    title: 'Відносні речення, парні сполучники та словотвір',
+    germanTitle: 'Relativsätze, zweiteilige Konjunktionen & Wortbildung',
+    goal: 'Будувати відносні речення з der/die/das, вживати парні сполучники та розпізнавати рід іменників за суфіксами й субстантивацією.',
+    ruleSummary:
+      'Відносне речення пояснює іменник перед ним і починається з відносного займенника (der/die/das/die), рід і число якого беруться від цього іменника, а відмінок — від ролі в самому підрядному реченні (дієслово — у кінці). Двоскладні сполучники (nicht nur ... sondern auch, entweder ... oder, weder ... noch) поєднують однорідні члени або речення. У словотворі субстантивовані інфінітиви (das Essen, das Lernen) і зменшувальні на -chen/-lein завжди середнього роду (das), а суфікси -ung, -heit, -keit — завжди жіночого роду (die).',
+    visualFormula: [
+      {
+        label: 'Відносне речення (Relativsatz)',
+        formula: 'Іменник, + der/die/das/den/dem + ... + ДІЄСЛОВО (у кінці), ...',
+        example: 'Das ist der Kollege, den ich gestern getroffen habe.'
+      },
+      {
+        label: 'Двоскладні сполучники',
+        formula: 'nicht nur ..., sondern auch ... | entweder ... oder ... | weder ... noch ...',
+        example: 'Ich spreche nicht nur Deutsch, sondern auch Englisch.'
+      },
+      {
+        label: 'Суфікси жіночого роду (завжди die)',
+        formula: '-ung, -heit, -keit, -schaft, -tion',
+        example: 'Die Anmeldung ist sehr wichtig.'
+      },
+      {
+        label: 'Середній рід (завжди das): інфінітиви та -chen/-lein',
+        formula: 'das + Інфінітив з великої літери | das + слово + -chen/-lein',
+        example: 'Das Lernen macht mir Spaß.'
+      }
+    ],
+    ukrainianTrap:
+      'У відносному реченні відмінок займенника der/die/das залежить НЕ від головного речення, а від дієслова у самому відносному реченні (наприклад, «treffen» вимагає Akkusativ → den). Також усі субстантивовані дієслова в німецькій мають рід das (das Lesen, das Schreiben).',
+    examTip:
+      'Якщо у слові бачиш закінчення -ung, -heit або -keit, його артикль завжди «die»; якщо це інфінітив із великої літери або зменшувальне на -chen — завжди «das». Це економить час на будь-якому тесті.',
+    exercises: [
+      {
+        type: 'choice',
+        prompt: 'Обери правильний відносний займенник: «Це книга, яку я зараз читаю» (das Buch, Akkusativ).',
+        options: [
+          'Das ist das Buch, das ich gerade lese.',
+          'Das ist das Buch, der ich gerade lese.',
+          'Das ist das Buch, dem ich gerade lese.'
+        ],
+        answer: 'Das ist das Buch, das ich gerade lese.',
+        explanation: 'Das Buch — середній рід, у відносному реченні в Akkusativ форма також das, дієслово lese — у кінці.'
+      },
+      {
+        type: 'fill',
+        prompt: 'Впиши артикль субстантивованого дієслова: «___ Schwimmen ist gesund.»',
+        placeholder: 'Das...',
+        answer: 'Das',
+        explanation: 'Усі іменники, утворені від інфінітивів дієслів, мають середній рід: das Schwimmen.'
+      },
+      {
+        type: 'builder',
+        prompt: 'Склади речення: «Він не п’є ні кави, ні чаю».',
+        tokens: ['Er', 'trinkt', 'weder', 'Kaffee', 'noch', 'Tee.'],
+        answer: 'Er trinkt weder Kaffee noch Tee.',
+        explanation: 'Двоскладний сполучник «ні ..., ні ...» у німецькій — це weder ... noch ...'
+      },
+      {
+        type: 'choice',
+        prompt: 'Як правильно сказати: «Вона володіє не лише німецькою, а й іспанською»?',
+        options: [
+          'Sie spricht nicht nur Deutsch, sondern auch Spanisch.',
+          'Sie spricht nicht nur Deutsch, aber auch Spanisch.',
+          'Sie spricht weder Deutsch, sondern auch Spanisch.'
+        ],
+        answer: 'Sie spricht nicht nur Deutsch, sondern auch Spanisch.',
+        explanation: '«Не лише ..., а й ...» передається парою nicht nur ..., sondern auch ...'
+      },
+      {
+        type: 'fill',
+        prompt: 'Впиши артикль іменника на -keit: «___ Möglichkeit ist super.»',
+        placeholder: 'Die...',
+        answer: 'Die',
+        explanation: 'Іменники із суфіксом -keit завжди мають жіночий рід: die Möglichkeit.'
+      }
+    ]
+  },
+
+  {
+    id: 'a2_final_exam',
+    level: 'A2',
+    order: 15,
+    isFree: false,
+    isFinalExam: true,
+    title: 'Фінальний іспит рівня A2',
+    germanTitle: 'Abschlusstest A2 (Alle Themen & Fehler-Training)',
+    goal: 'Перевірити засвоєння ключових тем A2 у змішаному тесті та автоматично закріпити теми, у яких виникли помилки.',
+    ruleSummary:
+      'Цей іспит перевіряє найважливіші граматичні механізми рівня A2: прийменники з Genitiv, n-Deklination, Präteritum та Perfekt, Konjunktiv II, керування з прийменниками, пасив, інфінітивні звороти та складнопідрядні речення. Якщо ти помилишся в завданні з певної теми, система автоматично додасть 2 додаткові вправи на закріплення цієї теми в кінець іспиту.',
+    visualFormula: [
+      {
+        label: 'Формат іспиту',
+        formula: '10 змішаних завдань + авто-закріплення при помилках',
+        example: 'Für die erfolgreiche Prüfung sind mindestens 70% nötig.'
+      },
+      {
+        label: 'Критерій зарахування',
+        formula: 'від 70% правильних відповідей → «Засвоєно ✓» + 75 🪙',
+        example: 'Jede richtige Antwort bringt +10 XP та +10 🪙.'
+      }
+    ],
+    ukrainianTrap:
+      'Не поспішай: уважно читай, який час або відмінок вимагає дієслово чи прийменник, і перевіряй позицію дієслова в головному та підрядному реченнях.',
+    examTip:
+      'Якщо якась тема з A2 ще здається непевною, перед іспитом зазирни у відповідний урок — шпаргалка та приклад допоможуть швидко згадати правило.',
+    exercises: [
+      {
+        type: 'choice',
+        sourceLessonId: 'a2_1_kasus_genitiv',
+        topicTag: 'Прийменники з Genitiv',
+        prompt: 'Обери правильний варіант: «Через погану погоду ми не їдемо в парк».',
+        options: [
+          'Wegen des schlechten Wetters fahren wir nicht in den Park.',
+          'Wegen dem schlechten Wetter fahren wir nicht in den Park.',
+          'Wegen den schlechten Wetter fahren wir nicht in den Park.'
+        ],
+        answer: 'Wegen des schlechten Wetters fahren wir nicht in den Park.',
+        explanation: 'Wegen вимагає Genitiv: des schlechten Wetters.'
+      },
+      {
+        type: 'choice',
+        sourceLessonId: 'a2_3_n_deklination',
+        topicTag: 'Слабке відмінювання (n-Deklination)',
+        prompt: 'Обери правильний варіант: «Я добре знаю цього колегу».',
+        options: [
+          'Ich kenne diesen Kollegen gut.',
+          'Ich kenne dieser Kollege gut.',
+          'Ich kenne diesem Kollege gut.'
+        ],
+        answer: 'Ich kenne diesen Kollegen gut.',
+        explanation: 'Der Kollege належить до n-Deklination, в Akkusativ однини → diesen Kollegen.'
+      },
+      {
+        type: 'choice',
+        sourceLessonId: 'a2_4_praeteritum',
+        topicTag: 'Минулий час Präteritum',
+        prompt: 'Обери правильну форму: «Учора я мусив довго працювати».',
+        options: [
+          'Gestern musste ich lange arbeiten.',
+          'Gestern müsste ich lange arbeiten.',
+          'Gestern muss ich lange arbeiten.'
+        ],
+        answer: 'Gestern musste ich lange arbeiten.',
+        explanation: 'У Präteritum модальні дієслова не мають умлаута: müssen → musste.'
+      },
+      {
+        type: 'choice',
+        sourceLessonId: 'a2_5_perfekt_plusquamperfekt',
+        topicTag: 'Складний Perfekt та Plusquamperfekt',
+        prompt: 'Обери правильний Perfekt: «Він вчасно відправив листа» (abschicken).',
+        options: [
+          'Er hat den Brief pünktlich abgeschickt.',
+          'Er hat den Brief pünktlich geabschickt.',
+          'Er ist den Brief pünktlich abgeschickt.'
+        ],
+        answer: 'Er hat den Brief pünktlich abgeschickt.',
+        explanation: 'Abschicken — відокремлюваний префікс ab-, тому ge- стоїть усередині: abgeschickt.'
+      },
+      {
+        type: 'choice',
+        sourceLessonId: 'a2_6_futur1_modalverben',
+        topicTag: 'Futur I та модальні відтінки',
+        prompt: 'Як сказати: «Тобі не обов’язково приходити рано» (немає потреби)?',
+        options: [
+          'Du musst nicht früh kommen.',
+          'Du darfst nicht früh kommen.',
+          'Du sollst nicht früh kommen.'
+        ],
+        answer: 'Du musst nicht früh kommen.',
+        explanation: 'Відсутність обов’язку — nicht müssen, заборона — nicht dürfen.'
+      },
+      {
+        type: 'choice',
+        sourceLessonId: 'a2_7_konjunktiv_2',
+        topicTag: 'Умовний спосіб Konjunktiv II',
+        prompt: 'Обери ввічливе прохання: «Чи не міг би ти передати мені сіль?»',
+        options: [
+          'Könntest du mir bitte das Salz geben?',
+          'Kannst du mir bitte das Salz geben?',
+          'Konntest du mir bitte das Salz geben?'
+        ],
+        answer: 'Könntest du mir bitte das Salz geben?',
+        explanation: 'Для ввічливого прохання вживається форма Konjunktiv II — könntest.'
+      },
+      {
+        type: 'choice',
+        sourceLessonId: 'a2_8_reflexiv_praepositionen_da_wo',
+        topicTag: 'Зворотні дієслова та керування',
+        prompt: 'Обери правильний варіант: «Я добре запам’ятовую нові слова» (sich etwas merken).',
+        options: [
+          'Ich merke mir neue Wörter gut.',
+          'Ich merke mich neue Wörter gut.',
+          'Ich erinnere mir neue Wörter gut.'
+        ],
+        answer: 'Ich merke mir neue Wörter gut.',
+        explanation: 'При наявності додатка в Akkusativ (neue Wörter) зворотний займенник стоїть у Dativ — mir.'
+      },
+      {
+        type: 'choice',
+        sourceLessonId: 'a2_9_passiv_grundlagen',
+        topicTag: 'Пасивний стан (Vorgangspassiv)',
+        prompt: 'Обери правильний пасив у Präsens: «Тут приймають картки».',
+        options: [
+          'Hier werden Kreditkarten akzeptiert.',
+          'Hier sind Kreditkarten akzeptiert.',
+          'Hier werden Kreditkarten akzeptieren.'
+        ],
+        answer: 'Hier werden Kreditkarten akzeptiert.',
+        explanation: 'Пасив у Präsens утворюється з werden + Partizip II (akzeptiert).'
+      },
+      {
+        type: 'choice',
+        sourceLessonId: 'a2_10_infinitiv_lassen',
+        topicTag: 'Інфінітивні звороти та lassen',
+        prompt: 'Обери правильний варіант: «Він щодня бігає, щоб бути у формі».',
+        options: [
+          'Er läuft jeden Tag, um fit zu bleiben.',
+          'Er läuft jeden Tag, um fit bleiben.',
+          'Er läuft jeden Tag, ohne fit zu bleiben.'
+        ],
+        answer: 'Er läuft jeden Tag, um fit zu bleiben.',
+        explanation: 'Мета дії виражається зворотом um ... zu + Infinitiv.'
+      },
+      {
+        type: 'choice',
+        sourceLessonId: 'a2_13_nebensaetze_konjunktionen',
+        topicTag: 'Складнопідрядні речення',
+        prompt: 'Як правильно побудувати речення з weil («тому що я маю час»)?',
+        options: [
+          'Ich helfe dir gern, weil ich Zeit habe.',
+          'Ich helfe dir gern, weil ich habe Zeit.',
+          'Ich helfe dir gern, weil habe ich Zeit.'
+        ],
+        answer: 'Ich helfe dir gern, weil ich Zeit habe.',
+        explanation: 'У підрядному реченні з weil дієвідмінне дієслово habe стоїть у самому кінці.'
+      }
+    ]
+  }
+];
