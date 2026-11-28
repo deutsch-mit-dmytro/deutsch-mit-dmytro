@@ -331,3 +331,334 @@ export const GRAMMAR_LESSONS_A2 = [
     ]
   }
 ];
+  {
+    id: 'a2_5_perfekt_plusquamperfekt',
+    level: 'A2',
+    order: 5,
+    isFree: false,
+    title: 'Складний Perfekt та Plusquamperfekt',
+    germanTitle: 'Komplexes Perfekt & Plusquamperfekt',
+    goal: 'Правильно утворювати складні форми Perfekt (префікси, рух vs спокій) та позначати передісторію в минулому через Plusquamperfekt.',
+    ruleSummary:
+      'У Perfekt дієслова з відокремлюваними префіксами (auf-, an-, ein-, mit-, ab-) ставлять -ge- між префіксом і коренем (aufgestanden). Дієслова з невідділюваними префіксами (be-, ge-, er-, ver-, zer-, ent-, emp-) та дієслова на -ieren не отримують ge- (bestellt, studiert). Рух із точки А в точку Б або зміна стану вимагають sein (ich bin gefahren, er ist eingeschlafen), а стан спокою (stehen, liegen, sitzen, hängen) — haben (ich habe gelegen). Plusquamperfekt (hatte/war + Partizip II) показує дію, яка сталася раніше за іншу минулу дію (часто з nachdem).',
+    visualFormula: [
+      {
+        label: 'Відокремлювані префікси (Perfekt)',
+        formula: 'префікс + ge + основа + -(e)t / -en',
+        example: 'Ich bin um 7 Uhr aufgestanden.'
+      },
+      {
+        label: 'Невідділювані префікси та -ieren',
+        formula: 'без ge-: bestellt, erklärt, repariert',
+        example: 'Er hat das Paket pünktlich bestellt.'
+      },
+      {
+        label: 'Стан спокою (haben) vs рух (sein)',
+        formula: 'Ich habe im Bett gelegen (спокій) vs Ich bin nach Berlin gefahren (рух)',
+        example: 'Das Buch hat auf dem Tisch gelegen.'
+      },
+      {
+        label: 'Plusquamperfekt (передісторія)',
+        formula: 'hatte / war + Partizip II',
+        example: 'Nachdem wir gegessen hatten, gingen wir spazieren.'
+      }
+    ],
+    ukrainianTrap:
+      'Українською ми часто кажемо «Я лежав на дивані» без вказівки на рух, але в німецькій liegen, sitzen, stehen, hängen у Perfekt вживаються з haben (ich habe gelegen), а не з sein! Також не став ge- у дієсловах на -ieren (studieren → studiert, не gestudiert).',
+    examTip:
+      'Якщо у реченні є сполучник nachdem і в одній частині стоїть Präteritum (gingen, kam), у частині з nachdem для послідовності минулих подій часто використовується Plusquamperfekt (hatten, waren).',
+    exercises: [
+      {
+        type: 'choice',
+        prompt: 'Обери правильний Perfekt: «Він вчасно відправив листа» (abschicken).',
+        options: [
+          'Er hat den Brief pünktlich abgeschickt.',
+          'Er hat den Brief pünktlich geabschickt.',
+          'Er ist den Brief pünktlich abgeschickt.'
+        ],
+        answer: 'Er hat den Brief pünktlich abgeschickt.',
+        explanation: 'Abschicken має відокремлюваний префікс ab-, тому ge- ставиться всередину: abgeschickt. Допоміжне дієслово — hat.'
+      },
+      {
+        type: 'fill',
+        prompt: 'Впиши Partizip II дієслова studieren: «Sie hat in Wien Deutsch ___.»',
+        placeholder: 'studiert...',
+        answer: 'studiert',
+        explanation: 'Дієслова на -ieren утворюють Partizip II без префікса ge-: studiert.'
+      },
+      {
+        type: 'builder',
+        prompt: 'Склади речення: «Після того як ми поснідали, ми вийшли з дому».',
+        tokens: ['Nachdem', 'wir', 'gefrühstückt', 'hatten,', 'gingen', 'wir', 'aus', 'dem', 'Haus.'],
+        answer: 'Nachdem wir gefrühstückt hatten, gingen wir aus dem Haus.',
+        explanation: 'Попередня дія в минулому передається через Plusquamperfekt (gefrühstückt hatten), а основна дія — у Präteritum (gingen).'
+      },
+      {
+        type: 'choice',
+        prompt: 'Як правильно сказати: «Вона довго сиділа в кафе» (sitzen)?',
+        options: [
+          'Sie hat lange im Café gesessen.',
+          'Sie ist lange im Café gesessen.',
+          'Sie hat lange im Café gesitzt.'
+        ],
+        answer: 'Sie hat lange im Café gesessen.',
+        explanation: 'Sitzt/gesessen — дієслово стану спокою, у Perfekt воно вживається з haben (hat gesessen), а не з sein.'
+      },
+      {
+        type: 'fill',
+        prompt: 'Впиши правильну форму допоміжного дієслова: «___ du gut geschlafen?»',
+        placeholder: 'Hast / Bist...',
+        answer: 'Hast',
+        explanation: 'Schlafen не виражає руху з точки А в точку Б чи зміни стану, тому Perfekt утворюється з haben: Hast du geschlafen?'
+      }
+    ]
+  },
+
+  {
+    id: 'a2_6_futur1_modalverben',
+    level: 'A2',
+    order: 6,
+    isFree: false,
+    title: 'Майбутній час Futur I та модальні відтінки',
+    germanTitle: 'Futur I & Nuancen der Modalverben',
+    goal: 'Утворювати Futur I з werden + Infinitiv для планів і припущень та розрізняти відтінки значень модальних дієслів.',
+    ruleSummary:
+      'Futur I утворюється з дієслова werden у теперішньому часі (на 2-му місці) та інфінітива основного дієслова (у кінці речення). Його вживають для планів, обіцянок та припущень про майбутнє або теперішнє. Модальні дієслова на рівні A2 передають не лише базове «хочу/можу», а й відтінки: müssen — об’єктивна необхідність, dürfen — дозвіл, nicht dürfen — заборона, sollen — порада/доручення, können — уміння або можливість.',
+    visualFormula: [
+      {
+        label: 'Формула Futur I',
+        formula: 'werden (2-ге місце) + ... + Infinitiv (у кінці)',
+        example: 'Morgen werde ich früher aufstehen.'
+      },
+      {
+        label: 'Заборона vs відсутність необхідності',
+        formula: 'nicht dürfen (заборонено) vs nicht müssen / nicht brauchen zu (не обов’язково)',
+        example: 'Hier darf man nicht rauchen.'
+      },
+      {
+        label: 'Рекомендація або чиєсь прохання/правило',
+        formula: 'sollen (варто / сказали зробити)',
+        example: 'Der Arzt sagt, ich soll mehr Wasser trinken.'
+      },
+      {
+        label: 'Припущення в теперішньому часі',
+        formula: 'können / müssen + Infinitiv',
+        example: 'Er ist nicht da — er kann im Stau stehen.'
+      }
+    ],
+    ukrainianTrap:
+      'Фраза «Du musst das nicht machen» означає «Тобі не обов’язково це робити» (відсутність обов’язку), а не «Тобі не можна це робити»! Заборона в німецькій — це «Du darfst das nicht machen» або «Man darf hier nicht...».',
+    examTip:
+      'У завданнях на читання та граматику звертайте увагу на контраст між müssen і dürfen/sollen: якщо йдеться про правила музею, лікаря чи закону, часто ховається саме dürfen (дозвіл/заборона) або sollen (рекомендація).',
+    exercises: [
+      {
+        type: 'choice',
+        prompt: 'Обери правильне речення у Futur I: «Наступного літа ми поїдемо до Австрії».',
+        options: [
+          'Nächsten Sommer werden wir nach Österreich fahren.',
+          'Nächsten Sommer werden wir nach Österreich gefahren.',
+          'Nächsten Sommer sind wir nach Österreich fahren.'
+        ],
+        answer: 'Nächsten Sommer werden wir nach Österreich fahren.',
+        explanation: 'Futur I будується з werden (wir werden) та інфінітива в кінці (fahren).'
+      },
+      {
+        type: 'fill',
+        prompt: 'Впиши форму дієслова werden для «er/sie/es»: «Er ___ bestimmt bald anrufen.»',
+        placeholder: 'wird...',
+        answer: 'wird',
+        explanation: 'У теперішньому часі для 3-ї особи однини (er/sie/es) дієслово werden має форму wird.'
+      },
+      {
+        type: 'builder',
+        prompt: 'Склади речення: «Тут не можна фотографувати» (заборона).',
+        tokens: ['Hier', 'darf', 'man', 'nicht', 'fotografieren.'],
+        answer: 'Hier darf man nicht fotografieren.',
+        explanation: 'Заборона передається дієсловом dürfen у запереченні: darf man nicht.'
+      },
+      {
+        type: 'choice',
+        prompt: 'Як сказати: «Тобі не обов’язково приходити рано» (немає потреби)?',
+        options: [
+          'Du musst nicht früh kommen.',
+          'Du darfst nicht früh kommen.',
+          'Du sollst nicht früh kommen.'
+        ],
+        answer: 'Du musst nicht früh kommen.',
+        explanation: 'Відсутність обов’язку виражається через nicht müssen (не обов’язково), тоді як nicht dürfen означає заборону.'
+      },
+      {
+        type: 'fill',
+        prompt: 'Впиши модальне дієслово зі значенням поради/доручення: «___ ich das Fenster schließen?»',
+        placeholder: 'Soll / Darf...',
+        answer: 'Soll',
+        explanation: 'Питання «Чи мені зачинити вікно?» (запитуючи про доречність/бажання співрозмовника) природно передається через Soll ich...?'
+      }
+    ]
+  },
+
+  {
+    id: 'a2_7_konjunktiv_2',
+    level: 'A2',
+    order: 7,
+    isFree: false,
+    title: 'Умовний спосіб Konjunktiv II',
+    germanTitle: 'Konjunktiv II (Höflichkeit, Ratschläge & irreale Wünsche)',
+    goal: 'Використовувати Konjunktiv II для ввічливих прохань, бажань, порад та нереальних умов у теперішньому часі.',
+    ruleSummary:
+      'Konjunktiv II допомагає звучати ввічливо, давати м’які поради й говорити про те, чого зараз немає або що нереальне. Найчастіше на рівні A2 вживають: würden + Infinitiv (якби / зробив би), hätte gern (хотів би мати), wäre gern (був би радий / хотів би бути), könntest/könnten (міг би / чи могли б) та solltest (тобі варто було б). Для нереальних умов вживають сполучник wenn і дієслово в кінці підрядного речення.',
+    visualFormula: [
+      {
+        label: 'Ввічливі прохання та запити',
+        formula: 'Könntest du ...? / Würden Sie mir bitte ...?',
+        example: 'Könntest du mir bitte kurz helfen?'
+      },
+      {
+        label: 'Бажання з «мати» і «бути»',
+        formula: 'Ich hätte gern ... | Ich wäre gern ...',
+        example: 'Ich hätte gern einen Kaffee, bitte.'
+      },
+      {
+        label: 'Порада та рекомендація',
+        formula: 'Du solltest ... | An deiner Stelle würde ich ...',
+        example: 'Du solltest heute früher ins Bett gehen.'
+      },
+      {
+        label: 'Нереальна умова (wenn)',
+        formula: 'Wenn + підмет + ... + hätte/wäre/würde, дієслово ...',
+        example: 'Wenn ich mehr Zeit hätte, würde ich Spanisch lernen.'
+      }
+    ],
+    ukrainianTrap:
+      'У розмовній і стандартній мові замість рідкісних форм Konjunktiv II більшості дієслів використовують «würde + Infinitiv» (наприклад, «ich würde reisen»), але для sein (wäre), haben (hätte) та модальних дієслів (könnte, müsste, sollte) краще брати саме їхні власні форми Konjunktiv II.',
+    examTip:
+      'У завданнях на ввічливу комунікацію (наприклад, прохання в готелі, магазині або до колеги) форми würden Sie, könnten Sie та hätte gern — маркер високого рівня ввічливості.',
+    exercises: [
+      {
+        type: 'choice',
+        prompt: 'Обери ввічливе прохання: «Чи не міг би ти передати мені сіль?»',
+        options: [
+          'Könntest du mir bitte das Salz geben?',
+          'Kannst du mir bitte das Salz geben?',
+          'Konntest du mir bitte das Salz geben?'
+        ],
+        answer: 'Könntest du mir bitte das Salz geben?',
+        explanation: 'Для ввічливого прохання використовується форма Konjunktiv II від können — könntest.'
+      },
+      {
+        type: 'fill',
+        prompt: 'Впиши форму для ввічливого замовлення: «Ich ___ gern ein Wasser ohne Kohlensäure.»',
+        placeholder: 'hätt...',
+        answer: 'hätte',
+        explanation: 'Конструкція «хотів би мати» утворюється з hätte gern (Konjunktiv II від haben).'
+      },
+      {
+        type: 'builder',
+        prompt: 'Склади пораду: «Тобі варто більше відпочивати».',
+        tokens: ['Du', 'solltest', 'mehr', 'Pause', 'machen.'],
+        answer: 'Du solltest mehr Pause machen.',
+        explanation: 'Порада передається формою solltest (Konjunktiv II від sollen).'
+      },
+      {
+        type: 'choice',
+        prompt: 'Як правильно завершити нереальну умову: «Якби у мене було більше грошей, я б подорожував»?',
+        options: [
+          'Wenn ich mehr Geld hätte, würde ich reisen.',
+          'Wenn ich mehr Geld habe, würde ich reisen.',
+          'Wenn ich mehr Geld hätte, werde ich reisen.'
+        ],
+        answer: 'Wenn ich mehr Geld hätte, würde ich reisen.',
+        explanation: 'Нереальна умова в теперішньому часі вимагає Konjunktiv II: hätte у підрядному реченні та würde + Infinitiv у головному.'
+      },
+      {
+        type: 'fill',
+        prompt: 'Доповни речення: «An deiner Stelle ___ ich den Job annehmen.»',
+        placeholder: 'würd...',
+        answer: 'würde',
+        explanation: 'Зворот «An deiner Stelle würde ich...» («На твоєму місці я б...») використовується для поради.'
+      }
+    ]
+  },
+
+  {
+    id: 'a2_8_reflexiv_praepositionen_da_wo',
+    level: 'A2',
+    order: 8,
+    isFree: false,
+    title: 'Зворотні дієслова, керування та da-/wo-форми',
+    germanTitle: 'Reflexive Verben, Verben mit Präpositionen & Pronominaladverbien',
+    goal: 'Розрізняти Akkusativ і Dativ у зворотних дієсловах, вчити дієслівне керування з прийменниками та утворювати daran/woran.',
+    ruleSummary:
+      'Зворотні дієслова вживаються з займенником sich. Якщо в реченні немає іншого додатка в Akkusativ, sich стоїть в Akkusativ (ich freue mich). Якщо з’являється ще один об’єкт в Akkusativ (наприклад, «щось уявити» або «щось запам’ятати»), sich переходить у Dativ (ich stelle mir etwas vor, ich merke mir etwas). Багато дієслів мають фіксований прийменник (warten auf + Akk., denken an + Akk., teilnehmen an + Dat.). Якщо далі йде не предмет/особа, а ціле речення чи думка, замість прийменника + займенника використовують da(r)- + прийменник (daran, darauf), а в запитаннях — wo(r)- + прийменник (woran, worauf).',
+    visualFormula: [
+      {
+        label: 'sich без іншого Akkusativ vs з ним',
+        formula: 'Ich freue mich (Akk) | Ich merke mir (Dat) das Wort (Akk)',
+        example: 'Ich stelle mir das Leben in Berlin vor.'
+      },
+      {
+        label: 'Стале дієслівне керування',
+        formula: 'warten auf + Akk | sich interessieren für + Akk | teilnehmen an + Dat',
+        example: 'Wir warten auf den Zug.'
+      },
+      {
+        label: 'Займенникові прислівники da(r)- / wo(r)-',
+        formula: 'da + прийменник (якщо прийменник на голосну — додаємо -r-: daran, darauf)',
+        example: 'Ich denke oft daran.'
+      },
+      {
+        label: 'Питання з wo(r)-',
+        formula: 'wo + прийменник (на голосну — -r-: woran, worauf, womit)',
+        example: 'Woran denkst du gerade?'
+      }
+    ],
+    ukrainianTrap:
+      'У німецькій дієслівний прийменник часто не збігається з українським: ми кажемо «чекати на потяг» (укр. «на»), але німецькою «auf den Zug warten» (auf + Akk); «цікавитися музикою» (укр. без прийменника), але німецькою «sich für Musik interessieren» (für + Akk).',
+    examTip:
+      'Якщо прийменник починається на голосну (an, auf, über, um), при з’єднанні з da- або wo- обов’язково з’являється сполучна літера -r-: daran, darauf, darüber, woran, worauf.',
+    exercises: [
+      {
+        type: 'choice',
+        prompt: 'Обери правильний варіант: «Я добре запам’ятовую нові слова» (sich etwas merken).',
+        options: [
+          'Ich merke mir neue Wörter gut.',
+          'Ich merke mich neue Wörter gut.',
+          'Ich erinnere mir neue Wörter gut.'
+        ],
+        answer: 'Ich merke mir neue Wörter gut.',
+        explanation: 'У конструкції «sich etwas merken» є додаток в Akkusativ (neue Wörter), тому зворотний займенник ставиться в Dativ — mir.'
+      },
+      {
+        type: 'fill',
+        prompt: 'Впиши правильний прийменник: «Sie interessiert sich sehr ___ Kunst.»',
+        placeholder: 'für / an / auf...',
+        answer: 'für',
+        explanation: 'Дієслово sich interessieren вимагає прийменника für + Akkusativ: sich interessieren für.'
+      },
+      {
+        type: 'builder',
+        prompt: 'Склади запитання: «На що ти зараз чекаєш?» (warten auf).',
+        tokens: ['Worauf', 'wartest', 'du', 'gerade?'],
+        answer: 'Worauf wartest du gerade?',
+        explanation: 'Дієслово warten керує прийменником auf. У питанні до неживого предмета/події утворюється форма worauf.'
+      },
+      {
+        type: 'choice',
+        prompt: 'Як правильно сказати: «Я з нетерпінням чекаю на відпустку»?',
+        options: [
+          'Ich freue mich auf den Urlaub.',
+          'Ich freue mich über den Urlaub.',
+          'Ich freue mich an den Urlaub.'
+        ],
+        answer: 'Ich freue mich auf den Urlaub.',
+        explanation: 'Радіти чомусь майбутньому/очікуваному — це sich freuen auf + Akkusativ.'
+      },
+      {
+        type: 'fill',
+        prompt: 'Впиши форму з da(r)-: «Das ist ein wichtiges Thema. Wir sprechen morgen ___.» (über)',
+        placeholder: 'darüber...',
+        answer: 'darüber',
+        explanation: 'Sprechen über + Akkusativ. Оскільки über починається на голосну, з da- утворюється darüber.'
+      }
+    ]
+  },
