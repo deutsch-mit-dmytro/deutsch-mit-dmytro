@@ -53,7 +53,7 @@ const FALLBACK_DATA = [
   { id: 1, level: 'A1', category: 'colloquial', article: 'der', word: 'Kumpel', plural: 'die Kumpels', translation: 'приятель, друзяка', example: 'Mein Kumpel kommt heute Abend vorbei.', exampleUa: 'Мій приятель завітає сьогодні ввечері.' },
   { id: 2, level: 'A1', category: 'exam', article: 'die', word: 'Anmeldung', plural: 'die Anmeldungen', translation: 'реєстрація, прописка', example: 'Für den Kurs braucht man eine Anmeldung.', exampleUa: 'Для курсу потрібна реєстрація.' },
   { id: 3, level: 'A1', category: 'official', article: 'der', word: 'Ausweis', plural: 'die Ausweise', translation: 'посвідчення особи', example: 'Zeigen Sie bitte Ihren Ausweis an der Kasse.', exampleUa: 'Покажіть, будь ласка, ваше посвідчення на касі.' },
-  { id: 4, level: 'A2', category: 'colloquial', article: 'die', word: 'Lust', plural: '', translation: 'бажання, охота', example: 'Hast du heute Lust auf Kino?', exampleUa: 'Маєш сьогодні бажання піти в кіно?' },
+  { id: 4, level: 'A2', category: 'colloquial', article: 'die', word: 'Lust', plural: '', translation: 'бажання, охота', example: 'Hast du heute Lust на Kino?', exampleUa: 'Маєш сьогодні бажання піти в кіно?' },
   { id: 5, level: 'B1', category: 'exam', article: 'der', word: 'Vorteil', plural: 'die Vorteile', translation: 'перевага', example: 'Ein großer Vorteil ist die flexible Arbeitszeit.', exampleUa: 'Великою перевагою є гнучкий робочий графік.' },
   { id: 6, level: 'B2', category: 'official', article: 'die', word: 'Voraussetzung', plural: 'die Voraussetzungen', translation: 'передумова, вимога', example: 'Gute Deutschkenntnisse sind eine wichtige Voraussetzung.', exampleUa: 'Добре знання німецької є важливою вимогою.' }
 ];
@@ -456,7 +456,13 @@ export default function App() {
   const [grammarCorrectCount, setGrammarCorrectCount] = useState(0);
   const [grammarQueue, setGrammarQueue] = useState([]);
   const [grammarRemedialTopics, setGrammarRemedialTopics] = useState([]);
+  const [openGrammarAccordions, setOpenGrammarAccordions] = useState({});
+  const [showFullRuleBox, setShowFullRuleBox] = useState(false);
   const grammarInputRef = useRef(null);
+
+  const toggleGrammarAccordion = (key) => {
+    setOpenGrammarAccordions((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
   const [dailyMixItems, setDailyMixItems] = useState([]);
   const [dailyMixIndex, setDailyMixIndex] = useState(0);
@@ -1188,6 +1194,8 @@ export default function App() {
     setActiveGrammarLesson(lesson);
     setGrammarQueue(Array.isArray(lesson.exercises) ? [...lesson.exercises] : []);
     setGrammarRemedialTopics([]);
+    setOpenGrammarAccordions({});
+    setShowFullRuleBox(false);
     setGrammarStep('rule');
     setGrammarExIndex(0);
     setGrammarAnswerInput('');
@@ -2519,7 +2527,7 @@ export default function App() {
                     <div>
                       <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400">Курс граматики німецької</h2>
                       <p className="text-xs text-slate-600 mt-0.5">
-                        Короткі правила без води + формули порядку слів + інтерактивна практика
+                        Короткі правила без води + розкривні таблиці + інтерактивна практика
                       </p>
                     </div>
                     <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
@@ -2702,46 +2710,171 @@ export default function App() {
                       <p className="text-xs font-semibold text-slate-400">{activeGrammarLesson.germanTitle}</p>
                     </div>
 
-                    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-1.5">
-                      <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
-                        {activeGrammarLesson.isFinalExam ? 'Як працює фінальний іспит' : 'Суть правила без води'}
+                    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-extrabold uppercase tracking-wider text-slate-600">
+                          {activeGrammarLesson.isFinalExam ? 'Як працює фінальний іспит' : 'Коротке пояснення правила'}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setShowFullRuleBox((prev) => !prev)}
+                          className="text-xs font-bold text-amber-700 hover:underline"
+                        >
+                          {showFullRuleBox ? 'Згорнути текст' : 'Розгорнути повністю'}
+                        </button>
                       </div>
-                      <p className="text-xs sm:text-sm text-slate-800 leading-relaxed">
+                      <p
+                        className={`text-xs sm:text-sm text-slate-800 leading-relaxed ${
+                          showFullRuleBox ? '' : 'line-clamp-3'
+                        }`}
+                      >
                         {activeGrammarLesson.ruleSummary}
                       </p>
                     </div>
 
-                    <div className="space-y-2.5">
-                      <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
-                        {activeGrammarLesson.isFinalExam ? 'Умови зарахування' : 'Візуальні формули та приклади'}
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                        {activeGrammarLesson.visualFormula.map((item, idx) => (
-                          <div
-                            key={idx}
-                            className="p-3.5 rounded-2xl border border-amber-200 bg-amber-50/50 space-y-1.5"
+                    {Array.isArray(activeGrammarLesson.tables) && activeGrammarLesson.tables.length > 0 && (
+                      <div className="space-y-2.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
+                            Таблиці та розбір по пунктах (натисни, щоб відкрити)
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const allOpen = activeGrammarLesson.tables.every(
+                                (_, i) => openGrammarAccordions[`${activeGrammarLesson.id}_${i}`]
+                              );
+                              const next = {};
+                              activeGrammarLesson.tables.forEach((_, i) => {
+                                next[`${activeGrammarLesson.id}_${i}`] = !allOpen;
+                              });
+                              setOpenGrammarAccordions(next);
+                            }}
+                            className="text-xs font-bold text-slate-600 hover:text-slate-900"
                           >
-                            <div className="text-[11px] font-extrabold text-amber-900">{item.label}</div>
-                            <div className="text-xs font-mono font-bold text-slate-900 bg-white px-2.5 py-1.5 rounded-lg border border-amber-100">
-                              {item.formula}
-                            </div>
-                            <div className="flex items-center justify-between gap-2 pt-0.5">
-                              <span className="text-xs text-slate-700 italic">«{item.example}»</span>
-                              {!activeGrammarLesson.isFinalExam && (
+                            Відкрити / закрити всі
+                          </button>
+                        </div>
+
+                        <div className="space-y-2">
+                          {activeGrammarLesson.tables.map((tbl, idx) => {
+                            const accKey = `${activeGrammarLesson.id}_${idx}`;
+                            const isOpen = Boolean(openGrammarAccordions[accKey]);
+
+                            return (
+                              <div
+                                key={accKey}
+                                className="border border-slate-200 rounded-2xl bg-white overflow-hidden shadow-2xs"
+                              >
                                 <button
                                   type="button"
-                                  onClick={() => speakGerman(item.example)}
-                                  className="p-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 shrink-0"
-                                  title="Прослухати приклад"
+                                  onClick={() => toggleGrammarAccordion(accKey)}
+                                  className="w-full px-4 py-3.5 text-left bg-slate-50/80 hover:bg-amber-50/60 transition flex items-center justify-between gap-3"
                                 >
-                                  <Volume2 className="w-3.5 h-3.5" />
+                                  <div className="min-w-0">
+                                    <div className="text-xs sm:text-sm font-extrabold text-slate-900">
+                                      {tbl.title}
+                                    </div>
+                                    {tbl.subtitle && (
+                                      <div className="text-[11px] text-slate-500 mt-0.5">{tbl.subtitle}</div>
+                                    )}
+                                  </div>
+                                  <span className="text-xs font-extrabold text-amber-800 bg-amber-100 px-2.5 py-1 rounded-lg shrink-0">
+                                    {isOpen ? 'Згорнути −' : 'Відкрити +'}
+                                  </span>
                                 </button>
-                              )}
-                            </div>
-                          </div>
-                        ))}
+
+                                {isOpen && (
+                                  <div className="p-3.5 sm:p-4 space-y-3 border-t border-slate-100">
+                                    {Array.isArray(tbl.headers) && Array.isArray(tbl.rows) && (
+                                      <div className="overflow-x-auto rounded-xl border border-slate-200">
+                                        <table className="w-full text-left border-collapse text-xs">
+                                          <thead>
+                                            <tr className="bg-slate-900 text-white">
+                                              {tbl.headers.map((h, hIdx) => (
+                                                <th key={hIdx} className="px-3 py-2 font-bold whitespace-nowrap">
+                                                  {h}
+                                                </th>
+                                              ))}
+                                            </tr>
+                                          </thead>
+                                          <tbody className="divide-y divide-slate-100">
+                                            {tbl.rows.map((row, rIdx) => (
+                                              <tr key={rIdx} className="odd:bg-white even:bg-slate-50/70">
+                                                {row.map((cell, cIdx) => (
+                                                  <td
+                                                    key={cIdx}
+                                                    className={`px-3 py-2 align-top ${
+                                                      cIdx === 0 ? 'font-bold text-slate-900' : 'text-slate-700'
+                                                    }`}
+                                                  >
+                                                    {cell}
+                                                  </td>
+                                                ))}
+                                              </tr>
+                                            ))}
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                    )}
+
+                                    {tbl.example && (
+                                      <div className="flex items-center justify-between gap-2 bg-amber-50/70 border border-amber-200/80 rounded-xl px-3 py-2">
+                                        <span className="text-xs text-slate-800 italic">«{tbl.example}»</span>
+                                        {!activeGrammarLesson.isFinalExam && (
+                                          <button
+                                            type="button"
+                                            onClick={() => speakGerman(tbl.example)}
+                                            className="p-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 shrink-0"
+                                            title="Прослухати приклад"
+                                          >
+                                            <Volume2 className="w-3.5 h-3.5" />
+                                          </button>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
+                    )}
+
+                    {Array.isArray(activeGrammarLesson.visualFormula) && activeGrammarLesson.visualFormula.length > 0 && (
+                      <div className="space-y-2.5">
+                        <div className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
+                          {activeGrammarLesson.isFinalExam ? 'Умови зарахування' : 'Візуальні формули та приклади'}
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          {activeGrammarLesson.visualFormula.map((item, idx) => (
+                            <div
+                              key={idx}
+                              className="p-3.5 rounded-2xl border border-amber-200 bg-amber-50/50 space-y-1.5"
+                            >
+                              <div className="text-[11px] font-extrabold text-amber-900">{item.label}</div>
+                              <div className="text-xs font-mono font-bold text-slate-900 bg-white px-2.5 py-1.5 rounded-lg border border-amber-100 whitespace-pre-line">
+                                {item.formula}
+                              </div>
+                              <div className="flex items-center justify-between gap-2 pt-0.5">
+                                <span className="text-xs text-slate-700 italic">«{item.example}»</span>
+                                {!activeGrammarLesson.isFinalExam && (
+                                  <button
+                                    type="button"
+                                    onClick={() => speakGerman(item.example)}
+                                    className="p-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 shrink-0"
+                                    title="Прослухати приклад"
+                                  >
+                                    <Volume2 className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     <div className="bg-rose-50/80 border border-rose-200 rounded-2xl p-4 space-y-1">
                       <div className="text-xs font-extrabold text-rose-900">
