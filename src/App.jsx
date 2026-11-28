@@ -5,7 +5,17 @@ import {
   Share2, Sparkles, BookOpen, BrainCircuit, ArrowRight,
   RotateCcw, Crown, Check, Copy, X, Loader2, LogOut, User, ShieldCheck, FileText, ExternalLink, Search, Keyboard, Compass, Camera, Pencil, Coins, Lightbulb, ShoppingBag, Heart, HelpCircle, MessageCircle, Send, Plus, Trash2, ClipboardList, Snowflake, Puzzle, Lock, ArrowLeft, Zap
 } from 'lucide-react';
-import { GRAMMAR_LESSONS } from './grammarData';
+import { GRAMMAR_LESSONS as GRAMMAR_LESSONS_A1 } from './grammarData';
+import { GRAMMAR_LESSONS_A2 } from './grammarDataA2';
+import { GRAMMAR_LESSONS_B1 } from './grammarDataB1';
+import { GRAMMAR_LESSONS_B2 } from './grammarDataB2';
+
+const GRAMMAR_LESSONS = [
+  ...GRAMMAR_LESSONS_A1,
+  ...GRAMMAR_LESSONS_A2,
+  ...GRAMMAR_LESSONS_B1,
+  ...GRAMMAR_LESSONS_B2,
+];
 
 const SUPABASE_URL = 'https://vdjduptyloghojeqaglw.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_L9Gw77mlbgOdzYt4-a6nEA_ZqeNxiui';
@@ -43,7 +53,7 @@ const FALLBACK_DATA = [
   { id: 1, level: 'A1', category: 'colloquial', article: 'der', word: 'Kumpel', plural: 'die Kumpels', translation: 'приятель, друзяка', example: 'Mein Kumpel kommt heute Abend vorbei.', exampleUa: 'Мій приятель завітає сьогодні ввечері.' },
   { id: 2, level: 'A1', category: 'exam', article: 'die', word: 'Anmeldung', plural: 'die Anmeldungen', translation: 'реєстрація, прописка', example: 'Für den Kurs braucht man eine Anmeldung.', exampleUa: 'Для курсу потрібна реєстрація.' },
   { id: 3, level: 'A1', category: 'official', article: 'der', word: 'Ausweis', plural: 'die Ausweise', translation: 'посвідчення особи', example: 'Zeigen Sie bitte Ihren Ausweis an der Kasse.', exampleUa: 'Покажіть, будь ласка, ваше посвідчення на касі.' },
-  { id: 4, level: 'A2', category: 'colloquial', article: 'die', word: 'Lust', plural: '', translation: 'бажання, охота', example: 'Hast du heute Lust на Kino?', exampleUa: 'Маєш сьогодні бажання піти в кіно?' },
+  { id: 4, level: 'A2', category: 'colloquial', article: 'die', word: 'Lust', plural: '', translation: 'бажання, охота', example: 'Hast du heute Lust auf Kino?', exampleUa: 'Маєш сьогодні бажання піти в кіно?' },
   { id: 5, level: 'B1', category: 'exam', article: 'der', word: 'Vorteil', plural: 'die Vorteile', translation: 'перевага', example: 'Ein großer Vorteil ist die flexible Arbeitszeit.', exampleUa: 'Великою перевагою є гнучкий робочий графік.' },
   { id: 6, level: 'B2', category: 'official', article: 'die', word: 'Voraussetzung', plural: 'die Voraussetzungen', translation: 'передумова, вимога', example: 'Gute Deutschkenntnisse sind eine wichtige Voraussetzung.', exampleUa: 'Добре знання німецької є важливою вимогою.' }
 ];
@@ -134,7 +144,7 @@ const SHOP_ITEMS = [
   { id: 'acc_headphones', type: 'accessory', icon: '🎧', name: 'Навушники поліглота', desc: 'Для ідеального аудіювання Goethe/telc', price: 1100, petXp: 230 },
   { id: 'acc_bowtie', type: 'accessory', icon: '🎀', name: 'Оксамитовий метелик', desc: 'Святковий дрес-код для іспиту C1', price: 1450, petXp: 300 },
   { id: 'acc_robe', type: 'accessory', icon: '🎓', name: 'Академічна мантія', desc: 'Атрибут випускника університету', price: 1950, petXp: 420 },
-  { id: 'acc_crown', type: 'accessory', icon: '👑', name: 'Золота корона магістра', desc: 'Королівський статус у німецькій', price: 2600, petXp: 550 },
+  { id: 'acc_crown', type="accessory", icon: '👑', name: 'Золота корона магістра', desc: 'Королівський статус у німецькій', price: 2600, petXp: 550 },
   { id: 'acc_castle', type: 'accessory', icon: '🏰', name: 'Замок Нойшванштайн', desc: 'Легендарна резиденція для кота', price: 3500, petXp: 800 },
 ];
 
@@ -448,11 +458,10 @@ export default function App() {
   const [grammarRemedialTopics, setGrammarRemedialTopics] = useState([]);
   const grammarInputRef = useRef(null);
 
-  // --- Щоденне тренування дня (Daily Mix: 3 слова + 2 нові картки + 2 граматичні вправи) ---
   const [dailyMixItems, setDailyMixItems] = useState([]);
   const [dailyMixIndex, setDailyMixIndex] = useState(0);
   const [dailyMixFlipped, setDailyMixFlipped] = useState(false);
-  const [dailyMixAnswer, setDailyMixAnswer] = useState(null); // { isCorrect, userAnswer }
+  const [dailyMixAnswer, setDailyMixAnswer] = useState(null);
   const [dailyMixBuiltTokens, setDailyMixBuiltTokens] = useState([]);
   const [dailyMixFillInput, setDailyMixFillInput] = useState('');
   const [dailyMixCompleted, setDailyMixCompleted] = useState(false);
@@ -660,7 +669,6 @@ export default function App() {
     }
   };
 
-  // Завантаження всієї таблиці vocabulary без ліміту в 1000 рядків через пагінацію .range()
   useEffect(() => {
     async function fetchWords() {
       setLoading(true);
@@ -1161,7 +1169,6 @@ export default function App() {
     }
   };
 
-  // --- Граматика: керування уроком та вправами ---
   const completedGrammarIds = useMemo(
     () => (Array.isArray(pet.completedGrammarIds) ? pet.completedGrammarIds : []),
     [pet.completedGrammarIds]
@@ -1286,7 +1293,6 @@ export default function App() {
     });
   };
 
-  // --- Логіка "⚡ Швидке тренування дня (3 хв)" ---
   const isDailyMixDoneToday = pet.dailyMixDate === getLocalDateStr();
 
   const handleStartDailyMix = () => {
@@ -2474,7 +2480,6 @@ export default function App() {
           </section>
         )}
 
-        {/* Головний перемикач курсу: Лексика / Граматика */}
         {dailyMixItems.length === 0 && (
           <section className="grid grid-cols-2 gap-2.5 bg-white p-2 rounded-2xl border border-slate-200 shadow-xs">
             <button
@@ -2505,7 +2510,6 @@ export default function App() {
           </section>
         )}
 
-        {/* ==================== РОЗДІЛ 1: ГРАМАТИКА ==================== */}
         {dailyMixItems.length === 0 && courseSection === 'grammar' && (
           <div className="space-y-5">
             {!activeGrammarLesson ? (
@@ -2554,7 +2558,7 @@ export default function App() {
                     </div>
                     <h3 className="text-lg font-extrabold text-slate-900">Уроки рівня {grammarLevel} готуються</h3>
                     <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto">
-                      Зараз повністю відкриті базові теми рівня <strong>A1</strong>. Почни з них, щоб закріпити фундамент порядку слів, дієслів і відмінків!
+                      Зараз відкриті уроки рівня <strong>A1</strong>. Перемкнись на <strong>A1</strong>, щоб почати навчання, або скоро додамо теми для {grammarLevel}!
                     </p>
                     <button
                       type="button"
@@ -2751,7 +2755,7 @@ export default function App() {
                     {activeGrammarLesson.examTip && (
                       <div className="bg-sky-50/80 border border-sky-200 rounded-2xl p-4 space-y-1">
                         <div className="text-xs font-extrabold text-sky-900">
-                          🎓 Фокус на іспиті Goethe-Zertifikat A1
+                          🎓 Фокус на іспиті
                         </div>
                         <p className="text-xs sm:text-sm text-sky-950 leading-relaxed">
                           {activeGrammarLesson.examTip}
@@ -3092,7 +3096,6 @@ export default function App() {
           </div>
         )}
 
-        {/* ==================== РОЗДІЛ 2: ЛЕКСИКА ==================== */}
         {dailyMixItems.length === 0 && courseSection === 'vocabulary' && (
           <>
             <section className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
@@ -3746,7 +3749,6 @@ export default function App() {
         </div>
       </footer>
 
-      {/* ШІ-чат та модальні вікна (Profile, Auth, Legal, Paywall, Share) */}
       <div className="fixed bottom-4 right-4 z-40 flex flex-col items-end">
         {showAiChat && (
           <div className="mb-3 w-[calc(100vw-2rem)] sm:w-96 bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden flex flex-col max-h-[72vh]">
