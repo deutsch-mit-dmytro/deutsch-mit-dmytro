@@ -23,7 +23,7 @@ const MONO_JAR_URL = 'https://send.monobank.ua/jar/6yGqswy7kR';
 const LEVEL_TEST_URL = 'https://sites.google.com/view/deutschmitdmytro/full-page-embed';
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const FREE_WORDS_LIMIT = 5;
+const FREE_WORDS_LIMIT = 5; // v2
 const FREE_DAILY_AI_LIMIT = 10;
 const HUNGER_DROP_INTERVAL_MS = 10 * 60 * 1000; // -1% кожні 10 хвилин (-6%/год)
 
