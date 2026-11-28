@@ -9,11 +9,19 @@ export const GRAMMAR_LESSONS = [
     goal: 'Будувати стверджувальні речення та ставити запитання при знайомстві й у побуті.',
     ruleSummary:
       'У німецькому розповідному реченні відмінюване дієслово ЗАВЖДИ стоїть на 2-му місці — неважливо, з якого слова починається речення. У питанні з питальним словом (wer, wo, wie, was) дієслово теж на 2-му місці, а в питанні без питального слова (на «так/ні») дієслово виходить на 1-ше місце.',
-    visualFormula: [
-      { label: '1. Розповідь (прямий)', formula: '[Хто?] + [ДІЄСЛОВО (2)] + [Де / Коли?]', example: 'Ich wohne in Berlin.' },
-      { label: '2. Розповідь (інверсія)', formula: '[Коли / Де?] + [ДІЄСЛОВО (2)] + [Хто?]', example: 'Heute wohne ich in Berlin.' },
-      { label: '3. W-питання', formula: '[W-слово] + [ДІЄСЛОВО (2)] + [Хто?]', example: 'Woher kommst du?' },
-      { label: '4. Питання Так/Ні', formula: '[ДІЄСЛОВО (1)] + [Хто?] + [Решта]?', example: 'Kommst du heute?' },
+    tables: [
+      {
+        title: '1. Типи речень та позиція дієслова',
+        subtitle: 'Як змінюється місце відмінюваного дієслова залежно від типу речення',
+        headers: ['Тип речення', 'Позиція дієслова', 'Схема', 'Приклад'],
+        rows: [
+          ['Розповідь (прямий порядок)', '2-ге місце', '[Хто?] + [ДІЄСЛОВО] + [Де / Коли?]', 'Ich wohne in Berlin.'],
+          ['Розповідь (інверсія)', '2-ге місце', '[Коли / Де?] + [ДІЄСЛОВО] + [Хто?]', 'Heute wohne ich in Berlin.'],
+          ['W-питання', '2-ге місце', '[W-слово] + [ДІЄСЛОВО] + [Хто?]?', 'Woher kommst du?'],
+          ['Питання Так/Ні', '1-ше місце', '[ДІЄСЛОВО] + [Хто?] + [Решта]?', 'Kommst du heute?']
+        ],
+        example: 'Heute wohne ich in Berlin. — Kommst du heute?'
+      }
     ],
     ukrainianTrap:
       'В українській ми кажемо: «Сьогодні я працюю вдома» (дієслово аж на 3-му місці). У німецькій так не можна: після обставини часу «Heute» одразу йде дієслово — «Heute arbeite ich zu Hause».',
@@ -101,11 +109,21 @@ export const GRAMMAR_LESSONS = [
     goal: 'Відмінювати звичайні дієслова та базові дієслова «бути» (sein) і «мати» (haben).',
     ruleSummary:
       'Щоб провідміняти правильне дієслово, відкидаємо -en (отримуємо основу) і додаємо закінчення: ich -e, du -st, er/sie/es -t, wir -en, ihr -t, sie/Sie -en. Дієслова sein (бути) та haben (мати) відмінюються не за правилом — їх потрібно знати напам’ять.',
-    visualFormula: [
-      { label: 'Стандарт (kommen)', formula: 'ich komme • du kommst • er/sie/es kommt • wir/sie/Sie kommen • ihr kommt', example: 'Wir kommen aus der Ukraine.' },
-      { label: 'Основа на -t/-d (arbeiten)', formula: 'du arbeitest • er/sie/es arbeitet • ihr arbeitet (додаємо -e-)', example: 'Er arbeitet heute im Büro.' },
-      { label: 'sein (бути)', formula: 'ich bin • du bist • er/sie/es ist • wir/sie/Sie sind • ihr seid', example: 'Ich bin 20 Jahre alt.' },
-      { label: 'haben (мати)', formula: 'ich habe • du hast • er/sie/es hat • wir/sie/Sie haben • ihr habt', example: 'Er hat heute keine Zeit.' },
+    tables: [
+      {
+        title: '1. Відмінювання дієслів у Präsens (kommen, arbeiten, sein, haben)',
+        subtitle: 'Усі 6 осіб для стандартних дієслів, основи на -t/-d та ключових дієслів sein і haben',
+        headers: ['Особа', 'kommen (стандарт)', 'arbeiten (основа на -t)', 'sein (бути)', 'haben (мати)'],
+        rows: [
+          ['ich', 'komme', 'arbeite', 'bin', 'habe'],
+          ['du', 'kommst', 'arbeitest', 'bist', 'hast'],
+          ['er / sie / es', 'kommt', 'arbeitet', 'ist', 'hat'],
+          ['wir', 'kommen', 'arbeiten', 'sind', 'haben'],
+          ['ihr', 'kommt', 'arbeitet', 'seid', 'habt'],
+          ['sie / Sie', 'kommen', 'arbeiten', 'sind', 'haben']
+        ],
+        example: 'Wir kommen aus der Ukraine und sind heute in Berlin.'
+      }
     ],
     ukrainianTrap:
       'В українській ми кажемо «Я вдома» або «Вона лікар» без дієслова. У німецькій дієслово-зв’язка sein обов’язкове: «Ich BIN zu Hause», «Sie IST Ärztin». А в дієслові haben у формах du та er випадає літера b: hast, hat (не habst/habt!).',
@@ -189,11 +207,19 @@ export const GRAMMAR_LESSONS = [
     goal: 'Правильно змінювати кореневу голосну в популярних дієсловах (fahren, sprechen, essen, lesen, nehmen).',
     ruleSummary:
       'Деякі німецькі дієслова змінюють голосну в корені, але ТІЛЬКИ у 2-й та 3-й особі однини (du та er/sie/es). У формах ich, wir, ihr, sie/Sie голосна НЕ змінюється!',
-    visualFormula: [
-      { label: 'a → ä (fahren, schlafen)', formula: 'ich fahre → du fährst, er fährt (wir fahren!)', example: 'Er fährt mit dem Bus zur Arbeit.' },
-      { label: 'e → i (sprechen, essen, helfen)', formula: 'ich spreche → du sprichst, er spricht', example: 'Sprichst du Deutsch und Englisch?' },
-      { label: 'e → ie (lesen, sehen)', formula: 'ich lese → du liest, er liest', example: 'Sie liest gerne Bücher.' },
-      { label: 'Виняток: nehmen (брати)', formula: 'ich nehme → du nimmst, er nimmt (подвоєння m!)', example: 'Er nimmt einen Kaffee.' },
+    tables: [
+      {
+        title: '1. Зміна кореневої голосної у du та er/sie/es',
+        subtitle: 'У формах ich, wir, ihr, sie/Sie голосна залишається початковою',
+        headers: ['Модель', 'Дієслова', 'ich / wir / ihr', 'du / er, sie, es'],
+        rows: [
+          ['a → ä', 'fahren, schlafen', 'ich fahre, wir fahren, ihr fahrt', 'du fährst, er fährt'],
+          ['e → i', 'sprechen, essen, helfen', 'ich spreche, wir sprechen, ihr sprecht', 'du sprichst, er spricht'],
+          ['e → ie', 'lesen, sehen', 'ich lese, wir lesen, ihr lest', 'du liest, sie liest'],
+          ['Виняток', 'nehmen (брати)', 'ich nehme, wir nehmen, ihr nehmt', 'du nimmst, er nimmt']
+        ],
+        example: 'Er fährt mit dem Bus und liest dabei ein Buch.'
+      }
     ],
     ukrainianTrap:
       'Найчастіша помилка — змінювати голосну у множині («wir fähren» або «ihr spricht»). Запам’ятай правило: змінюються лише du та er/sie/es, а wir та ihr завжди лишаються як в інфінітиві!',
@@ -273,11 +299,19 @@ export const GRAMMAR_LESSONS = [
     goal: 'Розрізняти означений та неозначений артиклі й правильно утворювати множину іменників.',
     ruleSummary:
       'Кожен німецький іменник пишеться з великої літери і має рід: чоловічий (der / ein), жіночий (die / eine) або середній (das / ein). Коли говоримо про предмет уперше — беремо ein/eine; коли про конкретний або вже відомий — der/die/das. У множині артикль ЗАВЖДИ die, а неозначеного артикля немає.',
-    visualFormula: [
-      { label: 'Чоловічий рід (der)', formula: 'ein Ausweis (якесь посвідчення) → der Ausweis (це/конкретне посвідчення)', example: 'Der Ausweis liegt auf dem Tisch.' },
-      { label: 'Жіночий рід (die)', formula: 'eine Anmeldung → die Anmeldung (суфікси -ung, -heit, -keit → завжди die!)', example: 'Die Anmeldung ist kostenlos.' },
-      { label: 'Середній рід (das)', formula: 'ein Buch → das Buch (суфікси -chen, -lein → завжди das!)', example: 'Das Buch ist sehr interessant.' },
-      { label: 'Множина (Plural)', formula: 'der Kumpel → die Kumpels • die Anmeldung → die Anmeldungen', example: 'Viele Kumpels kommen heute.' },
+    tables: [
+      {
+        title: '1. Роди, артиклі та утворення множини',
+        subtitle: 'Як визначити артикль та побудувати множину в Nominativ',
+        headers: ['Рід / Число', 'Означений', 'Неозначений', 'Приклад'],
+        rows: [
+          ['Чоловічий (der)', 'der', 'ein', 'der Ausweis → die Ausweise'],
+          ['Жіночий (die)', 'die', 'eine', 'die Anmeldung → die Anmeldungen'],
+          ['Середній (das)', 'das', 'ein', 'das Buch → die Bücher'],
+          ['Множина', 'die', '— (немає)', 'der Kumpel → die Kumpels']
+        ],
+        example: 'Die Anmeldung ist kostenlos und viele Kumpels kommen heute.'
+      }
     ],
     ukrainianTrap:
       'Рід у німецькій та українській часто не збігається: дівчина — das Mädchen (середній рід!), стіл — der Tisch (чоловічий), сонце — die Sonne (жіночий). Тому кожен іменник вчи одразу разом з артиклем.',
@@ -361,11 +395,19 @@ export const GRAMMAR_LESSONS = [
     goal: 'Правильно змінювати артиклі після дієслів haben, brauchen, suchen, kaufen, essen, trinken.',
     ruleSummary:
       'Nominativ (хто? що?) — це підмет, який виконує дію. Akkusativ (кого? що?) — це об’єкт, на який спрямована дія. Головний секрет німецької: у Akkusativ змінюється ТІЛЬКИ чоловічий рід (der → den, ein → einen). Жіночий, середній рід і множина залишаються без змін!',
-    visualFormula: [
-      { label: 'Чоловічий рід (ЗМІНЮЄТЬСЯ!)', formula: 'der → den • ein → einen', example: 'Ich brauche einen / den Ausweis.' },
-      { label: 'Жіночий рід (без змін)', formula: 'die → die • eine → eine', example: 'Ich brauche eine / die Anmeldung.' },
-      { label: 'Середній рід (без змін)', formula: 'das → das • ein → ein', example: 'Ich kaufe ein / das Buch.' },
-      { label: 'Топ-дієслова Akkusativ', formula: 'haben, brauchen, suchen, kaufen, essen, trinken, lesen, sehen, nehmen', example: 'Er trinkt einen Kaffee.' },
+    tables: [
+      {
+        title: '1. Порівняння Nominativ та Akkusativ',
+        subtitle: 'Зміна відбувається лише в чоловічому роді',
+        headers: ['Рід / Число', 'Nominativ (означ. / неозн.)', 'Akkusativ (означ. / неозн.)', 'Приклад в Akkusativ'],
+        rows: [
+          ['Чоловічий (der)', 'der / ein', 'den / einen', 'Ich brauche den / einen Ausweis.'],
+          ['Жіночий (die)', 'die / eine', 'die / eine', 'Wir suchen die / eine Wohnung.'],
+          ['Середній (das)', 'das / ein', 'das / ein', 'Ich kaufe das / ein Buch.'],
+          ['Множина (die)', 'die / —', 'die / —', 'Er liest die Bücher.']
+        ],
+        example: 'Ich brauche einen Ausweis und kaufe das Buch.'
+      }
     ],
     ukrainianTrap:
       'Учні часто ставлять Nominativ там, де потрібен Akkusativ: «Ich habe ein Bruder» або «Ich nehme der Kaffee». Завжди перевіряй рід іменника: якщо це «він» (der) і над ним виконують дію — обов’язково додавай -en (einen Bruder, den Kaffee)!',
@@ -449,10 +491,18 @@ export const GRAMMAR_LESSONS = [
     goal: 'Правильно заперечувати іменники, дії та ознаки без подвійного заперечення.',
     ruleSummary:
       'Для заперечення іменника, який стоїть з неозначеним артиклем (ein/eine) або взагалі без артикля, використовуємо kein / keine / keinen (відмінюється точно як ein). Для заперечення дієслова, прикметника або іменника з означеним артиклем (der/die/das) беремо nicht.',
-    visualFormula: [
-      { label: 'kein (іменник з ein / без артикля)', formula: 'ein Kumpel → kein Kumpel • eine Zeit → keine Zeit • Akkusativ (der): keinen', example: 'Ich habe heute keine Zeit.' },
-      { label: 'nicht + дієслово (у кінці)', formula: '[Підмет] + [Дієслово] + ... + nicht', example: 'Ich arbeite heute nicht.' },
-      { label: 'nicht + прикметник / місце', formula: '[Підмет] + [Дієслово] + nicht + [Прикметник / Місце]', example: 'Das Buch ist nicht teuer. / Er wohnt nicht in Berlin.' },
+    tables: [
+      {
+        title: '1. kein / keine / keinen vs nicht',
+        subtitle: 'Коли заперечуємо іменник без артикля / з ein, а коли — дію чи ознаку',
+        headers: ['Заперечення', 'Що заперечує', 'Приклад'],
+        rows: [
+          ['kein / keine / keinen', 'іменник з ein/eine або без артикля', 'Ich habe heute keine Zeit. / Er hat keinen Ausweis.'],
+          ['nicht (у кінці)', 'дієслово (дію)', 'Ich arbeite heute nicht.'],
+          ['nicht (перед словом)', 'прикметник, місце або іменник з der/die/das', 'Das Buch ist nicht teuer. / Ich verstehe das Wort nicht.']
+        ],
+        example: 'Ich habe heute keine Zeit und arbeite nicht.'
+      }
     ],
     ukrainianTrap:
       'В українській ми кажемо: «Я НЕ маю НІЯКОГО часу» (два заперечення). У німецькій можливе ТІЛЬКИ ОДНЕ заперечення: «Ich habe keine Zeit» (ніколи не кажи «Ich habe nicht keine Zeit»!).',
@@ -540,10 +590,22 @@ export const GRAMMAR_LESSONS = [
     goal: 'Правильно говорити «мій, твій, його, її, наш, ваш, їхній» у різних родах та відмінках.',
     ruleSummary:
       'Вибір присвійного займенника складається з 2 кроків: 1) визначаємо власника (ich → mein, du → dein, er/es → sein, sie → ihr, wir → unser, ihr → euer, sie/Sie → ihr/Ihr); 2) додаємо закінчення за родом та відмінком іменника (точно як у ein/eine/einen).',
-    visualFormula: [
-      { label: 'Основа за власником', formula: 'ich: mein • du: dein • er/es: sein • sie: ihr • wir: unser • ihr: euer • sie/Sie: ihr/Ihr', example: 'Das ist mein Kumpel.' },
-      { label: 'Nominativ (Хто? Що?)', formula: 'der: mein • die: meine • das: mein • Plural: meine', example: 'Meine Anmeldung ist fertig.' },
-      { label: 'Akkusativ (Кого? Що?)', formula: 'der → meinen! (die: meine, das: mein, Pl.: meine)', example: 'Ich suche meinen Ausweis.' },
+    tables: [
+      {
+        title: '1. Присвійні займенники за власником та відмінком',
+        subtitle: 'У Nominativ жіночий рід і множина мають -e; у Akkusativ чоловічий рід — -en',
+        headers: ['Власник', 'Nom. чол. / сер.', 'Nom. жін. / мн.', 'Akk. чоловічий'],
+        rows: [
+          ['ich', 'mein', 'meine', 'meinen'],
+          ['du', 'dein', 'deine', 'deinen'],
+          ['er / es', 'sein', 'seine', 'seinen'],
+          ['sie (вона)', 'ihr', 'ihre', 'ihren'],
+          ['wir', 'unser', 'unsere', 'unseren'],
+          ['ihr (ви)', 'euer', 'eure', 'euren'],
+          ['sie / Sie', 'ihr / Ihr', 'ihre / Ihre', 'ihren / Ihren']
+        ],
+        example: 'Anna sucht ihre Tasche und ich suche meinen Ausweis.'
+      }
     ],
     ukrainianTrap:
       'Українці часто плутають «його» (sein) та «її» (ihr). Запам’ятай: якщо власник чоловік (er) — завжди sein (sein Auto, seine Mutter); якщо власниця жінка (sie) — завжди ihr (ihr Auto, ihre Mutter).',
@@ -623,10 +685,23 @@ export const GRAMMAR_LESSONS = [
     goal: 'Замінювати іменники займенниками (мене, тебе, його, її, нас, вас, їх) у діалогах.',
     ruleSummary:
       'Щоб не повторювати одне й те саме слово двічі, замінюємо його особовим займенником. У Nominativ: ich, du, er, sie, es, wir, ihr, sie, Sie. У Akkusativ (кого? що?): mich, dich, ihn, sie, es, uns, euch, sie, Sie.',
-    visualFormula: [
-      { label: 'Однина (Nominativ → Akkusativ)', formula: 'ich → mich • du → dich • er → ihn • sie → sie • es → es', example: 'Kennst du den Mann? — Ja, ich kenne ihn.' },
-      { label: 'Множина (Nominativ → Akkusativ)', formula: 'wir → uns • ihr → euch • sie → sie • Sie → Sie', example: 'Besuchst du uns morgen?' },
-      { label: 'Заміна речей за родом', formula: 'der Tisch → ihn • die Lampe → sie • das Buch → es', example: 'Wie findest du den Tisch? — Ich finde ihn super.' },
+    tables: [
+      {
+        title: '1. Особові займенники в Nominativ та Akkusativ',
+        subtitle: 'Змінюються лише форми для ich, du та er',
+        headers: ['Nominativ', 'Akkusativ', 'Приклад в Akkusativ'],
+        rows: [
+          ['ich', 'mich', 'Siehst du mich?'],
+          ['du', 'dich', 'Ich verstehe dich.'],
+          ['er (der Tisch)', 'ihn', 'Ich kaufe ihn.'],
+          ['sie (die Lampe)', 'sie', 'Ich sehe sie.'],
+          ['es (das Buch)', 'es', 'Ich lese es.'],
+          ['wir', 'uns', 'Besuchst du uns?'],
+          ['ihr', 'euch', 'Wir laden euch ein.'],
+          ['sie / Sie', 'sie / Sie', 'Ich kenne sie / Sie.']
+        ],
+        example: 'Kennst du den Mann? — Ja, ich kenne ihn.'
+      }
     ],
     ukrainianTrap:
       'У німецькій неживі предмети замінюються за їхнім граматичним родом! Стіл (der Tisch) — це «він» (ihn), книга (das Buch) — «воно» (es), навіть якщо українською книга — «вона».',
@@ -706,10 +781,21 @@ export const GRAMMAR_LESSONS = [
     goal: 'Виражати вміння, необхідність, бажання та дозвіл і правильно будувати рамкову конструкцію.',
     ruleSummary:
       'У німецькій є 6 модальних дієслів: können (могти/вміти), müssen (мусити), wollen (хотіти), dürfen (мати дозвіл), sollen (мати обов’язок/пораду) та möchten (хотів би). Вони стоять на 2-му місці та змінюються за особою, а основне дієслово в інфінітиві (без zu!) летить у САМИЙ КІНЕЦЬ речення.',
-    visualFormula: [
-      { label: 'Рамкова конструкція', formula: '[Хто?] + [МОДАЛЬНЕ (2)] + [Де / Коли / Що?] + [ІНФІНІТИВ (кінець)]', example: 'Ich muss heute viel arbeiten.' },
-      { label: 'Секрет відмінювання', formula: 'ich = er/sie/es (однакові, без -t!): ich kann, er kann • ich muss, er muss • ich will, er will', example: 'Er kann sehr gut Deutsch sprechen.' },
-      { label: 'Ввічливе möchten', formula: 'ich möchte • du möchtest • er/sie/es möchte • wir/sie/Sie möchten', example: 'Ich möchte einen Kaffee bestellen.' },
+    tables: [
+      {
+        title: '1. Відмінювання модальних дієслів у Präsens',
+        subtitle: 'Форми для ich та er/sie/es збігаються і не мають закінчення -t',
+        headers: ['Дієслово', 'ich / er, sie, es', 'du', 'wir / sie, Sie', 'ihr'],
+        rows: [
+          ['können', 'kann', 'kannst', 'können', 'könnt'],
+          ['müssen', 'muss', 'musst', 'müssen', 'müsst'],
+          ['wollen', 'will', 'willst', 'wollen', 'wollt'],
+          ['dürfen', 'darf', 'darfst', 'dürfen', 'dürft'],
+          ['sollen', 'soll', 'sollst', 'sollen', 'sollt'],
+          ['möchten', 'möchte', 'möchtest', 'möchten', 'möchtet']
+        ],
+        example: 'Ich muss heute viel arbeiten, aber ich kann morgen kommen.'
+      }
     ],
     ukrainianTrap:
       'У 3-й особі однини (er/sie/es) модальні дієслова НЕ мають закінчення -t: «er kann», «sie muss», «er will» (ніколи не кажи «er kannt» чи «er musst»!). І не став друге дієслово одразу після модального — відправляй його в кінець речення.',
@@ -789,10 +875,19 @@ export const GRAMMAR_LESSONS = [
     goal: 'Правильно розривати дієслова з префіксами auf-, an-, ein-, aus-, mit-, fern- у теперішньому часі.',
     ruleSummary:
       'Багато німецьких дієслів мають наголошений префікс (aufstehen, einkaufen, anrufen, fernsehen, mitkommen). У теперішньому часі (Präsens) корінь відмінюється на 2-му місці, а префікс відривається і летить у САМИЙ КІНЕЦЬ речення. Якщо в реченні є модальне дієслово — префікс НЕ відривається!',
-    visualFormula: [
-      { label: 'У Präsens (префікс у кінці!)', formula: 'einkaufen → Ich kaufe heute im Supermarkt ein.', example: 'Der Zug kommt um 10 Uhr an. (ankommen)' },
-      { label: 'З модальним дієсловом (разом)', formula: 'Ich muss heute im Supermarkt einkaufen.', example: 'Kannst du mich bitte anrufen? (anrufen)' },
-      { label: 'Топ-префікси рівня A1', formula: 'auf- (aufstehen), an- (anrufen, ankommen), ein- (einkaufen), aus- (aussteigen), mit- (mitkommen), fern- (fernsehen)', example: 'Ich stehe um 7 Uhr auf.' },
+    tables: [
+      {
+        title: '1. Популярні дієслова з відокремлюваними префіксами',
+        subtitle: 'У простому Präsens префікс іде в кінець, а з модальним дієсловом лишається разом',
+        headers: ['Інфінітив', 'Переклад', 'У Präsens', 'З модальним дієсловом'],
+        rows: [
+          ['aufstehen', 'вставати', 'Ich stehe um 7 Uhr auf.', 'Ich muss früh aufstehen.'],
+          ['anrufen', 'телефонувати', 'Ich rufe dich an.', 'Kannst du mich anrufen?'],
+          ['einkaufen', 'робити покупки', 'Wir kaufen ein.', 'Wir wollen einkaufen.'],
+          ['mitkommen', 'іти разом', 'Kommst du mit?', 'Du kannst mitkommen.']
+        ],
+        example: 'Der Zug kommt um 10 Uhr an und ich stehe um 7 Uhr auf.'
+      }
     ],
     ukrainianTrap:
       'Учні часто кажуть «Ich einkaufe heute» або ставлять префікс у середині речення. Запам’ятай: префікс працює як «закриваюча дужка» — він чекає, поки закінчаться всі інші слова, і стає перед самою крапкою.',
@@ -880,10 +975,18 @@ export const GRAMMAR_LESSONS = [
     goal: 'Правильно формулювати прохання, поради та інструкції на «ти», «ви» та ввічливе «Ви».',
     ruleSummary:
       'У німецькій є 3 форми наказового способу: 1) на «ти» (du) — відкидаємо займенник du та закінчення -st (Komm! Mach!); 2) на «ви» до групи (ihr) — просто забираємо займенник ihr (Kommt! Macht!); 3) ввічливо на «Ви» (Sie) — дієслово на 1-ше місце + Sie (Kommen Sie bitte!).',
-    visualFormula: [
-      { label: 'На «ти» (du)', formula: 'du kommst → Komm! • du liest → Lies! (e→i залишається, а ä→a!)', example: 'Gib mir bitte das Buch!' },
-      { label: 'На «ви» (ihr)', formula: 'ihr kommt → Kommt! • ihr fahrt → Fahrt!', example: 'Macht bitte die Übung!' },
-      { label: 'Ввічливо (Sie)', formula: 'Sie kommen → Kommen Sie bitte! (sein → Seien Sie!)', example: 'Zeigen Sie bitte Ihren Ausweis!' },
+    tables: [
+      {
+        title: '1. Три форми Imperativ (du, ihr, Sie)',
+        subtitle: 'Як утворюється прохання або команда для кожної форми звертання',
+        headers: ['Звертання', 'Правило утворення', 'Приклади'],
+        rows: [
+          ['du (на «ти»)', 'основа без -st (e→i зберігається, ä→a зникає)', 'Komm! Gib mir das Buch! Fahr langsam!'],
+          ['ihr (на «ви» до групи)', 'форма дієслова для ihr без займенника', 'Kommt! Macht bitte die Übung!'],
+          ['Sie (ввічливо)', 'інфінітив + Sie (sein → Seien Sie)', 'Kommen Sie bitte! Zeigen Sie Ihren Ausweis!']
+        ],
+        example: 'Gib mir bitte das Buch und zeigen Sie bitte Ihren Ausweis!'
+      }
     ],
     ukrainianTrap:
       'У дієсловах зі зміною a → ä (fahren, schlafen) у формі на «ти» умлаут зникає: «du fährst → Fahr!» (не Fähr!). А от зміна e → i/ie зберігається: «du gibst → Gib!», «du liest → Lies!».',
@@ -967,10 +1070,20 @@ export const GRAMMAR_LESSONS = [
     goal: 'Правильно називати час, дні тижня, місяці та орієнтуватися в місті й транспорті.',
     ruleSummary:
       'Для часу запам’ятай трійку: um (точна година: um 8 Uhr), am (дні тижня та частини доби: am Montag, am Abend; виняток: in der Nacht), im (місяці та пори року: im Juli, im Sommer). Для місця (де? → Dativ) означений артикль змінюється: der/das → dem (in + dem = im, an + dem = am, zu + dem = zum), die → der (zu + der = zur).',
-    visualFormula: [
-      { label: 'Час: um / am / im', formula: 'um 9 Uhr • am Montag / am Morgen • im Mai / im Winter', example: 'Der Kurs beginnt am Montag um 9 Uhr.' },
-      { label: 'Додому vs Вдома', formula: 'nach Hause (куди? — додому) • zu Hause (де? — вдома)', example: 'Ich gehe nach Hause. / Ich bin zu Hause.' },
-      { label: 'Скорочення в Dativ', formula: 'in dem = im • an dem = am • zu dem = zum • zu der = zur • mit dem Bus', example: 'Ich fahre mit dem Bus zur Arbeit.' },
+    tables: [
+      {
+        title: '1. Прийменники часу та місця (Dativ)',
+        subtitle: 'Коли беремо um, am, im, а як позначаємо напрямок і місце',
+        headers: ['Категорія', 'Прийменник / Форма', 'Приклад'],
+        rows: [
+          ['Точний час (година)', 'um', 'um 9 Uhr / um 14:30 Uhr'],
+          ['Дні тижня та частини доби', 'am (виняток: in der Nacht)', 'am Montag / am Abend'],
+          ['Місяці та пори року', 'im', 'im Oktober / im Sommer'],
+          ['Рух додому vs перебування вдома', 'nach Hause vs zu Hause', 'Ich fahre nach Hause. / Ich bin zu Hause.'],
+          ['Злиття в Dativ', 'im, am, zum, zur, mit dem', 'Ich fahre mit dem Bus zur Arbeit.']
+        ],
+        example: 'Der Kurs beginnt am Montag um 9 Uhr im Sommersemester.'
+      }
     ],
     ukrainianTrap:
       'Українці плутають «nach Hause» і «zu Hause», а також кажуть «in Montag» замість «am Montag». Також зверни увагу: з назвами країн без артикля (Deutschland, Italien) для напрямку «в/до» беремо nach (nach Deutschland), а з країнами з артиклем (die Ukraine, die Schweiz) — in die (in die Ukraine) / aus der (aus der Ukraine).',
@@ -1054,10 +1167,21 @@ export const GRAMMAR_LESSONS = [
     goal: 'Розповідати про події в минулому («я був», «у мене було») так, як це роблять носії мови.',
     ruleSummary:
       'Для розповіді про минуле німці зазвичай використовують час Perfekt, АЛЕ для дієслів sein (бути) та haben (мати) у розмові майже завжди вживають просту форму минулого часу Präteritum: war (був) та hatte (мав).',
-    visualFormula: [
-      { label: 'sein → war (бути)', formula: 'ich war • du warst • er/sie/es war • wir/sie/Sie waren • ihr wart', example: 'Gestern war ich im Kino.' },
-      { label: 'haben → hatte (мати)', formula: 'ich hatte • du hattest • er/sie/es hatte • wir/sie/Sie hatten • ihr hattet', example: 'Wir hatten gestern keine Zeit.' },
-      { label: 'Порівняння часів', formula: 'Heute bin ich müde. → Gestern war ich müde.', example: 'Früher hatte ich keinen Hund.' },
+    tables: [
+      {
+        title: '1. war та hatte у Präteritum для всіх осіб',
+        subtitle: '1-ша та 3-тя особа однини збігаються і не мають закінчення -t',
+        headers: ['Особа', 'sein → war', 'haben → hatte'],
+        rows: [
+          ['ich', 'war', 'hatte'],
+          ['du', 'warst', 'hattest'],
+          ['er / sie / es', 'war', 'hatte'],
+          ['wir', 'waren', 'hatten'],
+          ['ihr', 'wart', 'hattet'],
+          ['sie / Sie', 'waren', 'hatten']
+        ],
+        example: 'Gestern war ich im Kino und hatte keine Zeit.'
+      }
     ],
     ukrainianTrap:
       'Учні часто намагаються утворити складну форму «Ich bin gewesen» або «Ich habe gehabt». На рівні A1–B1 у живій мові так не кажуть — використовуй короткі й природні «ich war» та «ich hatte».',
@@ -1141,11 +1265,19 @@ export const GRAMMAR_LESSONS = [
     goal: 'Розповідати про дії, які вже відбулися в минулому («я купив», «ми поїхали», «він прочитав»).',
     ruleSummary:
       'Perfekt складається з 2 частин: допоміжне дієслово haben або sein на 2-му місці + форма Partizip II у САМОМУ КІНЦІ речення. Більшість дієслів бере haben. Дієслово sein беремо лише для руху з точки А в точку Б (gehen, fahren, fliegen, kommen) та зміни стану (aufstehen, einschlafen, bleiben).',
-    visualFormula: [
-      { label: 'Формула Perfekt', formula: '[Хто?] + [haben / sein (2)] + [Де / Що?] + [Partizip II (кінець)]', example: 'Ich habe gestern ein Buch gekauft.' },
-      { label: 'Слабкі дієслова (ge-...-t)', formula: 'machen → gemacht • kaufen → gekauft • lernen → gelernt', example: 'Wir haben viel Deutsch gelernt.' },
-      { label: 'Без префікса ge-!', formula: '-ieren (studiert, telefoniert) • невідокремлювані be-, ver- (besucht, verstanden)', example: 'Er hat seine Eltern besucht.' },
-      { label: 'Топ сильних на A1 (ge-...-en) + sein', formula: 'gegessen, getrunken, gelesen, geschrieben, geschlafen • SEIN: gegangen, gefahren, geflogen, gekommen', example: 'Wir sind nach Berlin gefahren.' },
+    tables: [
+      {
+        title: '1. Утворення Perfekt та вибір haben / sein',
+        subtitle: 'Допоміжне дієслово на 2-му місці, Partizip II — у кінці речення',
+        headers: ['Категорія', 'Правило', 'Приклад'],
+        rows: [
+          ['Слабкі дієслова', 'ge + основа + -t (з haben)', 'machen → gemacht, kaufen → gekauft'],
+          ['Без префікса ge-', 'дієслова на -ieren та невідокремлювані (be-, ver-, er-)', 'studiert, telefoniert, besucht, verstanden'],
+          ['Сильні дієслова з haben', 'ge + основа + -en', 'gegessen, getrunken, gelesen, geschrieben'],
+          ['Рух / зміна стану з sein', 'sein (2) + Partizip II (кінець)', 'gegangen, gefahren, geflogen, gekommen, aufgestanden']
+        ],
+        example: 'Wir sind nach Berlin gefahren und haben ein Buch gekauft.'
+      }
     ],
     ukrainianTrap:
       'Найчастіша помилка — ставити haben з дієсловами руху («Ich habe nach Berlin gefahren»). Запам’ятай: якщо є переміщення з одного місця в інше (пішов, поїхав, полетів, приїхав) — завжди беремо SEIN: «Ich BIN nach Berlin gefahren».',
@@ -1225,10 +1357,22 @@ export const GRAMMAR_LESSONS = [
     goal: 'Правильно вживати давальний відмінок (кому? чому?) з дієсловами helfen, gehören, gefallen, schmecken, danken та особовими займенниками.',
     ruleSummary:
       'Відмінок Dativ відповідає на запитання «кому? чому?» (wem?). Означені та неозначені артиклі змінюються так: der/das → dem (einem), die → der (einer), множина → den + закінчення -n у іменника. Особові займенники у Dativ: mir, dir, ihm, ihr, ihm, uns, euch, ihnen, Ihnen.',
-    visualFormula: [
-      { label: 'Артиклі у Dativ', formula: 'der/das → dem (einem) • die → der (einer) • Plural → den ...-n', example: 'Ich helfe dem Mann und der Frau.' },
-      { label: 'Особові займенники (Dativ)', formula: 'ich → mir • du → dir • er/es → ihm • sie → ihr • wir → uns • ihr → euch • sie/Sie → ihnen/Ihnen', example: 'Kannst du mir bitte helfen?' },
-      { label: 'Топ-дієслова з Dativ', formula: 'helfen (допомагати), gehören (належати), gefallen (подобатися), schmecken (смакувати), danken (дякувати)', example: 'Das Buch gehört meinem Kumpel.' },
+    tables: [
+      {
+        title: '1. Артиклі та особові займенники у Dativ',
+        subtitle: 'Вживаються після дієслів helfen, gehören, gefallen, schmecken, danken',
+        headers: ['Рід / Особа', 'Nominativ', 'Dativ (артикль / займенник)', 'Приклад'],
+        rows: [
+          ['Чоловічий (der)', 'der / ein', 'dem / einem', 'Ich helfe dem Mann.'],
+          ['Жіночий (die)', 'die / eine', 'der / einer', 'Ich danke der Frau.'],
+          ['Середній (das)', 'das / ein', 'dem / einem', 'Das gehört dem Kind.'],
+          ['Множина (die)', 'die / —', 'den (+ -n у іменника)', 'Ich helfe den Kindern.'],
+          ['ich / du', 'ich / du', 'mir / dir', 'Kannst du mir helfen?'],
+          ['er / sie / es', 'er / sie / es', 'ihm / ihr / ihm', 'Das Buch gehört ihm / ihr.'],
+          ['wir / ihr / sie, Sie', 'wir / ihr / sie, Sie', 'uns / euch / ihnen, Ihnen', 'Ich danke Ihnen!']
+        ],
+        example: 'Kannst du mir bitte helfen? — Der Kuchen schmeckt uns sehr gut.'
+      }
     ],
     ukrainianTrap:
       'Дієслово «gefallen» (подобатися) працює навпаки до української: те, що подобається, є підметом у Nominativ, а кому подобається — у Dativ! «Мені подобається ця куртка» = «Die Jacke gefällt mir» (не «Ich gefalle die Jacke»!).',
@@ -1328,10 +1472,18 @@ export const GRAMMAR_LESSONS = [
     goal: 'Безпомилково обирати відмінок після прийменників für, ohne, um, gegen, durch (Akkusativ) та aus, bei, mit, nach, seit, von, zu (Dativ).',
     ruleSummary:
       'У німецькій кожен прийменник «керує» певним відмінком. Після für, ohne, um, gegen, durch, bis ЗАВЖДИ стоїть Akkusativ. Після aus, bei, mit, nach, seit, von, zu ЗАВЖДИ стоїть Dativ (і утворює злиття: in+dem=im, an+dem=am, zu+dem=zum, zu+der=zur, bei+dem=beim, von+dem=vom).',
-    visualFormula: [
-      { label: 'Тільки Akkusativ', formula: 'für (для), ohne (без), um (навколо / о год.), gegen (проти), durch (через), bis (до)', example: 'Das Geschenk ist für meinen Vater.' },
-      { label: 'Тільки Dativ', formula: 'aus (з), bei (у/при), mit (з), nach (після/в), seit (з часу), von (від), zu (до)', example: 'Ich fahre mit dem Zug zur Arbeit.' },
-      { label: 'Обов’язкові злиття', formula: 'im • am • zum • zur • beim • vom', example: 'Er kommt gerade vom Arzt.' },
+    tables: [
+      {
+        title: '1. Прийменники з Akkusativ та Dativ + обов’язкові злиття',
+        subtitle: 'Кожна група прийменників має фіксований відмінок',
+        headers: ['Група', 'Прийменники', 'Приклад'],
+        rows: [
+          ['Тільки Akkusativ', 'für, ohne, um, gegen, durch, bis', 'Das Geschenk ist für meinen Vater.'],
+          ['Тільки Dativ', 'aus, bei, mit, nach, seit, von, zu', 'Ich fahre mit dem Zug zur Arbeit.'],
+          ['Обов’язкові злиття', 'in+dem=im, an+dem=am, zu+dem=zum, zu+der=zur, bei+dem=beim, von+dem=vom', 'Er kommt gerade vom Arzt.']
+        ],
+        example: 'Ich fahre mit dem Bus zur Apotheke.'
+      }
     ],
     ukrainianTrap:
       'Слово «без» (ohne) в українській вимагає родового відмінка («без цукру», «без друга»), а в німецькій — ТІЛЬКИ Akkusativ: «ohne einen Freund» (чоловічий рід отримує -en!). Також не плутай «mit» (з кимось — Dativ) та «ohne» (без когось — Akkusativ).',
@@ -1427,10 +1579,17 @@ export const GRAMMAR_LESSONS = [
     goal: 'Розрізняти статичне положення предмета (Wo? → Dativ) та напрямок руху (Wohin? → Akkusativ) для 9 прийменників.',
     ruleSummary:
       'Дев’ять прийменників (in, an, auf, unter, über, vor, hinter, neben, zwischen) можуть вимагати або Dativ, або Akkusativ. Задай запитання до дії: якщо предмет уже знаходиться на місці (Wo? — Де? стоїть, лежить, висить) → ставимо Dativ. Якщо предмет переміщують кудись (Wohin? — Куди? кладу, ставлю, йду) → ставимо Akkusativ.',
-    visualFormula: [
-      { label: 'Wo? (Де? Статика → Dativ)', formula: 'liegen, stehen, sitzen, hängen, sein + Dativ (dem / der / den)', example: 'Das Buch liegt auf dem Tisch.' },
-      { label: 'Wohin? (Куди? Рух → Akkusativ)', formula: 'legen, stellen, setzen, hängen, gehen + Akkusativ (den / die / das)', example: 'Ich lege das Buch auf den Tisch.' },
-      { label: 'Усі 9 прийменників', formula: 'in (в), an (на верт./біля), auf (на гориз.), unter (під), über (над), vor (перед), hinter (за), neben (поруч), zwischen (між)', example: 'Die Lampe hängt über dem Tisch.' },
+    tables: [
+      {
+        title: '1. Wo? (Dativ) vs Wohin? (Akkusativ) для 9 прийменників',
+        subtitle: 'in, an, auf, unter, über, vor, hinter, neben, zwischen',
+        headers: ['Питання', 'Відмінок', 'Дієслова-підказки', 'Приклад'],
+        rows: [
+          ['Wo? (Де? Статика)', 'Dativ (dem / der / den)', 'liegen, stehen, sitzen, hängen, sein', 'Das Buch liegt auf dem Tisch.'],
+          ['Wohin? (Куди? Рух)', 'Akkusativ (den / die / das)', 'legen, stellen, setzen, hängen, gehen', 'Ich lege das Buch auf den Tisch.']
+        ],
+        example: 'Das Handy liegt auf dem Tisch. — Ich lege es auf den Tisch.'
+      }
     ],
     ukrainianTrap:
       'Різниця між «auf» і «an»: «auf» — на горизонтальній поверхні (auf dem Tisch — на столі), «an» — на вертикальній поверхні або впритул біля межі (an der Wand — на стіні, am Fenster — біля вікна).',
@@ -1530,10 +1689,21 @@ export const GRAMMAR_LESSONS = [
     goal: 'Відрізняти невідокремлювані префікси (be-, ver-, er-...) та правильно вживати зворотні дієслова (sich freuen, sich setzen, sich waschen).',
     ruleSummary:
       '1) Невідокремлювані префікси (be-, emp-, ent-, er-, ge-, miss-, ver-, zer-) ЗАВЖДИ пишуться разом із коренем (ich besuche, er versteht) і в Perfekt НЕ отримують префікс ge- (besucht, verstanden). 2) Зворотні дієслова мають частку sich («себе»), яка змінюється для ich → mich та du → dich (для er/sie/es/wir/ihr/sie/Sie залишається sich або uns/euch).',
-    visualFormula: [
-      { label: 'Невідокремлювані префікси', formula: 'be-, emp-, ent-, er-, ge-, miss-, ver-, zer- → РАЗОМ і без ge- у Perfekt!', example: 'Ich verstehe dich. / Ich habe dich verstanden.' },
-      { label: 'Зворотні займенники (Akkusativ)', formula: 'ich mich • du dich • er/sie/es sich • wir uns • ihr euch • sie/Sie sich', example: 'Ich freue mich auf das Wochenende!' },
-      { label: 'Місце sich у реченні', formula: '[Підмет] + [Дієслово (2)] + [mich/dich/sich] + [Решта]', example: 'Wir setzen uns an den Tisch.' },
+    tables: [
+      {
+        title: '1. Невідокремлювані префікси та відмінювання sich',
+        subtitle: 'Префікси be-, ver-, er- не відділяються; sich змінюється за особою',
+        headers: ['Особа', 'Зворотний займенник', 'Приклад (sich freuen)'],
+        rows: [
+          ['ich', 'mich', 'Ich freue mich.'],
+          ['du', 'dich', 'Du freust dich.'],
+          ['er / sie / es', 'sich', 'Er / Sie freut sich.'],
+          ['wir', 'uns', 'Wir freuen uns.'],
+          ['ihr', 'euch', 'Ihr freut euch.'],
+          ['sie / Sie', 'sich', 'Sie freuen sich.']
+        ],
+        example: 'Ich freue mich auf deine Antwort und verstehe die Regel.'
+      }
     ],
     ukrainianTrap:
       'В українській ми для всіх осіб додаємо «-ся» («я радію», «ти радієш», «ми радіємо»). У німецькій не можна казати «Ich freue sich» — для «ich» обов’язково «mich» («Ich freue mich»), а для «du» — «dich» («Freust du dich?»)!',
@@ -1629,10 +1799,32 @@ export const GRAMMAR_LESSONS = [
     goal: 'Говорити про минулі можливості, обов’язки та плани («я міг», «я мусив», «я хотів») та розрізняти mögen і möchten.',
     ruleSummary:
       'У розповіді про минуле модальні дієслова вживаються у простому минулому часі Präteritum: können → konnte, müssen → musste, wollen → wollte, dürfen → durfte, sollen → sollte. Головний лайфхак: у Präteritum зникають усі умлаути, а форма для ich і er/sie/es збігається! Інфінітив основного дієслова так само стоїть у кінці.',
-    visualFormula: [
-      { label: 'Утворення Präteritum (без умлаутів!)', formula: 'können → konnte • müssen → musste • wollen → wollte • dürfen → durfte • sollen → sollte', example: 'Gestern konnte ich nicht kommen.' },
-      { label: 'Особові закінчення Präteritum', formula: 'ich konnte • du konntest • er/sie/es konnte • wir/sie/Sie konnten • ihr konntet', example: 'Wir mussten gestern lange arbeiten.' },
-      { label: 'mögen vs. möchten', formula: 'ich mag Kaffee (люблю взагалі) • ich möchte einen Kaffee (хотів би зараз)', example: 'Ich mag Pizza, aber heute möchte ich Suppe.' },
+    tables: [
+      {
+        title: '1. Модальні дієслова у Präteritum (без умлаутів)',
+        subtitle: 'Повна таблиця для всіх осіб у минулому часі',
+        headers: ['Інфінітив', 'ich / er, sie, es', 'du', 'wir / sie, Sie', 'ihr'],
+        rows: [
+          ['können', 'konnte', 'konntest', 'konnten', 'konntet'],
+          ['müssen', 'musste', 'musstest', 'mussten', 'musstet'],
+          ['wollen', 'wollte', 'wolltest', 'wollten', 'wolltet'],
+          ['dürfen', 'durfte', 'durftest', 'durften', 'durftet'],
+          ['sollen', 'sollte', 'solltest', 'sollten', 'solltet']
+        ],
+        example: 'Gestern konnte ich nicht kommen, weil ich arbeiten musste.'
+      },
+      {
+        title: '2. mögen (подобатися взагалі) vs möchten (хотів би зараз)',
+        subtitle: 'Відмінювання mögen у теперішньому часі',
+        headers: ['Особа', 'mögen (Präsens)', 'möchten'],
+        rows: [
+          ['ich / er, sie, es', 'mag', 'möchte'],
+          ['du', 'magst', 'möchtest'],
+          ['wir / sie, Sie', 'mögen', 'möchten'],
+          ['ihr', 'mögt', 'möchtet']
+        ],
+        example: 'Ich mag Pizza, aber heute möchte ich Suppe.'
+      }
     ],
     ukrainianTrap:
       'Не зберігай умлаут у минулому часі: «ich könnnte» чи «ich müsste» — це вже умовний спосіб («міг би / мусив би»), а простий минулий факт («міг / мусив») пишеться БЕЗ крапок: «ich konnte», «ich musste».',
@@ -1720,10 +1912,19 @@ export const GRAMMAR_LESSONS = [
     goal: 'Вживати безособове man, конструкцію es gibt + Akkusativ, вказівний dieser та питальний welcher.',
     ruleSummary:
       '1) man («хтось / люди взагалі») завжди стоїть у Nominativ і вимагає дієслова в 3-й особі однини (man spricht, man darf). 2) Формальне es вживається у безособових виразах (Es regnet, Es gibt + Akkusativ). 3) dieser/diese/dieses («цей/ця/це») та welcher/welche/welches («який/яка/яке») беруть закінчення означеного артикля (у Akkusativ чоловічого роду — diesen / welchen).',
-    visualFormula: [
-      { label: 'man + 3-тя особа однини', formula: 'Hier spricht man Deutsch. • Hier darf man nicht parken.', example: 'In Deutschland trinkt man viel Kaffee.' },
-      { label: 'es gibt + Akkusativ', formula: 'Es gibt + einen/eine/ein/kein/keine/kein (або множина)', example: 'Hier gibt es einen Supermarkt und viele Cafés.' },
-      { label: 'dieser / welcher', formula: 'Nominativ: dieser / diese / dieses • Akkusativ (der): diesen / welchen', example: 'Welchen Zug nimmst du? — Diesen hier.' },
+    tables: [
+      {
+        title: '1. Займенники man, es gibt та відмінювання dieser / welcher',
+        subtitle: 'Зверни увагу: після es gibt завжди стоїть Akkusativ',
+        headers: ['Конструкція / Слово', 'Граматичне правило', 'Приклад'],
+        rows: [
+          ['man', '3-тя особа однини дієслова (як er/sie/es)', 'Hier spricht man Deutsch.'],
+          ['es gibt + Akkusativ', 'чол. рід: einen / den', 'In der Nähe gibt es einen Bahnhof.'],
+          ['dieser / welcher (Nom.)', 'dieser / diese / dieses | welcher / welche / welches', 'Dieser Tisch ist praktisch.'],
+          ['dieser / welcher (Akk. чол.)', 'diesen / welchen', 'Welchen Bus nimmst du? — Diesen hier.']
+        ],
+        example: 'In Berlin gibt es viele Museen und hier spricht man Deutsch.'
+      }
     ],
     ukrainianTrap:
       'Після «Es gibt» («є / існує») у німецькій завжди йде АКУЗАТИВ (Akkusativ): «Es gibt einen Tisch» (чоловічий рід отримує -en!), а не «ein Tisch».',
@@ -1815,10 +2016,20 @@ export const GRAMMAR_LESSONS = [
     goal: 'Порівнювати предмети й дії («такий самий, як», «швидший, ніж», «найкращий») та знати ключові винятки.',
     ruleSummary:
       'Після дієслів sein, werden, bleiben прикметник не відмінюється (Das Auto ist neu). Для порівняння однакового рівня вживаємо «so + прикметник + wie». Вищий ступінь утворюється суфіксом -er + «als» («швидше, ніж»). Найвищий ступінь — «am + прикметник + -sten». Винятки: gut → besser → am besten, gern → lieber → am liebsten, viel → mehr → am meisten.',
-    visualFormula: [
-      { label: 'Однаковий рівень', formula: 'so + [прикметник] + wie', example: 'Er ist so groß wie sein Bruder.' },
-      { label: 'Вищий ступінь (ніж)', formula: '[прикметник + -er] + als', example: 'Der Zug ist schneller als der Bus.' },
-      { label: 'Найвищий ступінь & винятки', formula: 'am + [прикметник + -sten] • gut→besser→am besten • gern→lieber→am liebsten', example: 'Ich trinke am liebsten Kaffee.' },
+    tables: [
+      {
+        title: '1. Ступені порівняння та винятки',
+        subtitle: 'Правила утворення Komparativ, Superlativ та нерегулярні форми',
+        headers: ['Початкова форма', 'Вищий ступінь (+ als)', 'Найвищий ступінь (am ...-sten)'],
+        rows: [
+          ['schnell (швидкий)', 'schneller', 'am schnellsten'],
+          ['klein (маленький)', 'kleiner', 'am kleinsten'],
+          ['gut (добрий — виняток)', 'besser', 'am besten'],
+          ['gern (охоче — виняток)', 'lieber', 'am liebsten'],
+          ['viel (багато — виняток)', 'mehr', 'am meisten']
+        ],
+        example: 'Der Zug fährt schneller als der Bus, aber ich fahre am liebsten Rad.'
+      }
     ],
     ukrainianTrap:
       'Після вищого ступеня в німецькій ставимо «als» («більший, ніж»), а після «so ... wie» («такий самий, як») — «wie». Не плутай їх між собою!',
@@ -1914,10 +2125,18 @@ export const GRAMMAR_LESSONS = [
     goal: 'Правильно розставляти обставини у реченні (час, причина, спосіб дії, місце) та з’єднувати речення сполучниками.',
     ruleSummary:
       '1) У німецькому реченні обставини зазвичай ставляться у порядку TeKaMoLo: Temporal (коли?) → Kausal (чому?) → Modal (як?) → Lokal (де/куди?). 2) Сполучники und, aber, oder, denn займають «нульову позицію» і не впливають на порядок слів у другому реченні. 3) Прислівники deshalb (тому), dann (потім), sonst (інакше) займають 1-шу позицію, тому після них одразу йде дієслово!',
-    visualFormula: [
-      { label: 'Порядок TeKaMoLo', formula: 'Temporal (коли?) → Kausal (чому?) → Modal (як?) → Lokal (де/куди?)', example: 'Ich fahre heute wegen des Termins mit dem Bus ins Zentrum.' },
-      { label: 'Нульова позиція (und, aber, oder, denn)', formula: '[Речення 1], aber/denn/und [Підмет (1)] [ДІЄСЛОВО (2)] ...', example: 'Ich habe Zeit, aber ich bin müde.' },
-      { label: 'Прислівник на 1-й позиції (deshalb)', formula: '[Речення 1]. Deshalb [ДІЄСЛОВО (2)] [Підмет (3)] ...', example: 'Es regnet. Deshalb bleiben wir zu Hause.' },
+    tables: [
+      {
+        title: '1. Правило TeKaMoLo та сполучники (позиція 0 vs інверсія)',
+        subtitle: 'Як розставити обставини й поєднати частини речення',
+        headers: ['Правило / Група', 'Порядок слів', 'Приклад'],
+        rows: [
+          ['TeKaMoLo', 'Temporal → Kausal → Modal → Lokal', 'Er fährt heute mit dem Zug nach Berlin.'],
+          ['Позиція 0 (und, aber, oder, denn)', 'Сполучник + Підмет (1) + ДІЄСЛОВО (2)', 'Ich gehe schlafen, denn ich bin müde.'],
+          ['Позиція 1 (deshalb, dann, sonst)', 'Прислівник (1) + ДІЄСЛОВО (2) + Підмет (3)', 'Es regnet. Deshalb bleiben wir zu Hause.']
+        ],
+        example: 'Ich habe Zeit, aber ich bin müde. Deshalb bleibe ich zu Hause.'
+      }
     ],
     ukrainianTrap:
       'Після «deshalb» («тому») дієслово стоїть ОДРАЗУ після «deshalb» («Deshalb bleibe ich...»), а не після підмета («Deshalb ich bleibe...» — це помилка!).',
@@ -2017,10 +2236,19 @@ export const GRAMMAR_LESSONS = [
     goal: 'Будувати підрядні речення з дієсловом у кінці та позначати належність через власні імена (Lisas Buch).',
     ruleSummary:
       '1) У складнопідрядному реченні після weil (тому що), dass (що) або wenn (коли / якщо) відмінюване дієслово ставиться в САМИЙ КІНЕЦЬ підрядного речення. 2) Для позначення належності з власними іменами у німецькій додаємо закінчення -s без апострофа: Lisas Buch, Toms Fahrrad (якщо ім’я вже закінчується на -s, -ß, -x, -z — ставимо апостроф: Max’ Buch).',
-    visualFormula: [
-      { label: 'weil / dass / wenn → дієслово в кінці', formula: '..., weil/dass/wenn [підмет] ... [ДІЄСЛОВО у кінці]', example: 'Ich lerne Deutsch, weil ich in Wien studieren möchte.' },
-      { label: 'Належність з власним ім’ям', formula: '[Ім’я + -s] + [іменник БЕЗ артикля!]', example: 'Das ist Lisas neues Buch.' },
-      { label: 'Якщо ім’я на -s/-z/-x', formula: '[Ім’я + ’] + [іменник]', example: 'Hans’ Wohnung ist groß.' },
+    tables: [
+      {
+        title: '1. Підрядні речення (weil, dass, wenn) та належність імен',
+        subtitle: 'Дієслово йде в кінець; імена отримують -s без артикля',
+        headers: ['Конструкція', 'Правило', 'Приклад'],
+        rows: [
+          ['weil (тому що)', '..., weil + підмет + ... + ДІЄСЛОВО (кінець)', 'Ich bleibe zu Hause, weil ich krank bin.'],
+          ['dass (що)', '..., dass + підмет + ... + ДІЄСЛОВО (кінець)', 'Er sagt, dass er heute arbeitet.'],
+          ['wenn (якщо / коли)', 'Wenn + підмет + ... + ДІЄСЛОВО, ДІЄСЛОВО ...', 'Wenn ich Zeit habe, gehe ich spazieren.'],
+          ['Ім’я + -s', 'Ім’я + -s + іменник (без артикля)', 'Das ist Lisas neues Buch. (Max’ Buch)']
+        ],
+        example: 'Das ist Lisas Buch und ich lese es, weil es spannend ist.'
+      }
     ],
     ukrainianTrap:
       'Коли кажемо «Лізина книга» («Lisas Buch»), перед «Buch» НЕ ставимо артикль («не Lisas das Buch», а просто «Lisas Buch»)! І не став апостроф у звичайних іменах на кшталт «Lisas» — в українській та англійській пишуть з апострофом, а в німецькій стандартно пишеться разом: Lisas Buch.',
@@ -2120,10 +2348,18 @@ export const GRAMMAR_LESSONS = [
     goal: 'Називати числа, дати, час (офіційний і розмовний: halb, Viertel, vor, nach), ціни та одиниці виміру.',
     ruleSummary:
       '1) У двозначних числах німецькою спочатку називаємо одиниці, потім «und» і десятки: 24 = vierundzwanzig («чотири-і-двадцять»). 2) Порядкові числівники в датах: до 19 додаємо -te (am vierten Mai), від 20 — -ste (am zwanzigsten Juni); винятки: erste, dritte, siebte, achte. 3) У розмовному часі «halb acht» = 7:30 (пів до восьмої!).',
-    visualFormula: [
-      { label: 'Двозначні числа (навпаки!)', formula: '21 = einundzwanzig • 35 = fünfunddreißig • 100 = (ein)hundert', example: 'Das kostet fünfundvierzig Euro.' },
-      { label: 'Дати (am + порядковий + -n)', formula: '1. → erste • 3. → dritte • 7. → siebte • від 20 → -ste', example: 'Der Kurs beginnt am dritten Mai.' },
-      { label: 'Розмовний час (halb = -30 хв)', formula: 'halb neun = 08:30 • Viertel nach acht = 08:15 • Viertel vor acht = 07:45', example: 'Der Film beginnt um halb acht (19:30).' },
+    tables: [
+      {
+        title: '1. Числівники, дати та розмовний час',
+        subtitle: 'Як називати двозначні числа, числа місяця та години з halb і Viertel',
+        headers: ['Тема', 'Правило', 'Приклад'],
+        rows: [
+          ['Двозначні числа', 'одиниці + und + десятки', '21 = einundzwanzig, 35 = fünfunddreißig'],
+          ['Дати (am + ...-n)', '1–19: -te | від 20: -ste | винятки: erste, dritte, siebte, achte', 'am dritten Mai / am zwanzigsten Juni'],
+          ['Розмовний час', 'halb = -30 хв до наступної години', 'halb neun = 08:30 | Viertel vor acht = 07:45']
+        ],
+        example: 'Der Kurs beginnt am dritten Mai um halb zehn (09:30).'
+      }
     ],
     ukrainianTrap:
       '«halb acht» — це НЕ 8:30, а 7:30 (півдороги до восьмої години)! А в числах типу 47 («siebenundvierzig») спочатку чуємо «сім» (sieben), а потім «сорок» (vierzig).',
@@ -2216,9 +2452,18 @@ export const GRAMMAR_LESSONS = [
     goal: 'Підсумкова перевірка всього курсу A1. Якщо припустишся помилки — отримаєш додаткові завдання саме на цю тему!',
     ruleSummary:
       'Це фінальний контрольний тест за всіма темами рівня A1: порядок слів, дієслова, артиклі, відмінки Nominativ/Akkusativ/Dativ, заперечення nicht/kein, займенники, модальні дієслова, відокремлювані та невідокремлювані префікси, Imperativ, прийменники, прикметники, TeKaMoLo, складнопідрядні речення, дати та час. При помилці система автоматично додає вправи з відповідної теми.',
-    visualFormula: [
-      { label: 'Формат фінального тесту', formula: '14 контрольних завдань по ключових темах курсу A1', example: 'Прохідний бал: від 80% без невідпрацьованих помилок' },
-      { label: 'Розумне відпрацювання', formula: 'Помилка в темі X → автоматично додаються вправи саме з теми X', example: 'Поки не закріпиш слабке місце — іспит не відпустить 😉' },
+    tables: [
+      {
+        title: 'Правила фінального іспиту A1',
+        subtitle: 'Як відбувається перевірка та автоматичне відпрацювання помилок',
+        headers: ['Параметр', 'Умова'],
+        rows: [
+          ['Формат тесту', '14 контрольних завдань по ключових темах курсу A1'],
+          ['Розумне відпрацювання', 'Помилка в темі X → +2 додаткові вправи саме з теми X в кінець тесту'],
+          ['Прохідний поріг', 'від 70% правильних відповідей → «Засвоєно ✓» + 75 🪙']
+        ],
+        example: 'Für die erfolgreiche Prüfung sind mindestens 70% nötig.'
+      }
     ],
     ukrainianTrap:
       'У фінальному іспиті всі правила змішані між собою — так само, як у реальному житті та на іспиті Goethe-Zertifikat A1. Перед відповіддю завжди перевіряй 3 речі: 1) де стоїть дієслово; 2) який рід у іменника (der/die/das); 3) чи це теперішній, чи минулий час.',
