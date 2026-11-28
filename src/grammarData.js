@@ -772,7 +772,6 @@ export const GRAMMAR_LESSONS = [
   },
 
   {
-     {
     id: 'a1_09',
     level: 'A1',
     order: 9,
@@ -893,7 +892,7 @@ export const GRAMMAR_LESSONS = [
       }
     ]
   },
-  
+
   {
     id: 'a1_10',
     level: 'A1',
@@ -2322,7 +2321,7 @@ export const GRAMMAR_LESSONS = [
           'Wenn ich Zeit habe, ich gehe spazieren.'
         ],
         answer: 'Wenn ich Zeit habe, gehe ich spazieren.',
-        explanation: 'У підрядному реченні дієслово «habe» в кінці, а в головному після коми дієслово «gehe» стоїть одразу.'
+        explanation: 'У підряддному реченні дієслово «habe» в кінці, а в головному після коми дієслово «gehe» стоїть одразу.'
       },
       {
         topicTag: 'Підрядні речення та належність імен',
