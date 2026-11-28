@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import {
   Volume2, Flame, Trophy, CheckCircle2, XCircle,
   Share2, Sparkles, BookOpen, BrainCircuit, ArrowRight,
-  RotateCcw, Crown, Check, Copy, X, Loader2, LogOut, User, ShieldCheck, FileText, ExternalLink, Search, Keyboard, Compass, Camera, Pencil, Coins, Lightbulb, ShoppingBag, Heart, HelpCircle, MessageCircle, Send, Plus, Trash2, ClipboardList, Snowflake, Puzzle, Lock, ArrowLeft
+  RotateCcw, Crown, Check, Copy, X, Loader2, LogOut, User, ShieldCheck, FileText, ExternalLink, Search, Keyboard, Compass, Camera, Pencil, Coins, Lightbulb, ShoppingBag, Heart, HelpCircle, MessageCircle, Send, Plus, Trash2, ClipboardList, Snowflake, Puzzle, Lock, ArrowLeft, Zap
 } from 'lucide-react';
 import { GRAMMAR_LESSONS } from './grammarData';
 
@@ -43,7 +43,7 @@ const FALLBACK_DATA = [
   { id: 1, level: 'A1', category: 'colloquial', article: 'der', word: 'Kumpel', plural: 'die Kumpels', translation: 'приятель, друзяка', example: 'Mein Kumpel kommt heute Abend vorbei.', exampleUa: 'Мій приятель завітає сьогодні ввечері.' },
   { id: 2, level: 'A1', category: 'exam', article: 'die', word: 'Anmeldung', plural: 'die Anmeldungen', translation: 'реєстрація, прописка', example: 'Für den Kurs braucht man eine Anmeldung.', exampleUa: 'Для курсу потрібна реєстрація.' },
   { id: 3, level: 'A1', category: 'official', article: 'der', word: 'Ausweis', plural: 'die Ausweise', translation: 'посвідчення особи', example: 'Zeigen Sie bitte Ihren Ausweis an der Kasse.', exampleUa: 'Покажіть, будь ласка, ваше посвідчення на касі.' },
-  { id: 4, level: 'A2', category: 'colloquial', article: 'die', word: 'Lust', plural: '', translation: 'бажання, охота', example: 'Hast du heute Lust auf Kino?', exampleUa: 'Маєш сьогодні бажання піти в кіно?' },
+  { id: 4, level: 'A2', category: 'colloquial', article: 'die', word: 'Lust', plural: '', translation: 'бажання, охота', example: 'Hast du heute Lust на Kino?', exampleUa: 'Маєш сьогодні бажання піти в кіно?' },
   { id: 5, level: 'B1', category: 'exam', article: 'der', word: 'Vorteil', plural: 'die Vorteile', translation: 'перевага', example: 'Ein großer Vorteil ist die flexible Arbeitszeit.', exampleUa: 'Великою перевагою є гнучкий робочий графік.' },
   { id: 6, level: 'B2', category: 'official', article: 'die', word: 'Voraussetzung', plural: 'die Voraussetzungen', translation: 'передумова, вимога', example: 'Gute Deutschkenntnisse sind eine wichtige Voraussetzung.', exampleUa: 'Добре знання німецької є важливою вимогою.' }
 ];
@@ -154,7 +154,8 @@ const DEFAULT_PET = {
   lastFedDate: null,
   lastDecayDate: null,
   lastDecayAt: null,
-  completedGrammarIds: []
+  completedGrammarIds: [],
+  dailyMixDate: null
 };
 
 const QUICK_AI_PROMPTS = [
@@ -447,6 +448,15 @@ export default function App() {
   const [grammarRemedialTopics, setGrammarRemedialTopics] = useState([]);
   const grammarInputRef = useRef(null);
 
+  // --- Щоденне тренування дня (Daily Mix: 3 слова + 2 нові картки + 2 граматичні вправи) ---
+  const [dailyMixItems, setDailyMixItems] = useState([]);
+  const [dailyMixIndex, setDailyMixIndex] = useState(0);
+  const [dailyMixFlipped, setDailyMixFlipped] = useState(false);
+  const [dailyMixAnswer, setDailyMixAnswer] = useState(null); // { isCorrect, userAnswer }
+  const [dailyMixBuiltTokens, setDailyMixBuiltTokens] = useState([]);
+  const [dailyMixFillInput, setDailyMixFillInput] = useState('');
+  const [dailyMixCompleted, setDailyMixCompleted] = useState(false);
+
   const [showOnboarding, setShowOnboarding] = useState(() => localStorage.getItem('dmd_hide_intro') !== 'true');
 
   const [user, setUser] = useState(null);
@@ -650,16 +660,41 @@ export default function App() {
     }
   };
 
+  // Завантаження всієї таблиці vocabulary без ліміту в 1000 рядків через пагінацію .range()
   useEffect(() => {
     async function fetchWords() {
       setLoading(true);
-      const { data, error } = await supabase.from('vocabulary').select('*').order('id', { ascending: true });
-      if (!error && data && data.length > 0) {
-        setVocabulary(data.map((row) => ({
-          id: row.id, level: row.level, category: row.category,
-          article: row.article || '', word: row.word, plural: row.plural || '',
-          translation: row.translation, example: row.example, exampleUa: row.example_ua
-        })));
+      const pageSize = 1000;
+      let from = 0;
+      let allRows = [];
+
+      while (true) {
+        const { data, error } = await supabase
+          .from('vocabulary')
+          .select('*')
+          .order('id', { ascending: true })
+          .range(from, from + pageSize - 1);
+
+        if (error || !data || data.length === 0) break;
+        allRows = [...allRows, ...data];
+        if (data.length < pageSize) break;
+        from += pageSize;
+      }
+
+      if (allRows.length > 0) {
+        setVocabulary(
+          allRows.map((row) => ({
+            id: row.id,
+            level: row.level,
+            category: row.category,
+            article: row.article || '',
+            word: row.word,
+            plural: row.plural || '',
+            translation: row.translation,
+            example: row.example,
+            exampleUa: row.example_ua,
+          }))
+        );
       }
       setLoading(false);
     }
@@ -713,6 +748,7 @@ export default function App() {
         spellingDone: Math.max(dbPet.spellingDone || 0, localPet.spellingDone || 0),
         ownedItems: Array.from(new Set([...(dbPet.ownedItems || []), ...(localPet.ownedItems || [])])),
         completedGrammarIds: Array.from(new Set([...(dbPet.completedGrammarIds || []), ...(localPet.completedGrammarIds || [])])),
+        dailyMixDate: dbPet.dailyMixDate || localPet.dailyMixDate || null,
         lastDecayAt: latestDecayAt,
       };
 
@@ -1084,6 +1120,7 @@ export default function App() {
 
   const handleStartCustomPractice = (targetMode = 'cards') => {
     if (customWords.length === 0) return;
+    setDailyMixItems([]);
     setCourseSection('vocabulary');
     setPracticeCustomMode(true);
     setPracticeAllLearnedMode(false);
@@ -1247,6 +1284,141 @@ export default function App() {
       input.focus();
       input.setSelectionRange(start + char.length, start + char.length);
     });
+  };
+
+  // --- Логіка "⚡ Швидке тренування дня (3 хв)" ---
+  const isDailyMixDoneToday = pet.dailyMixDate === getLocalDateStr();
+
+  const handleStartDailyMix = () => {
+    const pool = isPro ? vocabulary : vocabulary.filter((w) => w.level === 'A1');
+    const sourceWords = pool.length >= 4 ? pool : vocabulary;
+
+    const unlearnedPool = sourceWords.filter((w) => !learnedIds.includes(w.id));
+    const learnedPool = sourceWords.filter((w) => learnedIds.includes(w.id));
+
+    const reviewCandidates = [...learnedPool, ...unlearnedPool].sort(() => 0.5 - Math.random()).slice(0, 3);
+    const reviewSteps = reviewCandidates.map((targetWord, idx) => {
+      const distractors = sourceWords
+        .filter((w) => w.id !== targetWord.id)
+        .sort(() => 0.5 - Math.random())
+        .slice(0, 3);
+      return {
+        id: `dm_rev_${idx}_${targetWord.id}`,
+        kind: 'review_quiz',
+        badge: 'Повторення слова',
+        wordObj: targetWord,
+        options: [...distractors, targetWord].sort(() => 0.5 - Math.random()),
+      };
+    });
+
+    const usedIds = new Set(reviewCandidates.map((w) => w.id));
+    const newCandidates = [...unlearnedPool, ...sourceWords]
+      .filter((w) => !usedIds.has(w.id))
+      .sort(() => 0.5 - Math.random())
+      .slice(0, 2);
+
+    const newCardSteps = newCandidates.map((wordObj, idx) => ({
+      id: `dm_new_${idx}_${wordObj.id}`,
+      kind: 'new_card',
+      badge: 'Нове слово',
+      wordObj,
+    }));
+
+    const availableLessons = GRAMMAR_LESSONS.filter(
+      (l) => !l.isFinalExam && (completedGrammarIds.includes(l.id) || l.isFree || isPro)
+    );
+    const lessonPool = availableLessons.length > 0 ? availableLessons : GRAMMAR_LESSONS.filter((l) => !l.isFinalExam);
+
+    const allEx = [];
+    lessonPool.forEach((l) => {
+      (l.exercises || []).forEach((ex, exIdx) => {
+        allEx.push({ ...ex, lessonTitle: l.title, exKey: `${l.id}_${exIdx}` });
+      });
+    });
+
+    const pickedEx = allEx.sort(() => 0.5 - Math.random()).slice(0, 2);
+    const grammarSteps = pickedEx.map((ex, idx) => ({
+      id: `dm_gram_${idx}_${ex.exKey}`,
+      kind: 'grammar',
+      badge: `Граматика • ${ex.lessonTitle}`,
+      exercise: ex,
+    }));
+
+    const combined = [...reviewSteps, ...newCardSteps, ...grammarSteps];
+    setDailyMixItems(combined);
+    setDailyMixIndex(0);
+    setDailyMixFlipped(false);
+    setDailyMixAnswer(null);
+    setDailyMixBuiltTokens([]);
+    setDailyMixFillInput('');
+    setDailyMixCompleted(false);
+  };
+
+  const currentDailyMixStep = dailyMixItems[dailyMixIndex] || null;
+
+  const handleCheckDailyMixAnswer = (directChoice = null) => {
+    if (!currentDailyMixStep || dailyMixAnswer) return;
+
+    if (currentDailyMixStep.kind === 'review_quiz') {
+      if (!directChoice) return;
+      const isCorrect = directChoice.id === currentDailyMixStep.wordObj.id;
+      setDailyMixAnswer({ isCorrect, userAnswer: directChoice.translation });
+      if (isCorrect) {
+        touchDailyStreak();
+        addXpAndCoins(10);
+        speakGerman(currentDailyMixStep.wordObj.word);
+      }
+      return;
+    }
+
+    if (currentDailyMixStep.kind === 'grammar') {
+      const ex = currentDailyMixStep.exercise;
+      let userAns = '';
+      if (ex.type === 'choice') userAns = directChoice || '';
+      else if (ex.type === 'builder') userAns = dailyMixBuiltTokens.map((t) => t.text).join(' ').trim();
+      else userAns = dailyMixFillInput.trim();
+
+      if (!userAns) return;
+      const norm = (s) => s.replace(/\s+/g, ' ').trim();
+      const isCorrect =
+        ex.type === 'fill'
+          ? norm(userAns).toLowerCase() === norm(ex.answer).toLowerCase()
+          : norm(userAns) === norm(ex.answer);
+
+      setDailyMixAnswer({ isCorrect, userAnswer: userAns });
+      if (isCorrect) {
+        touchDailyStreak();
+        addXpAndCoins(10);
+        speakGerman(ex.answer);
+      }
+    }
+  };
+
+  const handleNextDailyMixStep = () => {
+    if (!currentDailyMixStep) return;
+
+    if (currentDailyMixStep.kind === 'new_card') {
+      touchDailyStreak();
+      if (!learnedIds.includes(currentDailyMixStep.wordObj.id)) {
+        setLearnedIds((prev) => [...prev, currentDailyMixStep.wordObj.id]);
+      }
+      addXpAndCoins(10);
+    }
+
+    if (dailyMixIndex + 1 < dailyMixItems.length) {
+      setDailyMixIndex((prev) => prev + 1);
+      setDailyMixFlipped(false);
+      setDailyMixAnswer(null);
+      setDailyMixBuiltTokens([]);
+      setDailyMixFillInput('');
+    } else {
+      const today = getLocalDateStr();
+      setPet((prev) => ({ ...prev, dailyMixDate: today }));
+      touchDailyStreak();
+      addXpAndCoins(30);
+      setCatReaction('Мікс дня виконано! +30 бонусних монет і серія збережена 🔥');
+      setDailyMixCompleted(true);
+    }
   };
 
   const learnedWordsList = useMemo(
@@ -1654,6 +1826,7 @@ export default function App() {
 
   const handleStartLearnedQuizFromProfile = () => {
     if (learnedWordsList.length === 0) return;
+    setDailyMixItems([]);
     setCourseSection('vocabulary');
     setPracticeLevelFilter(dictLevelFilter);
     setPracticeAllLearnedMode(true);
@@ -1926,7 +2099,7 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            {courseSection === 'vocabulary' && currentWord && !showSessionSummary && (mode === 'quiz' || mode === 'spelling') && (
+            {dailyMixItems.length === 0 && courseSection === 'vocabulary' && currentWord && !showSessionSummary && (mode === 'quiz' || mode === 'spelling') && (
               <button
                 type="button"
                 onClick={handleRequestCatHint}
@@ -1949,37 +2122,391 @@ export default function App() {
           </div>
         </section>
 
-        {/* Головний перемикач курсу: Лексика / Граматика */}
-        <section className="grid grid-cols-2 gap-2.5 bg-white p-2 rounded-2xl border border-slate-200 shadow-xs">
-          <button
-            type="button"
-            onClick={() => setCourseSection('vocabulary')}
-            className={`py-3 px-4 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition ${
-              courseSection === 'vocabulary'
-                ? 'bg-slate-900 text-white shadow-sm'
-                : 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-            }`}
-          >
-            <BookOpen className="w-4 h-4 text-amber-400" />
-            <span>Лексика ({learnedIds.length}/{vocabulary.length})</span>
-          </button>
+        {/* Блок «⚡ Швидке тренування дня (3 хв)» */}
+        {dailyMixItems.length === 0 ? (
+          <section className="bg-gradient-to-r from-amber-50 via-orange-50/70 to-amber-50 border-2 border-amber-300/80 rounded-2xl p-4 sm:px-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[11px] font-extrabold">
+                  <Zap className="w-3 h-3 fill-slate-950" /> 3 хв • 7 кроків
+                </span>
+                <h2 className="text-sm sm:text-base font-extrabold text-slate-900">
+                  Швидке тренування дня
+                </h2>
+                {isDailyMixDoneToday && (
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-extrabold">
+                    Виконано сьогодні ✓
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-600">
+                3 слова на пригадування + 2 нові картки + 2 граматичні вправи • <strong>+30 бонусних монет</strong>
+              </p>
+            </div>
 
-          <button
-            type="button"
-            onClick={() => setCourseSection('grammar')}
-            className={`py-3 px-4 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition ${
-              courseSection === 'grammar'
-                ? 'bg-slate-900 text-white shadow-sm'
-                : 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-            }`}
-          >
-            <Puzzle className="w-4 h-4 text-emerald-400" />
-            <span>Граматика ({completedGrammarIds.length}/{GRAMMAR_LESSONS.length})</span>
-          </button>
-        </section>
+            <button
+              type="button"
+              onClick={handleStartDailyMix}
+              className="shrink-0 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-extrabold inline-flex items-center justify-center gap-1.5 transition shadow-xs"
+            >
+              <Zap className="w-4 h-4 text-amber-400" />
+              <span>{isDailyMixDoneToday ? 'Пройти ще раз' : 'Почати мікс'}</span>
+            </button>
+          </section>
+        ) : (
+          <section className="bg-white border-2 border-amber-400 rounded-3xl p-5 sm:p-8 shadow-md space-y-5">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3.5">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[11px] font-extrabold">
+                  <Zap className="w-3 h-3 fill-slate-950" /> Мікс дня
+                </span>
+                {!dailyMixCompleted && (
+                  <span className="text-xs font-extrabold text-slate-600">
+                    Крок <strong className="text-slate-900">{dailyMixIndex + 1}</strong> з {dailyMixItems.length}
+                  </span>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setDailyMixItems([]);
+                  setDailyMixCompleted(false);
+                }}
+                className="inline-flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-slate-900 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 transition"
+              >
+                <X className="w-3.5 h-3.5" /> Вийти з міксу
+              </button>
+            </div>
+
+            {!dailyMixCompleted && currentDailyMixStep && (
+              <>
+                <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
+                  <div
+                    className="h-full bg-amber-500 rounded-full transition-all"
+                    style={{ width: `${Math.round(((dailyMixIndex + 1) / dailyMixItems.length) * 100)}%` }}
+                  />
+                </div>
+
+                {currentDailyMixStep.kind === 'review_quiz' && (
+                  <div className="space-y-5">
+                    <div className="text-center space-y-1">
+                      <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-700">
+                        {currentDailyMixStep.badge}
+                      </span>
+                      <h3 className="text-3xl sm:text-4xl font-extrabold text-slate-900">
+                        {currentDailyMixStep.wordObj.article && (
+                          <span className="text-slate-400 font-semibold mr-2">{currentDailyMixStep.wordObj.article}</span>
+                        )}
+                        {currentDailyMixStep.wordObj.word}
+                      </h3>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {currentDailyMixStep.options.map((opt) => {
+                        const isChosen = dailyMixAnswer?.userAnswer === opt.translation;
+                        const isRight = opt.id === currentDailyMixStep.wordObj.id;
+                        let style = 'bg-slate-50 border-slate-200 hover:border-slate-400 text-slate-800';
+                        if (dailyMixAnswer) {
+                          if (isRight) style = 'bg-emerald-50 border-emerald-500 text-emerald-950 font-bold';
+                          else if (isChosen) style = 'bg-rose-50 border-rose-500 text-rose-950';
+                          else style = 'bg-slate-50 border-slate-200 opacity-50';
+                        }
+                        return (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            disabled={Boolean(dailyMixAnswer)}
+                            onClick={() => handleCheckDailyMixAnswer(opt)}
+                            className={`p-4 rounded-2xl border-2 text-left text-sm transition flex items-center justify-between ${style}`}
+                          >
+                            <span>{opt.translation}</span>
+                            {dailyMixAnswer && isRight && <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />}
+                            {dailyMixAnswer && isChosen && !isRight && <XCircle className="w-5 h-5 text-rose-600 shrink-0" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {dailyMixAnswer && (
+                      <div className="flex justify-end pt-1">
+                        <button
+                          type="button"
+                          onClick={handleNextDailyMixStep}
+                          className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-bold inline-flex items-center gap-2"
+                        >
+                          <span>{dailyMixIndex + 1 < dailyMixItems.length ? 'Далі' : 'Завершити мікс (+30 🪙)'}</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {currentDailyMixStep.kind === 'new_card' && (
+                  <div className="space-y-4">
+                    <div
+                      onClick={() => setDailyMixFlipped((prev) => !prev)}
+                      className="bg-slate-50 border-2 border-slate-200 hover:border-amber-300 rounded-2xl p-6 min-h-[220px] flex flex-col justify-between cursor-pointer transition"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-extrabold">
+                          {currentDailyMixStep.badge} • {currentDailyMixStep.wordObj.level}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            speakGerman(currentDailyMixStep.wordObj.word, currentDailyMixStep.wordObj.article);
+                          }}
+                          className="p-2.5 rounded-full bg-amber-100 hover:bg-amber-200 text-amber-900"
+                        >
+                          <Volume2 className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <div className="text-center my-4 space-y-2">
+                        {currentDailyMixStep.wordObj.article && (
+                          <span className={`inline-block px-2.5 py-0.5 rounded-lg text-xs font-bold border ${getArticleColor(currentDailyMixStep.wordObj.article)}`}>
+                            {currentDailyMixStep.wordObj.article}
+                          </span>
+                        )}
+                        <h3 className="text-3xl sm:text-4xl font-extrabold text-slate-900">
+                          {currentDailyMixStep.wordObj.word}
+                        </h3>
+                        {dailyMixFlipped ? (
+                          <div className="pt-3 mt-3 border-t border-slate-200 space-y-1">
+                            <p className="text-xl font-bold text-amber-700">{currentDailyMixStep.wordObj.translation}</p>
+                            {currentDailyMixStep.wordObj.example && (
+                              <p className="text-xs text-slate-600 italic">«{currentDailyMixStep.wordObj.example}»</p>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-slate-400 pt-2">Натисни на картку, щоб відкрити переклад</p>
+                        )}
+                      </div>
+                      <div />
+                    </div>
+
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={handleNextDailyMixStep}
+                        className="px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold inline-flex items-center gap-2"
+                      >
+                        <span>Запам’ятав (+10 🪙)</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {currentDailyMixStep.kind === 'grammar' && currentDailyMixStep.exercise && (
+                  <div className="space-y-4">
+                    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
+                      <span className="text-[10px] font-extrabold uppercase text-emerald-700">
+                        {currentDailyMixStep.badge}
+                      </span>
+                      <h3 className="text-base sm:text-lg font-extrabold text-slate-900 mt-1">
+                        {currentDailyMixStep.exercise.prompt}
+                      </h3>
+                    </div>
+
+                    {currentDailyMixStep.exercise.type === 'choice' && (
+                      <div className="space-y-2">
+                        {currentDailyMixStep.exercise.options.map((opt, i) => {
+                          const isChosen = dailyMixAnswer?.userAnswer === opt;
+                          const isRight = opt === currentDailyMixStep.exercise.answer;
+                          let style = 'bg-white border-slate-200 hover:border-slate-400 text-slate-800';
+                          if (dailyMixAnswer) {
+                            if (isRight) style = 'bg-emerald-50 border-emerald-500 text-emerald-950 font-bold';
+                            else if (isChosen) style = 'bg-rose-50 border-rose-500 text-rose-950';
+                            else style = 'bg-slate-50 border-slate-200 opacity-50';
+                          }
+                          return (
+                            <button
+                              key={i}
+                              type="button"
+                              disabled={Boolean(dailyMixAnswer)}
+                              onClick={() => handleCheckDailyMixAnswer(opt)}
+                              className={`w-full p-3.5 rounded-2xl border-2 text-left text-sm transition flex items-center justify-between ${style}`}
+                            >
+                              <span>{opt}</span>
+                              {dailyMixAnswer && isRight && <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />}
+                              {dailyMixAnswer && isChosen && !isRight && <XCircle className="w-5 h-5 text-rose-600 shrink-0" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {currentDailyMixStep.exercise.type === 'builder' && (
+                      <div className="space-y-3">
+                        <div className="min-h-[56px] p-3 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 flex flex-wrap gap-2">
+                          {dailyMixBuiltTokens.length === 0 ? (
+                            <span className="text-xs text-slate-400">Обери слова для речення...</span>
+                          ) : (
+                            dailyMixBuiltTokens.map((tok) => (
+                              <button
+                                key={tok.id}
+                                type="button"
+                                disabled={Boolean(dailyMixAnswer)}
+                                onClick={() => setDailyMixBuiltTokens((prev) => prev.filter((x) => x.id !== tok.id))}
+                                className="px-3 py-1.5 rounded-xl bg-slate-900 text-white text-xs font-bold"
+                              >
+                                {tok.text}
+                              </button>
+                            ))
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {currentDailyMixStep.exercise.tokens.map((t, idx) => {
+                            const id = `dm_tok_${dailyMixIndex}_${idx}`;
+                            const used = dailyMixBuiltTokens.some((x) => x.id === id);
+                            return (
+                              <button
+                                key={id}
+                                type="button"
+                                disabled={used || Boolean(dailyMixAnswer)}
+                                onClick={() => setDailyMixBuiltTokens((prev) => [...prev, { id, text: t }])}
+                                className={`px-3 py-1.5 rounded-xl border-2 text-xs font-bold ${
+                                  used ? 'bg-slate-100 border-slate-200 text-slate-300' : 'bg-white border-slate-300 text-slate-800'
+                                }`}
+                              >
+                                {t}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {!dailyMixAnswer && (
+                          <button
+                            type="button"
+                            disabled={dailyMixBuiltTokens.length === 0}
+                            onClick={() => handleCheckDailyMixAnswer()}
+                            className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white text-xs sm:text-sm font-bold"
+                          >
+                            Перевірити речення
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    {currentDailyMixStep.exercise.type === 'fill' && (
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          handleCheckDailyMixAnswer();
+                        }}
+                        className="space-y-3"
+                      >
+                        <input
+                          type="text"
+                          disabled={Boolean(dailyMixAnswer)}
+                          value={dailyMixFillInput}
+                          onChange={(e) => setDailyMixFillInput(e.target.value)}
+                          placeholder={currentDailyMixStep.exercise.placeholder || 'Введи відповідь...'}
+                          className="w-full px-4 py-3 rounded-2xl border-2 border-slate-200 focus:border-amber-400 focus:outline-none text-sm font-bold text-slate-900"
+                        />
+                        {!dailyMixAnswer && (
+                          <button
+                            type="submit"
+                            disabled={!dailyMixFillInput.trim()}
+                            className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white text-xs sm:text-sm font-bold"
+                          >
+                            Перевірити
+                          </button>
+                        )}
+                      </form>
+                    )}
+
+                    {dailyMixAnswer && (
+                      <div
+                        className={`p-3.5 rounded-2xl border space-y-2 ${
+                          dailyMixAnswer.isCorrect
+                            ? 'bg-emerald-50 border-emerald-300 text-emerald-950'
+                            : 'bg-rose-50 border-rose-300 text-rose-950'
+                        }`}
+                      >
+                        <div className="text-xs font-extrabold">
+                          {dailyMixAnswer.isCorrect
+                            ? '✓ Правильно! +10 XP • +10 🪙'
+                            : `✗ Правильно: «${currentDailyMixStep.exercise.answer}»`}
+                        </div>
+                        <p className="text-xs text-slate-700">{currentDailyMixStep.exercise.explanation}</p>
+                        <div className="flex justify-end">
+                          <button
+                            type="button"
+                            onClick={handleNextDailyMixStep}
+                            className="px-5 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold inline-flex items-center gap-1.5"
+                          >
+                            <span>{dailyMixIndex + 1 < dailyMixItems.length ? 'Далі' : 'Завершити мікс (+30 🪙)'}</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+
+            {dailyMixCompleted && (
+              <div className="text-center py-5 space-y-4">
+                <div className="text-4xl">⚡🏆</div>
+                <div className="space-y-1">
+                  <h3 className="text-xl font-extrabold text-slate-900">Мікс дня виконано!</h3>
+                  <p className="text-xs sm:text-sm text-slate-600">
+                    Ти отримав <strong>+30 бонусних монет і XP</strong> та підтримав щоденну серію.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDailyMixItems([]);
+                    setDailyMixCompleted(false);
+                  }}
+                  className="px-5 py-2.5 rounded-xl bg-slate-900 text-white text-xs sm:text-sm font-bold hover:bg-slate-800 transition"
+                >
+                  Повернутися до курсу
+                </button>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* Головний перемикач курсу: Лексика / Граматика */}
+        {dailyMixItems.length === 0 && (
+          <section className="grid grid-cols-2 gap-2.5 bg-white p-2 rounded-2xl border border-slate-200 shadow-xs">
+            <button
+              type="button"
+              onClick={() => setCourseSection('vocabulary')}
+              className={`py-3 px-4 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition ${
+                courseSection === 'vocabulary'
+                  ? 'bg-slate-900 text-white shadow-sm'
+                  : 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+              }`}
+            >
+              <BookOpen className="w-4 h-4 text-amber-400" />
+              <span>Лексика ({learnedIds.length}/{vocabulary.length})</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setCourseSection('grammar')}
+              className={`py-3 px-4 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 transition ${
+                courseSection === 'grammar'
+                  ? 'bg-slate-900 text-white shadow-sm'
+                  : 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+              }`}
+            >
+              <Puzzle className="w-4 h-4 text-emerald-400" />
+              <span>Граматика ({completedGrammarIds.length}/{GRAMMAR_LESSONS.length})</span>
+            </button>
+          </section>
+        )}
 
         {/* ==================== РОЗДІЛ 1: ГРАМАТИКА ==================== */}
-        {courseSection === 'grammar' && (
+        {dailyMixItems.length === 0 && courseSection === 'grammar' && (
           <div className="space-y-5">
             {!activeGrammarLesson ? (
               <>
@@ -2122,7 +2649,6 @@ export default function App() {
                 )}
               </>
             ) : (
-              /* Внутрішній екран уроку граматики */
               <section className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-8 shadow-sm space-y-6">
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-4">
                   <button
@@ -2303,7 +2829,6 @@ export default function App() {
                       </h3>
                     </div>
 
-                    {/* Тип 1: Choice */}
                     {currentGrammarExercise.type === 'choice' && (
                       <div className="space-y-2.5">
                         {currentGrammarExercise.options.map((opt, idx) => {
@@ -2332,7 +2857,6 @@ export default function App() {
                       </div>
                     )}
 
-                    {/* Тип 2: Builder */}
                     {currentGrammarExercise.type === 'builder' && (
                       <div className="space-y-4">
                         <div className="min-h-[64px] p-3.5 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/70 flex flex-wrap items-center gap-2">
@@ -2399,7 +2923,6 @@ export default function App() {
                       </div>
                     )}
 
-                    {/* Тип 3: Fill */}
                     {currentGrammarExercise.type === 'fill' && (
                       <form
                         onSubmit={(e) => {
@@ -2570,7 +3093,7 @@ export default function App() {
         )}
 
         {/* ==================== РОЗДІЛ 2: ЛЕКСИКА ==================== */}
-        {courseSection === 'vocabulary' && (
+        {dailyMixItems.length === 0 && courseSection === 'vocabulary' && (
           <>
             <section className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -4036,6 +4559,7 @@ export default function App() {
                                 <button
                                   type="button"
                                   onClick={() => {
+                                    setDailyMixItems([]);
                                     setCourseSection('vocabulary');
                                     setPracticeAllLearnedMode(false);
                                     setPracticeCustomMode(false);
