@@ -772,39 +772,54 @@ export const GRAMMAR_LESSONS = [
   },
 
   {
+     {
     id: 'a1_09',
     level: 'A1',
     order: 9,
     isFree: false,
     title: 'Модальні дієслова (können, müssen, wollen...)',
     germanTitle: 'Modalverben & Satzklammer',
-    goal: 'Виражати вміння, необхідність, бажання та дозвіл і правильно будувати рамкову конструкцію.',
+    goal: 'Виражати вміння, необхідність, бажання, дозвіл і пораду для всіх 6 модальних дієслів і правильно будувати рамкову конструкцію.',
     ruleSummary:
       'У німецькій є 6 модальних дієслів: können (могти/вміти), müssen (мусити), wollen (хотіти), dürfen (мати дозвіл), sollen (мати обов’язок/пораду) та möchten (хотів би). Вони стоять на 2-му місці та змінюються за особою, а основне дієслово в інфінітиві (без zu!) летить у САМИЙ КІНЕЦЬ речення.',
     tables: [
       {
-        title: '1. Відмінювання модальних дієслів у Präsens',
+        title: '1. Відмінювання всіх 6 модальних дієслів у Präsens',
         subtitle: 'Форми для ich та er/sie/es збігаються і не мають закінчення -t',
         headers: ['Дієслово', 'ich / er, sie, es', 'du', 'wir / sie, Sie', 'ihr'],
         rows: [
-          ['können', 'kann', 'kannst', 'können', 'könnt'],
-          ['müssen', 'muss', 'musst', 'müssen', 'müsst'],
-          ['wollen', 'will', 'willst', 'wollen', 'wollt'],
-          ['dürfen', 'darf', 'darfst', 'dürfen', 'dürft'],
-          ['sollen', 'soll', 'sollst', 'sollen', 'sollt'],
-          ['möchten', 'möchte', 'möchtest', 'möchten', 'möchtet']
+          ['können (могти / вміти)', 'kann', 'kannst', 'können', 'könnt'],
+          ['müssen (мусити)', 'muss', 'musst', 'müssen', 'müsst'],
+          ['wollen (хотіти)', 'will', 'willst', 'wollen', 'wollt'],
+          ['dürfen (мати дозвіл)', 'darf', 'darfst', 'dürfen', 'dürft'],
+          ['sollen (маєш / варто)', 'soll', 'sollst', 'sollen', 'sollt'],
+          ['möchten (хотів би)', 'möchte', 'möchtest', 'möchten', 'möchtet']
         ],
         example: 'Ich muss heute viel arbeiten, aber ich kann morgen kommen.'
+      },
+      {
+        title: '2. Рамкова конструкція (Satzklammer) та значення дієслів',
+        subtitle: 'Модальне дієслово на 2-му місці, а інфінітив основного дієслова — у самому кінці',
+        headers: ['Дієслово', 'Значення', 'Приклад у рамці'],
+        rows: [
+          ['können', 'вміння або можливість', 'Er kann sehr gut Deutsch sprechen.'],
+          ['müssen', 'необхідність / обов’язок', 'Wir müssen morgen früh aufstehen.'],
+          ['wollen', 'чітке бажання / намір', 'Sie will im Sommer nach Wien fahren.'],
+          ['dürfen', 'дозвіл (nicht dürfen = заборона)', 'Hier darf man nicht rauchen.'],
+          ['sollen', 'порада лікаря / доручення іншої людини', 'Der Arzt sagt, ich soll mehr Wasser trinken.'],
+          ['möchten', 'ввічливе бажання / замовлення', 'Ich möchte einen Kaffee bestellen.']
+        ],
+        example: 'Der Arzt sagt, ich soll viel schlafen und keinen Kaffee trinken.'
       }
     ],
     ukrainianTrap:
-      'У 3-й особі однини (er/sie/es) модальні дієслова НЕ мають закінчення -t: «er kann», «sie muss», «er will» (ніколи не кажи «er kannt» чи «er musst»!). І не став друге дієслово одразу після модального — відправляй його в кінець речення.',
+      'У 3-й особі однини (er/sie/es) модальні дієслова НЕ мають закінчення -t: «er kann», «sie muss», «er will», «sie soll» (ніколи не кажи «er kannt» чи «er musst»!). І не став друге дієслово одразу після модального — відправляй його в кінець речення.',
     examTip:
-      'Goethe-Zertifikat A1 (Lesen Teil 2 & Sprechen): на вивісках постійно трапляється «Hier darf man nicht rauchen» (заборона), а в усному іспиті — «Können Sie mir bitte helfen?».',
+      'Goethe-Zertifikat A1 (Lesen Teil 2 & Sprechen): на вивісках постійно трапляється «Hier darf man nicht rauchen» (заборона), а в усному іспиті — «Können Sie mir bitte helfen?» та «Soll ich das Fenster öffnen?».',
     exercises: [
       {
         type: 'builder',
-        prompt: 'Збери речення з рамковою конструкцією: «Я можу сьогодні прийти ввечері».',
+        prompt: 'Збери речення з рамковою конструкцією: «Я можу сьогодні прийти ввечері» (können).',
         tokens: ['kommen.', 'kann', 'Ich', 'heute Abend'],
         answer: 'Ich kann heute Abend kommen.',
         explanation: 'Модальне дієслово kann стоїть на 2-му місці, а інфінітив kommen — у самому кінці.'
@@ -825,7 +840,14 @@ export const GRAMMAR_LESSONS = [
       },
       {
         type: 'choice',
-        prompt: 'Як ввічливо замовити чай: «Я хотів би випити чай»?',
+        prompt: 'Обери правильну форму дієслова sollen (порада лікаря): Der Arzt sagt, ich ___ mehr Tee trinken.',
+        options: ['sollt', 'soll', 'sollst'],
+        answer: 'soll',
+        explanation: 'Для «ich» дієслово sollen має форму «soll» (без закінчення).'
+      },
+      {
+        type: 'choice',
+        prompt: 'Як ввічливо замовити чай: «Я хотів би випити чай» (möchten)?',
         options: [
           'Ich möchte einen Tee trinken.',
           'Ich möchtet einen Tee trinken.',
@@ -856,6 +878,13 @@ export const GRAMMAR_LESSONS = [
         explanation: 'Для «ich» дієслово dürfen змінює голосну в однині: ich darf (на початку речення — Darf).'
       },
       {
+        type: 'fill',
+        prompt: 'Впиши форму дієслова sollen: ___ wir jetzt anfangen? (Чи нам уже починати?)',
+        placeholder: 'Форма sollen...',
+        answer: 'Sollen',
+        explanation: 'Для «wir» форма дієслова sollen — «sollen» (на початку речення — Sollen).'
+      },
+      {
         type: 'builder',
         prompt: 'Збери запитання: «Коли ви повинні бути в офісі?» (Sie, müssen).',
         tokens: ['im Büro sein?', 'müssen', 'Wann', 'Sie'],
@@ -864,7 +893,7 @@ export const GRAMMAR_LESSONS = [
       }
     ]
   },
-
+  
   {
     id: 'a1_10',
     level: 'A1',
