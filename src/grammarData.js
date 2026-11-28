@@ -659,7 +659,7 @@ export const GRAMMAR_LESSONS = [
         prompt: 'Збери речення: «Вона розуміє нас дуже добре».',
         tokens: ['sehr gut.', 'uns', 'versteht', 'Sie'],
         answer: 'Sie versteht uns sehr gut.',
-        explanation: 'Підмет Sie (1) → дієслово versteht (2) → займенник uns (3) → sehr gut (4).'
+        explanation: 'Підмет Sie (1) → дієслово versteht (2) → займенник uns (3) → дуже добре (4).'
       },
       {
         type: 'choice',
@@ -1216,18 +1216,1008 @@ export const GRAMMAR_LESSONS = [
   },
 
   {
-    id: 'a1_15_final',
+    id: 'a1_15',
     level: 'A1',
     order: 15,
+    isFree: false,
+    title: 'Відмінок Dativ: дієслова та особові займенники',
+    germanTitle: 'Dativ: Verben mit Dativ & Personalpronomen',
+    goal: 'Правильно вживати давальний відмінок (кому? чому?) з дієсловами helfen, gehören, gefallen, schmecken, danken та особовими займенниками.',
+    ruleSummary:
+      'Відмінок Dativ відповідає на запитання «кому? чому?» (wem?). Означені та неозначені артиклі змінюються так: der/das → dem (einem), die → der (einer), множина → den + закінчення -n у іменника. Особові займенники у Dativ: mir, dir, ihm, ihr, ihm, uns, euch, ihnen, Ihnen.',
+    visualFormula: [
+      { label: 'Артиклі у Dativ', formula: 'der/das → dem (einem) • die → der (einer) • Plural → den ...-n', example: 'Ich helfe dem Mann und der Frau.' },
+      { label: 'Особові займенники (Dativ)', formula: 'ich → mir • du → dir • er/es → ihm • sie → ihr • wir → uns • ihr → euch • sie/Sie → ihnen/Ihnen', example: 'Kannst du mir bitte helfen?' },
+      { label: 'Топ-дієслова з Dativ', formula: 'helfen (допомагати), gehören (належати), gefallen (подобатися), schmecken (смакувати), danken (дякувати)', example: 'Das Buch gehört meinem Kumpel.' },
+    ],
+    ukrainianTrap:
+      'Дієслово «gefallen» (подобатися) працює навпаки до української: те, що подобається, є підметом у Nominativ, а кому подобається — у Dativ! «Мені подобається ця куртка» = «Die Jacke gefällt mir» (не «Ich gefalle die Jacke»!).',
+    examTip:
+      'Goethe-Zertifikat A1 (Sprechen & Hören): фрази «Wie gefällt dir...», «Schmeckt es Ihnen?» та «Können Sie mir bitte helfen?» — обов’язковий мінімум для розмовної частини.',
+    exercises: [
+      {
+        topicTag: 'Dativ (дієслова та займенники)',
+        sourceLessonId: 'a1_15',
+        type: 'choice',
+        prompt: 'Обери правильний займенник: Kannst du ___ (мені) bitte helfen?',
+        options: ['mich', 'mir', 'ich'],
+        answer: 'mir',
+        explanation: 'Дієслово helfen завжди вимагає Dativ: ich → mir.'
+      },
+      {
+        topicTag: 'Dativ (дієслова та займенники)',
+        sourceLessonId: 'a1_15',
+        type: 'fill',
+        prompt: 'Впиши артикль у Dativ: Der Ausweis gehört ___ Mann. (der Mann)',
+        placeholder: 'Артикль...',
+        answer: 'dem',
+        explanation: 'Дієслово gehören керує Dativ. Чоловічий рід der у Dativ переходить у dem.'
+      },
+      {
+        topicTag: 'Dativ (дієслова та займенники)',
+        sourceLessonId: 'a1_15',
+        type: 'choice',
+        prompt: 'Як правильно сказати: «Нам дуже смакує цей торт» (der Kuchen — однина)?',
+        options: [
+          'Der Kuchen schmeckt uns sehr gut.',
+          'Der Kuchen schmecken wir sehr gut.',
+          'Uns schmecken der Kuchen sehr gut.'
+        ],
+        answer: 'Der Kuchen schmeckt uns sehr gut.',
+        explanation: 'Підмет — Der Kuchen (він → schmeckt), а «нам» у Dativ — uns.'
+      },
+      {
+        topicTag: 'Dativ (дієслова та займенники)',
+        sourceLessonId: 'a1_15',
+        type: 'builder',
+        prompt: 'Збери речення: «Я дякую Вам за допомогу» (danken + Dativ, Sie).',
+        tokens: ['für die Hilfe.', 'danke', 'Ihnen', 'Ich'],
+        answer: 'Ich danke Ihnen für die Hilfe.',
+        explanation: 'Дієслово danken вимагає Dativ: ввічлива форма «Вам» — Ihnen (з великої літери).'
+      },
+      {
+        topicTag: 'Dativ (дієслова та займенники)',
+        sourceLessonId: 'a1_15',
+        type: 'choice',
+        prompt: 'Обери правильну форму: Wie gefällt ___ (їй) die neue Wohnung?',
+        options: ['sie', 'ihr', 'ihm'],
+        answer: 'ihr',
+        explanation: 'Займенник «sie» (вона) у Dativ має форму «ihr» (їй).'
+      },
+      {
+        topicTag: 'Dativ (дієслова та займенники)',
+        sourceLessonId: 'a1_15',
+        type: 'fill',
+        prompt: 'Впиши форму присвійного займенника у Dativ: Ich helfe ___ Schwester. (die Schwester)',
+        placeholder: 'Форма mein...',
+        answer: 'meiner',
+        explanation: 'Schwester — жіночого роду (die), у Dativ закінчення -er: meiner Schwester.'
+      },
+      {
+        topicTag: 'Dativ (дієслова та займенники)',
+        sourceLessonId: 'a1_15',
+        type: 'choice',
+        prompt: 'Як правильно сказати у множині: «Я допомагаю дітям» (die Kinder)?',
+        options: [
+          'Ich helfe den Kindern.',
+          'Ich helfe die Kinder.',
+          'Ich helfe dem Kindern.'
+        ],
+        answer: 'Ich helfe den Kindern.',
+        explanation: 'У множині в Dativ артикль змінюється на den, а до іменника додається закінчення -n: den Kindern.'
+      },
+      {
+        topicTag: 'Dativ (дієслова та займенники)',
+        sourceLessonId: 'a1_15',
+        type: 'builder',
+        prompt: 'Збери речення: «Ця книга належить йому» (gehören, er).',
+        tokens: ['gehört', 'Dieses Buch', 'ihm.'],
+        answer: 'Dieses Buch gehört ihm.',
+        explanation: 'Займенник «er» (він) у Dativ має форму «ihm» (йому).'
+      }
+    ]
+  },
+
+  {
+    id: 'a1_16',
+    level: 'A1',
+    order: 16,
+    isFree: false,
+    title: 'Прийменники з Akkusativ та Dativ + злиття',
+    germanTitle: 'Präpositionen mit Akkusativ & Dativ',
+    goal: 'Безпомилково обирати відмінок після прийменників für, ohne, um, gegen, durch (Akkusativ) та aus, bei, mit, nach, seit, von, zu (Dativ).',
+    ruleSummary:
+      'У німецькій кожен прийменник «керує» певним відмінком. Після für, ohne, um, gegen, durch, bis ЗАВЖДИ стоїть Akkusativ. Після aus, bei, mit, nach, seit, von, zu ЗАВЖДИ стоїть Dativ (і утворює злиття: in+dem=im, an+dem=am, zu+dem=zum, zu+der=zur, bei+dem=beim, von+dem=vom).',
+    visualFormula: [
+      { label: 'Тільки Akkusativ', formula: 'für (для), ohne (без), um (навколо / о год.), gegen (проти), durch (через), bis (до)', example: 'Das Geschenk ist für meinen Vater.' },
+      { label: 'Тільки Dativ', formula: 'aus (з), bei (у/при), mit (з), nach (після/в), seit (з часу), von (від), zu (до)', example: 'Ich fahre mit dem Zug zur Arbeit.' },
+      { label: 'Обов’язкові злиття', formula: 'im • am • zum • zur • beim • vom', example: 'Er kommt gerade vom Arzt.' },
+    ],
+    ukrainianTrap:
+      'Слово «без» (ohne) в українській вимагає родового відмінка («без цукру», «без друга»), а в німецькій — ТІЛЬКИ Akkusativ: «ohne einen Freund» (чоловічий рід отримує -en!). Також не плутай «mit» (з кимось — Dativ) та «ohne» (без когось — Akkusativ).',
+    examTip:
+      'Goethe-Zertifikat A1 (Lesen & Schreiben): прийменники «für» («für meinen Kurs»), «mit» («mit dem Bus») та «seit» («seit einem Monat») постійно перевіряються в тестах.',
+    exercises: [
+      {
+        topicTag: 'Прийменники з Akkusativ та Dativ',
+        sourceLessonId: 'a1_16',
+        type: 'choice',
+        prompt: 'Обери правильну форму: Ich trinke Kaffee ohne ___ (der Zucker — чоловічий рід).',
+        options: ['Zucker / den Zucker', 'dem Zucker', 'der Zucker'],
+        answer: 'Zucker / den Zucker',
+        explanation: 'Прийменник ohne завжди вимагає Akkusativ (без артикля Zucker або з означеним den Zucker).'
+      },
+      {
+        topicTag: 'Прийменники з Akkusativ та Dativ',
+        sourceLessonId: 'a1_16',
+        type: 'fill',
+        prompt: 'Впиши прийменник «для»: Das Buch ist ___ dich! (Akkusativ)',
+        placeholder: 'Прийменник...',
+        answer: 'für',
+        explanation: '«für» означає «для» і завжди керує відмінком Akkusativ (für dich).'
+      },
+      {
+        topicTag: 'Прийменники з Akkusativ та Dativ',
+        sourceLessonId: 'a1_16',
+        type: 'choice',
+        prompt: 'Як правильно утворити злиття: «Я йду до лікаря» (zu + dem Arzt)?',
+        options: ['zur Arzt', 'zum Arzt', 'beim Arzt'],
+        answer: 'zum Arzt',
+        explanation: 'Arzt — чоловічого роду (der Arzt), у Dativ dem, а «zu + dem» зливається у «zum».'
+      },
+      {
+        topicTag: 'Прийменники з Akkusativ та Dativ',
+        sourceLessonId: 'a1_16',
+        type: 'builder',
+        prompt: 'Збери речення: «Ми гуляємо парком (через парк)» (durch + der Park → Akkusativ).',
+        tokens: ['den Park.', 'Wir', 'durch', 'gehen'],
+        answer: 'Wir gehen durch den Park.',
+        explanation: 'Прийменник durch вимагає Akkusativ: der Park змінюється на den Park.'
+      },
+      {
+        topicTag: 'Прийменники з Akkusativ та Dativ',
+        sourceLessonId: 'a1_16',
+        type: 'fill',
+        prompt: 'Впиши злиття (zu + der): Sie geht jetzt ___ Apotheke. (die Apotheke)',
+        placeholder: 'Злиття...',
+        answer: 'zur',
+        explanation: 'Apotheke — жіночого роду (die), у Dativ der, а «zu + der» зливається у «zur».'
+      },
+      {
+        topicTag: 'Прийменники з Akkusativ та Dativ',
+        sourceLessonId: 'a1_16',
+        type: 'choice',
+        prompt: 'Обери правильний варіант: Er wohnt ___ seinen Eltern (множина, bei + Dativ).',
+        options: ['bei', 'für', 'durch'],
+        answer: 'bei',
+        explanation: '«У батьків» (місце проживання у когось) передається прийменником bei + Dativ.'
+      },
+      {
+        topicTag: 'Прийменники з Akkusativ та Dativ',
+        sourceLessonId: 'a1_16',
+        type: 'choice',
+        prompt: 'Як правильно сказати: «Я вчу німецьку вже місяць» (der Monat, seit + Dativ)?',
+        options: [
+          'Ich lerne seit einen Monat Deutsch.',
+          'Ich lerne seit einem Monat Deutsch.',
+          'Ich lerne für einem Monat Deutsch.'
+        ],
+        answer: 'Ich lerne seit einem Monat Deutsch.',
+        explanation: 'Прийменник seit вимагає Dativ: der Monat (ein Monat) переходить у einem Monat.'
+      },
+      {
+        topicTag: 'Прийменники з Akkusativ та Dativ',
+        sourceLessonId: 'a1_16',
+        type: 'builder',
+        prompt: 'Збери речення: «Він повертається від друга» (von + dem Freund → vom Freund).',
+        tokens: ['kommt', 'Er', 'vom Freund.', 'gerade'],
+        answer: 'Er kommt gerade vom Freund.',
+        explanation: '«von + dem» скорочується до «vom» (Dativ чоловічого роду).'
+      }
+    ]
+  },
+
+  {
+    id: 'a1_17',
+    level: 'A1',
+    order: 17,
+    isFree: false,
+    title: 'Прийменники подвійного керування (Wechselpräpositionen)',
+    germanTitle: 'Wechselpräpositionen: Wo? (Dativ) vs. Wohin? (Akkusativ)',
+    goal: 'Розрізняти статичне положення предмета (Wo? → Dativ) та напрямок руху (Wohin? → Akkusativ) для 9 прийменників.',
+    ruleSummary:
+      'Дев’ять прийменників (in, an, auf, unter, über, vor, hinter, neben, zwischen) можуть вимагати або Dativ, або Akkusativ. Задай запитання до дії: якщо предмет уже знаходиться на місці (Wo? — Де? стоїть, лежить, висить) → ставимо Dativ. Якщо предмет переміщують кудись (Wohin? — Куди? кладу, ставлю, йду) → ставимо Akkusativ.',
+    visualFormula: [
+      { label: 'Wo? (Де? Статика → Dativ)', formula: 'liegen, stehen, sitzen, hängen, sein + Dativ (dem / der / den)', example: 'Das Buch liegt auf dem Tisch.' },
+      { label: 'Wohin? (Куди? Рух → Akkusativ)', formula: 'legen, stellen, setzen, hängen, gehen + Akkusativ (den / die / das)', example: 'Ich lege das Buch auf den Tisch.' },
+      { label: 'Усі 9 прийменників', formula: 'in (в), an (на верт./біля), auf (на гориз.), unter (під), über (над), vor (перед), hinter (за), neben (поруч), zwischen (між)', example: 'Die Lampe hängt über dem Tisch.' },
+    ],
+    ukrainianTrap:
+      'Різниця між «auf» і «an»: «auf» — на горизонтальній поверхні (auf dem Tisch — на столі), «an» — на вертикальній поверхні або впритул біля межі (an der Wand — на стіні, am Fenster — біля вікна).',
+    examTip:
+      'Goethe-Zertifikat A1 (Hören & Lesen): опис кімнати («Der Schrank steht neben dem Bett») та маршруту («Wir gehen in das / ins Kino») — улюблена тема завдань на розуміння деталей.',
+    exercises: [
+      {
+        topicTag: 'Wechselpräpositionen (Wo? vs Wohin?)',
+        sourceLessonId: 'a1_17',
+        type: 'choice',
+        prompt: 'Задай питання «Де?» (Wo?): Das Handy liegt auf ___ Tisch. (der Tisch)',
+        options: ['den', 'dem', 'der'],
+        answer: 'dem',
+        explanation: 'Телефон уже лежить на столі (статика, Wo?), тому потрібен Dativ: auf dem Tisch.'
+      },
+      {
+        topicTag: 'Wechselpräpositionen (Wo? vs Wohin?)',
+        sourceLessonId: 'a1_17',
+        type: 'fill',
+        prompt: 'Задай питання «Куди?» (Wohin?): Ich lege das Handy auf ___ Tisch. (der Tisch)',
+        placeholder: 'Артикль...',
+        answer: 'den',
+        explanation: 'Я кладу телефон на стіл (рух до цілі, Wohin?), тому ставимо Akkusativ: auf den Tisch.'
+      },
+      {
+        topicTag: 'Wechselpräpositionen (Wo? vs Wohin?)',
+        sourceLessonId: 'a1_17',
+        type: 'choice',
+        prompt: 'Як правильно сказати: «Ми йдемо сьогодні в кіно» (das Kino, Wohin?)?',
+        options: [
+          'Wir gehen heute im Kino.',
+          'Wir gehen heute ins Kino.',
+          'Wir gehen heute in dem Kino.'
+        ],
+        answer: 'Wir gehen heute ins Kino.',
+        explanation: 'Куди? (Wohin? → Akkusativ): «in + das» зливається у форму «ins Kino».'
+      },
+      {
+        topicTag: 'Wechselpräpositionen (Wo? vs Wohin?)',
+        sourceLessonId: 'a1_17',
+        type: 'builder',
+        prompt: 'Збери речення (Wo?): «Кіт спить під ліжком» (das Bett → Dativ).',
+        tokens: ['unter', 'schläft', 'dem Bett.', 'Die Katze'],
+        answer: 'Die Katze schläft unter dem Bett.',
+        explanation: 'Кіт спить на місці (Wo? → Dativ), середній рід das Bett переходить у dem Bett.'
+      },
+      {
+        topicTag: 'Wechselpräpositionen (Wo? vs Wohin?)',
+        sourceLessonId: 'a1_17',
+        type: 'choice',
+        prompt: 'Обери правильний прийменник для вертикальної поверхні: Das Bild hängt ___ der Wand. (die Wand)',
+        options: ['auf', 'an', 'unter'],
+        answer: 'an',
+        explanation: 'Картина висить на вертикальній поверхні (стіні), тому вживаємо an + Dativ: an der Wand.'
+      },
+      {
+        topicTag: 'Wechselpräpositionen (Wo? vs Wohin?)',
+        sourceLessonId: 'a1_17',
+        type: 'fill',
+        prompt: 'Впиши артикль у Dativ (Wo?): Der Stuhl steht neben ___ Schrank. (der Schrank)',
+        placeholder: 'Артикль...',
+        answer: 'dem',
+        explanation: 'Стілець стоїть поруч із шафою (Wo? → Dativ): neben dem Schrank.'
+      },
+      {
+        topicTag: 'Wechselpräpositionen (Wo? vs Wohin?)',
+        sourceLessonId: 'a1_17',
+        type: 'choice',
+        prompt: 'Як правильно сказати: «Вона ставить сумку під стіл» (der Tisch, Wohin?)?',
+        options: [
+          'Sie stellt die Tasche unter dem Tisch.',
+          'Sie stellt die Tasche unter den Tisch.',
+          'Sie stellt die Tasche unter der Tisch.'
+        ],
+        answer: 'Sie stellt die Tasche unter den Tisch.',
+        explanation: 'Дія переміщення (stellen — ставити куди?, Wohin?) вимагає Akkusativ: unter den Tisch.'
+      },
+      {
+        topicTag: 'Wechselpräpositionen (Wo? vs Wohin?)',
+        sourceLessonId: 'a1_17',
+        type: 'builder',
+        prompt: 'Збери речення: «Стіл стоїть між вікном і дверима» (das Fenster, die Tür).',
+        tokens: ['dem Fenster', 'steht', 'und der Tür.', 'Der Tisch', 'zwischen'],
+        answer: 'Der Tisch steht zwischen dem Fenster und der Tür.',
+        explanation: 'Питання «Де?» (Wo?) → Dativ для обох іменників: dem Fenster (das) та der Tür (die).'
+      }
+    ]
+  },
+
+  {
+    id: 'a1_18',
+    level: 'A1',
+    order: 18,
+    isFree: false,
+    title: 'Невідокремлювані префікси та зворотні дієслова (sich)',
+    germanTitle: 'Untrennbare Verben & Reflexive Verben (sich)',
+    goal: 'Відрізняти невідокремлювані префікси (be-, ver-, er-...) та правильно вживати зворотні дієслова (sich freuen, sich setzen, sich waschen).',
+    ruleSummary:
+      '1) Невідокремлювані префікси (be-, emp-, ent-, er-, ge-, miss-, ver-, zer-) ЗАВЖДИ пишуться разом із коренем (ich besuche, er versteht) і в Perfekt НЕ отримують префікс ge- (besucht, verstanden). 2) Зворотні дієслова мають частку sich («себе»), яка змінюється для ich → mich та du → dich (для er/sie/es/wir/ihr/sie/Sie залишається sich або uns/euch).',
+    visualFormula: [
+      { label: 'Невідокремлювані префікси', formula: 'be-, emp-, ent-, er-, ge-, miss-, ver-, zer- → РАЗОМ і без ge- у Perfekt!', example: 'Ich verstehe dich. / Ich habe dich verstanden.' },
+      { label: 'Зворотні займенники (Akkusativ)', formula: 'ich mich • du dich • er/sie/es sich • wir uns • ihr euch • sie/Sie sich', example: 'Ich freue mich auf das Wochenende!' },
+      { label: 'Місце sich у реченні', formula: '[Підмет] + [Дієслово (2)] + [mich/dich/sich] + [Решта]', example: 'Wir setzen uns an den Tisch.' },
+    ],
+    ukrainianTrap:
+      'В українській ми для всіх осіб додаємо «-ся» («я радію», «ти радієш», «ми радіємо»). У німецькій не можна казати «Ich freue sich» — для «ich» обов’язково «mich» («Ich freue mich»), а для «du» — «dich» («Freust du dich?»)!',
+    examTip:
+      'Goethe-Zertifikat A1 (Schreiben Teil 2): фраза «Ich freue mich auf deine Antwort» (З нетерпінням чекаю на твою відповідь) — ідеальне завершення будь-якого дружнього листа на іспиті.',
+    exercises: [
+      {
+        topicTag: 'Невідокремлювані префікси та sich',
+        sourceLessonId: 'a1_18',
+        type: 'choice',
+        prompt: 'Обери правильний зворотний займенник: Ich freue ___ sehr über das Geschenk!',
+        options: ['sich', 'mich', 'mir'],
+        answer: 'mich',
+        explanation: 'Для займенника «ich» зворотна частка у Akkusativ має форму «mich»: Ich freue mich.'
+      },
+      {
+        topicTag: 'Невідокремлювані префікси та sich',
+        sourceLessonId: 'a1_18',
+        type: 'fill',
+        prompt: 'Впиши форму дієслова verstehen (невідокремлюваний префікс ver-): ___ du diese Regel?',
+        placeholder: 'Форма verstehen...',
+        answer: 'Verstehst',
+        explanation: 'Префікс ver- невідокремлюваний, тому дієслово не розривається: Verstehst du...?'
+      },
+      {
+        topicTag: 'Невідокремлювані префікси та sich',
+        sourceLessonId: 'a1_18',
+        type: 'choice',
+        prompt: 'Як правильно сказати: «Ти миєш руки?» (sich waschen — зміна a → ä для du)?',
+        options: [
+          'Wäschst du sich die Hände?',
+          'Wäschst du dich?',
+          'Waschst du dich?'
+        ],
+        answer: 'Wäschst du dich?',
+        explanation: 'Для «du» дієслово waschen змінює a на ä (wäschst), а зворотний займенник — dich.'
+      },
+      {
+        topicTag: 'Невідокремлювані префікси та sich',
+        sourceLessonId: 'a1_18',
+        type: 'builder',
+        prompt: 'Збери речення (sich beeilen — поспішати): «Ми мусимо сьогодні поквапитися».',
+        tokens: ['uns', 'beeilen.', 'heute', 'Wir', 'müssen'],
+        answer: 'Wir müssen uns heute beeilen.',
+        explanation: 'Для «wir» зворотний займенник — «uns», він стоїть одразу після відмінюваного дієслова müssen.'
+      },
+      {
+        topicTag: 'Невідокремлювані префікси та sich',
+        sourceLessonId: 'a1_18',
+        type: 'choice',
+        prompt: 'Обери правильну форму Perfekt від дієслова erklären (пояснювати, префікс er-):',
+        options: ['geerklärt', 'erklärt', 'erklären'],
+        answer: 'erklärt',
+        explanation: 'Префікс er- належить до невідокремлюваних, тому в Partizip II префікс ge- не додається: erklärt.'
+      },
+      {
+        topicTag: 'Невідокремлювані префікси та sich',
+        sourceLessonId: 'a1_18',
+        type: 'fill',
+        prompt: 'Впиши зворотний займенник для «ihr» (ви): Setzt ___ bitte! (sich setzen — сідати)',
+        placeholder: 'Займенник...',
+        answer: 'euch',
+        explanation: 'Для займенника «ihr» зворотна форма — euch: Setzt euch bitte!'
+      },
+      {
+        topicTag: 'Невідокремлювані префікси та sich',
+        sourceLessonId: 'a1_18',
+        type: 'choice',
+        prompt: 'Який із цих префіксів є НЕВІДОКРЕМЛЮВАНИМ (пишеться завжди разом)?',
+        options: ['auf-', 'ein-', 'ver-'],
+        answer: 'ver-',
+        explanation: 'Префікс ver- (як і be-, er-, ent-, zer-) завжди пишеться разом із дієсловом.'
+      },
+      {
+        topicTag: 'Невідокремлювані префікси та sich',
+        sourceLessonId: 'a1_18',
+        type: 'builder',
+        prompt: 'Збери фінальну фразу для листа: «Я радію (чекаю) на твою відповідь».',
+        tokens: ['auf deine Antwort.', 'mich', 'freue', 'Ich'],
+        answer: 'Ich freue mich auf deine Antwort.',
+        explanation: 'Ich (1) → freue (2) → mich (3) → auf deine Antwort (4).'
+      }
+    ]
+  },
+
+  {
+    id: 'a1_19',
+    level: 'A1',
+    order: 19,
+    isFree: false,
+    title: 'Модальні дієслова у Präteritum + mögen / möchten',
+    germanTitle: 'Modalverben im Präteritum (konnte, musste, wollte...)',
+    goal: 'Говорити про минулі можливості, обов’язки та плани («я міг», «я мусив», «я хотів») та розрізняти mögen і möchten.',
+    ruleSummary:
+      'У розповіді про минуле модальні дієслова вживаються у простому минулому часі Präteritum: können → konnte, müssen → musste, wollen → wollte, dürfen → durfte, sollen → sollte. Головний лайфхак: у Präteritum зникають усі умлаути, а форма для ich і er/sie/es збігається! Інфінітив основного дієслова так само стоїть у кінці.',
+    visualFormula: [
+      { label: 'Утворення Präteritum (без умлаутів!)', formula: 'können → konnte • müssen → musste • wollen → wollte • dürfen → durfte • sollen → sollte', example: 'Gestern konnte ich nicht kommen.' },
+      { label: 'Особові закінчення Präteritum', formula: 'ich konnte • du konntest • er/sie/es konnte • wir/sie/Sie konnten • ihr konntet', example: 'Wir mussten gestern lange arbeiten.' },
+      { label: 'mögen vs. möchten', formula: 'ich mag Kaffee (люблю взагалі) • ich möchte einen Kaffee (хотів би зараз)', example: 'Ich mag Pizza, aber heute möchte ich Suppe.' },
+    ],
+    ukrainianTrap:
+      'Не зберігай умлаут у минулому часі: «ich könnnte» чи «ich müsste» — це вже умовний спосіб («міг би / мусив би»), а простий минулий факт («міг / мусив») пишеться БЕЗ крапок: «ich konnte», «ich musste».',
+    examTip:
+      'Goethe-Zertifikat A1 (Lesen & Schreiben): пояснення причини в минулому («Ich konnte leider nicht kommen, ich musste arbeiten») — одна з найпопулярніших екзаменаційних конструкцій.',
+    exercises: [
+      {
+        topicTag: 'Модальні дієслова у Präteritum',
+        sourceLessonId: 'a1_19',
+        type: 'choice',
+        prompt: 'Обери правильний минулий час (Präteritum): Gestern ___ ich leider nicht kommen. (können)',
+        options: ['kann', 'konnte', 'könnte'],
+        answer: 'konnte',
+        explanation: 'У минулому часі Präteritum дієслово können втрачає умлаут: ich konnte.'
+      },
+      {
+        topicTag: 'Модальні дієслова у Präteritum',
+        sourceLessonId: 'a1_19',
+        type: 'fill',
+        prompt: 'Впиши Präteritum від müssen: Wir ___ am Samstag früh aufstehen.',
+        placeholder: 'Форма müssen...',
+        answer: 'mussten',
+        explanation: 'Для «wir» минулий час від müssen (без умлаута) — «mussten».'
+      },
+      {
+        topicTag: 'Модальні дієслова у Präteritum',
+        sourceLessonId: 'a1_19',
+        type: 'choice',
+        prompt: 'У чому різниця між «Ich mag Tee» та «Ich möchte einen Tee»?',
+        options: [
+          '«Ich mag Tee» — люблю чай взагалі; «Ich möchte einen Tee» — хочу випити зараз',
+          'Обидві фрази означають минулий час',
+          '«Ich mag» вживається тільки у множині'
+        ],
+        answer: '«Ich mag Tee» — люблю чай взагалі; «Ich möchte einen Tee» — хочу випити зараз',
+        explanation: 'mögen (ich mag) описує постійні вподобання, а möchten (ich möchte) — ввічливе бажання в конкретний момент.'
+      },
+      {
+        topicTag: 'Модальні дієслова у Präteritum',
+        sourceLessonId: 'a1_19',
+        type: 'builder',
+        prompt: 'Збери речення: «Раніше вона хотіла жити в Берліні» (wollen, Präteritum).',
+        tokens: ['in Berlin wohnen.', 'wollte', 'Früher', 'sie'],
+        answer: 'Früher wollte sie in Berlin wohnen.',
+        explanation: 'Früher (1) → wollte (2, минулий час від wollen) → sie (3) → in Berlin wohnen (кінець).'
+      },
+      {
+        type: 'fill',
+        prompt: 'Впиши форму дієслова mögen: ___ du Schokolade? (для du)',
+        placeholder: 'Форма mögen...',
+        answer: 'Magst',
+        explanation: 'Відмінювання mögen в однині: ich mag, du magst, er/sie/es mag.'
+      },
+      {
+        type: 'choice',
+        prompt: 'Обери правильний минулий час від dürfen: Als Kind ___ ich nicht lange fernsehen.',
+        options: ['darf', 'durfte', 'dürfte'],
+        answer: 'durfte',
+        explanation: 'Präteritum від dürfen (без умлаута) для «ich» — «durfte».'
+      },
+      {
+        type: 'builder',
+        prompt: 'Збери речення: «Він мусив учора багато вчити» (müssen, Präteritum).',
+        tokens: ['viel lernen.', 'Er', 'gestern', 'musste'],
+        answer: 'Er musste gestern viel lernen.',
+        explanation: 'Для «er» форма Präteritum від müssen — «musste» (без умлаута і без -t у кінці).'
+      },
+      {
+        type: 'choice',
+        prompt: 'Яка форма Präteritum для «du» від дієслова können («Ти міг...»)?',
+        options: ['du kannst', 'du konntest', 'du konntet'],
+        answer: 'du konntest',
+        explanation: 'У Präteritum для «du» додається закінчення -est: du konntest.'
+      }
+    ]
+  },
+
+  {
+    id: 'a1_20',
+    level: 'A1',
+    order: 20,
+    isFree: false,
+    title: 'Займенники man, формальне es, dieser та welcher',
+    germanTitle: 'Pronomen: man, es (Es gibt), dieser & welcher',
+    goal: 'Вживати безособове man, конструкцію es gibt + Akkusativ, вказівний dieser та питальний welcher.',
+    ruleSummary:
+      '1) man («хтось / люди взагалі») завжди стоїть у Nominativ і вимагає дієслова в 3-й особі однини (man spricht, man darf). 2) Формальне es вживається у безособових виразах (Es regnet, Es gibt + Akkusativ). 3) dieser/diese/dieses («цей/ця/це») та welcher/welche/welches («який/яка/яке») беруть закінчення означеного артикля (у Akkusativ чоловічого роду — diesen / welchen).',
+    visualFormula: [
+      { label: 'man + 3-тя особа однини', formula: 'Hier spricht man Deutsch. • Hier darf man nicht parken.', example: 'In Deutschland trinkt man viel Kaffee.' },
+      { label: 'es gibt + Akkusativ', formula: 'Es gibt + einen/eine/ein/kein/keine/kein (або множина)', example: 'Hier gibt es einen Supermarkt und viele Cafés.' },
+      { label: 'dieser / welcher', formula: 'Nominativ: dieser / diese / dieses • Akkusativ (der): diesen / welchen', example: 'Welchen Zug nimmst du? — Diesen hier.' },
+    ],
+    ukrainianTrap:
+      'Після «Es gibt» («є / існує») у німецькій завжди йде АКУЗАТИВ (Akkusativ): «Es gibt einen Tisch» (чоловічий рід отримує -en!), а не «ein Tisch».',
+    examTip:
+      'Goethe-Zertifikat A1 (Lesen & Hören): конструкція «Es gibt...» постійно зустрічається в оголошеннях про місто, квартиру або розклад («In der Stadt gibt es viele Museen»).',
+    exercises: [
+      {
+        topicTag: 'Займенники man, es, dieser, welcher',
+        sourceLessonId: 'a1_20',
+        type: 'choice',
+        prompt: 'Обери правильну форму після «Es gibt»: In der Nähe gibt es ___ Bahnhof. (der Bahnhof)',
+        options: ['ein', 'einen', 'eine'],
+        answer: 'einen',
+        explanation: 'Після «es gibt» вживається Akkusativ. Bahnhof — чоловічого роду (der), тому einen Bahnhof.'
+      },
+      {
+        topicTag: 'Займенники man, es, dieser, welcher',
+        sourceLessonId: 'a1_20',
+        type: 'fill',
+        prompt: 'Впиши займенник узагальнення («хтось / люди»): Hier ___ man sehr gut Deutsch. (sprechen)',
+        placeholder: 'Форма sprechen...',
+        answer: 'spricht',
+        explanation: 'Займенник «man» завжди узгоджується з дієсловом у 3-й особі однини (er/sie/es): man spricht.'
+      },
+      {
+        topicTag: 'Займенники man, es, dieser, welcher',
+        sourceLessonId: 'a1_20',
+        type: 'choice',
+        prompt: 'Обери правильну форму питального займенника: ___ Bus nimmst du? (der Bus, Akkusativ)',
+        options: ['Welcher', 'Welchen', 'Welches'],
+        answer: 'Welchen',
+        explanation: 'Bus — чоловічого роду (der) у прямому додатку (Akkusativ), тому питальне слово має форму Welchen.'
+      },
+      {
+        topicTag: 'Займенники man, es, dieser, welcher',
+        sourceLessonId: 'a1_20',
+        type: 'builder',
+        prompt: 'Збери речення з «dieser» (чоловічий рід, Nominativ): «Цей стіл дуже зручний».',
+        tokens: ['sehr praktisch.', 'ist', 'Dieser Tisch'],
+        answer: 'Dieser Tisch ist sehr praktisch.',
+        explanation: 'Tisch — чоловічого роду у Nominativ (підмет), тому форма — Dieser Tisch.'
+      },
+      {
+        topicTag: 'Займенники man, es, dieser, welcher',
+        sourceLessonId: 'a1_20',
+        type: 'fill',
+        prompt: 'Впиши форму займенника «dieser» у Akkusativ: Ich kaufe ___ Mantel. (der Mantel)',
+        placeholder: 'Форма dieser...',
+        answer: 'diesen',
+        explanation: 'Mantel (пальто) — чоловічого роду (der) у Akkusativ після kaufen, тому diesen.'
+      },
+      {
+        topicTag: 'Займенники man, es, dieser, welcher',
+        sourceLessonId: 'a1_20',
+        type: 'choice',
+        prompt: 'Як правильно сказати про погоду: «Надворі йде дощ»?',
+        options: ['Es regnet.', 'Er regnet.', 'Sie regnet.'],
+        answer: 'Es regnet.',
+        explanation: 'Для явищ погоди в німецькій вживається безособовий займенник «es»: Es regnet (іде дощ).'
+      },
+      {
+        topicTag: 'Займенники man, es, dieser, welcher',
+        sourceLessonId: 'a1_20',
+        type: 'choice',
+        prompt: 'Яка форма «welcher» для іменника середнього роду у Nominativ (наприклад, das Buch)?',
+        options: ['Welcher', 'Welche', 'Welches'],
+        answer: 'Welches',
+        explanation: 'Для середнього роду (das) у Nominativ та Akkusativ вживається форма Welches.'
+      },
+      {
+        topicTag: 'Займенники man, es, dieser, welcher',
+        sourceLessonId: 'a1_20',
+        type: 'builder',
+        prompt: 'Збери речення: «У Берліні є багато можливостей».',
+        tokens: ['viele Möglichkeiten.', 'gibt es', 'In Berlin'],
+        answer: 'In Berlin gibt es viele Möglichkeiten.',
+        explanation: 'In Berlin (1) → gibt (2) → es (3) → viele Möglichkeiten (4).'
+      }
+    ]
+  },
+
+  {
+    id: 'a1_21',
+    level: 'A1',
+    order: 21,
+    isFree: false,
+    title: 'Прикметники та ступені порівняння (Komparativ & Superlativ)',
+    germanTitle: 'Adjektive & Steigerung (so...wie, -er...als, am ...-sten)',
+    goal: 'Порівнювати предмети й дії («такий самий, як», «швидший, ніж», «найкращий») та знати ключові винятки.',
+    ruleSummary:
+      'Після дієслів sein, werden, bleiben прикметник не відмінюється (Das Auto ist neu). Для порівняння однакового рівня вживаємо «so + прикметник + wie». Вищий ступінь утворюється суфіксом -er + «als» («швидше, ніж»). Найвищий ступінь — «am + прикметник + -sten». Винятки: gut → besser → am besten, gern → lieber → am liebsten, viel → mehr → am meisten.',
+    visualFormula: [
+      { label: 'Однаковий рівень', formula: 'so + [прикметник] + wie', example: 'Er ist so groß wie sein Bruder.' },
+      { label: 'Вищий ступінь (ніж)', formula: '[прикметник + -er] + als', example: 'Der Zug ist schneller als der Bus.' },
+      { label: 'Найвищий ступінь & винятки', formula: 'am + [прикметник + -sten] • gut→besser→am besten • gern→lieber→am liebsten', example: 'Ich trinke am liebsten Kaffee.' },
+    ],
+    ukrainianTrap:
+      'Після вищого ступеня в німецькій ставимо «als» («більший, ніж»), а після «so ... wie» («такий самий, як») — «wie». Не плутай їх між собою!',
+    examTip:
+      'Goethe-Zertifikat A1 / A2 (Sprechen): фраза «Ich fahre lieber mit dem Zug als mit dem Bus» звучить природно й допомагає висловити перевагу.',
+    exercises: [
+      {
+        topicTag: 'Прикметники та ступені порівняння',
+        sourceLessonId: 'a1_21',
+        type: 'choice',
+        prompt: 'Обери правильне слово для порівняння: Berlin ist größer ___ München.',
+        options: ['wie', 'als', 'so'],
+        answer: 'als',
+        explanation: 'Після прикметника у вищому ступені (größer) вживається сполучник «als» (ніж).'
+      },
+      {
+        topicTag: 'Прикметники та ступені порівняння',
+        sourceLessonId: 'a1_21',
+        type: 'fill',
+        prompt: 'Впиши вищий ступінь від прикметника «gut» (добрий → кращий): Dieses Buch ist ___ als das alte.',
+        placeholder: 'Форма gut...',
+        answer: 'besser',
+        explanation: 'Прикметник «gut» утворює вищий ступінь нерегулярно: gut → besser → am besten.'
+      },
+      {
+        topicTag: 'Прикметники та ступені порівняння',
+        sourceLessonId: 'a1_21',
+        type: 'choice',
+        prompt: 'Як сказати «найбільше люблю (охоче)» (виняток від gern)?',
+        options: ['am gernsten', 'am liebsten', 'am besten'],
+        answer: 'am liebsten',
+        explanation: 'Ступені порівняння для «gern»: gern → lieber → am liebsten.'
+      },
+      {
+        topicTag: 'Прикметники та ступені порівняння',
+        sourceLessonId: 'a1_21',
+        type: 'builder',
+        prompt: 'Збери речення: «Вона така ж молода, як і він» (jung).',
+        tokens: ['wie er.', 'so jung', 'Sie ist'],
+        answer: 'Sie ist so jung wie er.',
+        explanation: 'Для рівного порівняння використовуємо конструкцію «so + прикметник + wie».'
+      },
+      {
+        topicTag: 'Прикметники та ступені порівняння',
+        sourceLessonId: 'a1_21',
+        type: 'fill',
+        prompt: 'Впиши слово «wie» у порівнянні: Dieser Kaffee ist nicht so teuer ___ der Tee.',
+        placeholder: 'Слово...',
+        answer: 'wie',
+        explanation: 'У конструкції «so ... wie» («такий самий, як») вживається «wie».'
+      },
+      {
+        topicTag: 'Прикметники та ступені порівняння',
+        sourceLessonId: 'a1_21',
+        type: 'choice',
+        prompt: 'Яка форма найвищого ступеня правильна для «schnell» (швидкий)?',
+        options: ['am schnellsten', 'am schnellen', 'am schnellst'],
+        answer: 'am schnellsten',
+        explanation: 'Найвищий ступінь із «am» утворюється за формулою «am + основа + -sten»: am schnellsten.'
+      },
+      {
+        topicTag: 'Прикметники та ступені порівняння',
+        sourceLessonId: 'a1_21',
+        type: 'choice',
+        prompt: 'Чи змінюється прикметник після дієслова «sein» у реченні «Das Wetter ist heute warm»?',
+        options: [
+          'Ні, у предикативній позиції він не відмінюється',
+          'Так, додається закінчення -e',
+          'Так, додається закінчення -en'
+        ],
+        answer: 'Ні, у предикативній позиції він не відмінюється',
+        explanation: 'Після дієслів sein, werden та bleiben прикметник не отримує відмінкових закінчень.'
+      },
+      {
+        topicTag: 'Прикметники та ступені порівняння',
+        sourceLessonId: 'a1_21',
+        type: 'builder',
+        prompt: 'Збери речення: «Потяг їде швидше, ніж автобус» (schnell).',
+        tokens: ['als der Bus.', 'fährt', 'Der Zug', 'schneller'],
+        answer: 'Der Zug fährt schneller als der Bus.',
+        explanation: 'Der Zug (1) → fährt (2) → schneller (вищий ступінь) → als der Bus.'
+      }
+    ]
+  },
+
+  {
+    id: 'a1_22',
+    level: 'A1',
+    order: 22,
+    isFree: false,
+    title: 'Синтаксис: правило TeKaMoLo та складносурядні речення',
+    germanTitle: 'TeKaMoLo & Satzverbindungen (und, aber, oder, denn, deshalb)',
+    goal: 'Правильно розставляти обставини у реченні (час, причина, спосіб дії, місце) та з’єднувати речення сполучниками.',
+    ruleSummary:
+      '1) У німецькому реченні обставини зазвичай ставляться у порядку TeKaMoLo: Temporal (коли?) → Kausal (чому?) → Modal (як?) → Lokal (де/куди?). 2) Сполучники und, aber, oder, denn займають «нульову позицію» і не впливають на порядок слів у другому реченні. 3) Прислівники deshalb (тому), dann (потім), sonst (інакше) займають 1-шу позицію, тому після них одразу йде дієслово!',
+    visualFormula: [
+      { label: 'Порядок TeKaMoLo', formula: 'Temporal (коли?) → Kausal (чому?) → Modal (як?) → Lokal (де/куди?)', example: 'Ich fahre heute wegen des Termins mit dem Bus ins Zentrum.' },
+      { label: 'Нульова позиція (und, aber, oder, denn)', formula: '[Речення 1], aber/denn/und [Підмет (1)] [ДІЄСЛОВО (2)] ...', example: 'Ich habe Zeit, aber ich bin müde.' },
+      { label: 'Прислівник на 1-й позиції (deshalb)', formula: '[Речення 1]. Deshalb [ДІЄСЛОВО (2)] [Підмет (3)] ...', example: 'Es regnet. Deshalb bleiben wir zu Hause.' },
+    ],
+    ukrainianTrap:
+      'Після «deshalb» («тому») дієслово стоїть ОДРАЗУ після «deshalb» («Deshalb bleibe ich...»), а не після підмета («Deshalb ich bleibe...» — це помилка!).',
+    examTip:
+      'Goethe-Zertifikat A1 / A2 (Schreiben): сполучники «aber», «denn» та «deshalb» роблять текст логічним і зв’язним у будь-якому короткому листі чи повідомленні.',
+    exercises: [
+      {
+        topicTag: 'Синтаксис TeKaMoLo та сполучники',
+        sourceLessonId: 'a1_22',
+        type: 'choice',
+        prompt: 'Обери правильне продовження після «deshalb»: Ich habe Kopfschmerzen. Deshalb ___',
+        options: [
+          'ich gehe heute nicht zur Party.',
+          'gehe ich heute nicht zur Party.',
+          'heute ich gehe nicht zur Party.'
+        ],
+        answer: 'gehe ich heute nicht zur Party.',
+        explanation: '«Deshalb» займає 1-шу позицію в реченні, тому на 2-му місці стоїть дієслово «gehe», а потім підмет «ich».'
+      },
+      {
+        topicTag: 'Синтаксис TeKaMoLo та сполучники',
+        sourceLessonId: 'a1_22',
+        type: 'fill',
+        prompt: 'Впиши сполучник протиставлення («але»): Ich lerne gern Deutsch, ___ Grammatik ist manchmal schwer.',
+        placeholder: 'Сполучник...',
+        answer: 'aber',
+        explanation: '«aber» («але») з’єднує речення у нульовій позиції, порядок слів після нього прямий: Grammatik (1) ist (2).'
+      },
+      {
+        topicTag: 'Синтаксис TeKaMoLo та сполучники',
+        sourceLessonId: 'a1_22',
+        type: 'builder',
+        prompt: 'Збери речення за правилом TeKaMoLo (час → спосіб → місце): «Він їде сьогодні потягом до Берліна».',
+        tokens: ['mit dem Zug', 'heute', 'fährt', 'nach Berlin.', 'Er'],
+        answer: 'Er fährt heute mit dem Zug nach Berlin.',
+        explanation: 'Er (1) → fährt (2) → heute (Temporal — коли?) → mit dem Zug (Modal — як?) → nach Berlin (Lokal — куди?).'
+      },
+      {
+        topicTag: 'Синтаксис TeKaMoLo та сполучники',
+        sourceLessonId: 'a1_22',
+        type: 'choice',
+        prompt: 'Який сполучник пояснює причину, але НЕ відправляє дієслово в кінець речення?',
+        options: ['weil', 'denn', 'wenn'],
+        answer: 'denn',
+        explanation: '«denn» («адже / бо») працює як сурядний сполучник (позиція 0), тому дієслово лишається на 2-му місці.'
+      },
+      {
+        topicTag: 'Синтаксис TeKaMoLo та сполучники',
+        sourceLessonId: 'a1_22',
+        type: 'fill',
+        prompt: 'Впиши сполучник («або»): Trinkst du Kaffee ___ Tee?',
+        placeholder: 'Сполучник...',
+        answer: 'oder',
+        explanation: '«oder» означає «або» і поєднує однорідні члени або речення.'
+      },
+      {
+        topicTag: 'Синтаксис TeKaMoLo та сполучники',
+        sourceLessonId: 'a1_22',
+        type: 'builder',
+        prompt: 'Збери речення з «denn»: «Я йду спати, бо я дуже втомлений» (ich bin sehr müde).',
+        tokens: ['ich bin sehr müde.', 'Ich gehe schlafen,', 'denn'],
+        answer: 'Ich gehe schlafen, denn ich bin sehr müde.',
+        explanation: 'Після «denn» зберігається прямий порядок слів: ich (1) bin (2) sehr müde.'
+      },
+      {
+        topicTag: 'Синтаксис TeKaMoLo та сполучники',
+        sourceLessonId: 'a1_22',
+        type: 'choice',
+        prompt: 'Який порядок обставин відповідає правилу TeKaMoLo?',
+        options: [
+          'Temporal → Kausal → Modal → Lokal',
+          'Lokal → Modal → Temporal → Kausal',
+          'Modal → Lokal → Kausal → Temporal'
+        ],
+        answer: 'Temporal → Kausal → Modal → Lokal',
+        explanation: 'TeKaMoLo розшифровується як Temporal (час) — Kausal (причина) — Modal (спосіб) — Lokal (місце).'
+      },
+      {
+        topicTag: 'Синтаксис TeKaMoLo та сполучники',
+        sourceLessonId: 'a1_22',
+        type: 'fill',
+        prompt: 'Впиши слово («потім / тоді»): Zuerst frühstücke ich, ___ gehe ich zur Arbeit.',
+        placeholder: 'Слово...',
+        answer: 'dann',
+        explanation: '«dann» («потім») стоїть на 1-му місці, тому дієслово «gehe» одразу йде після нього.'
+      }
+    ]
+  },
+
+  {
+    id: 'a1_23',
+    level: 'A1',
+    order: 23,
+    isFree: false,
+    title: 'Складнопідрядні речення (weil, dass, wenn) та належність (Lisas Buch)',
+    germanTitle: 'Nebensätze mit weil, dass, wenn & Genitiv/Besitz bei Namen',
+    goal: 'Будувати підрядні речення з дієсловом у кінці та позначати належність через власні імена (Lisas Buch).',
+    ruleSummary:
+      '1) У складнопідрядному реченні після weil (тому що), dass (що) або wenn (коли / якщо) відмінюване дієслово ставиться в САМИЙ КІНЕЦЬ підрядного речення. 2) Для позначення належності з власними іменами у німецькій додаємо закінчення -s без апострофа: Lisas Buch, Toms Fahrrad (якщо ім’я вже закінчується на -s, -ß, -x, -z — ставимо апостроф: Max’ Buch).',
+    visualFormula: [
+      { label: 'weil / dass / wenn → дієслово в кінці', formula: '..., weil/dass/wenn [підмет] ... [ДІЄСЛОВО у кінці]', example: 'Ich lerne Deutsch, weil ich in Wien studieren möchte.' },
+      { label: 'Належність з власним ім’ям', formula: '[Ім’я + -s] + [іменник БЕЗ артикля!]', example: 'Das ist Lisas neues Buch.' },
+      { label: 'Якщо ім’я на -s/-z/-x', formula: '[Ім’я + ’] + [іменник]', example: 'Hans’ Wohnung ist groß.' },
+    ],
+    ukrainianTrap:
+      'Коли кажемо «Лізина книга» («Lisas Buch»), перед «Buch» НЕ ставимо артикль («не Lisas das Buch», а просто «Lisas Buch»)! І не став апостроф у звичайних іменах на кшталт «Lisas» — в українській та англійській пишуть з апострофом, а в німецькій стандартно пишеться разом: Lisas Buch.',
+    examTip:
+      'Goethe-Zertifikat A1 / A2: прості речення з «weil» («...weil ich krank bin») та «dass» («Ich glaube, dass...») демонструють впевнене володіння синтаксисом.',
+    exercises: [
+      {
+        topicTag: 'Підрядні речення та належність імен',
+        sourceLessonId: 'a1_23',
+        type: 'choice',
+        prompt: 'Обери правильний порядок слів у підрядному реченні: Ich bleibe zu Hause, weil ich ___ habe.',
+        options: ['keine Zeit', 'Zeit keine', 'nicht Zeit'],
+        answer: 'keine Zeit',
+        explanation: 'У підрядному реченні з «weil» дієслово («habe») стоїть у кінці: weil ich keine Zeit habe.'
+      },
+      {
+        topicTag: 'Підрядні речення та належність імен',
+        sourceLessonId: 'a1_23',
+        type: 'fill',
+        prompt: 'Утвори форму належності від імені «Lisa»: Wo ist ___ Tasche? (сумка Лізи)',
+        placeholder: 'Форма Lisa...',
+        answer: 'Lisas',
+        explanation: 'До власного імені Lisa додаємо -s без апострофа й без артикля перед іменником: Lisas Tasche.'
+      },
+      {
+        topicTag: 'Підрядні речення та належність імен',
+        sourceLessonId: 'a1_23',
+        type: 'builder',
+        prompt: 'Збери речення з «dass»: «Він каже, що він сьогодні працює».',
+        tokens: ['dass er', 'Er sagt,', 'heute arbeitet.', 'arbeitet.'],
+        answer: 'Er sagt, dass er heute arbeitet.',
+        explanation: 'Після «dass» відмінюване дієслово («arbeitet») переноситься в самий кінець підрядного речення.'
+      },
+      {
+        topicTag: 'Підрядні речення та належність імен',
+        sourceLessonId: 'a1_23',
+        type: 'choice',
+        prompt: 'Яке речення з «wenn» побудоване правильно?',
+        options: [
+          'Wenn ich Zeit habe, gehe ich spazieren.',
+          'Wenn ich habe Zeit, gehe ich spazieren.',
+          'Wenn ich Zeit habe, ich gehe spazieren.'
+        ],
+        answer: 'Wenn ich Zeit habe, gehe ich spazieren.',
+        explanation: 'У підрядному реченні дієслово «habe» в кінці, а в головному після коми дієслово «gehe» стоїть одразу.'
+      },
+      {
+        topicTag: 'Підрядні речення та належність імен',
+        sourceLessonId: 'a1_23',
+        type: 'fill',
+        prompt: 'Впиши сполучник («тому що»): Sie geht zum Arzt, ___ sie krank ist.',
+        placeholder: 'Сполучник...',
+        answer: 'weil',
+        explanation: '«weil» вводить причину («тому що вона хвора») і ставить дієслово «ist» у кінець.'
+      },
+      {
+        topicTag: 'Підрядні речення та належність імен',
+        sourceLessonId: 'a1_23',
+        type: 'choice',
+        prompt: 'Як правильно написати: «Це велосипед Тома» (Tom, das Fahrrad)?',
+        options: [
+          'Das ist Toms Fahrrad.',
+          'Das ist das Toms Fahrrad.',
+          'Das ist Tom’s das Fahrrad.'
+        ],
+        answer: 'Das ist Toms Fahrrad.',
+        explanation: 'Ім’я Tom отримує -s (Toms), а артикль перед Fahrrad опускається.'
+      },
+      {
+        topicTag: 'Підрядні речення та належність імен',
+        sourceLessonId: 'a1_23',
+        type: 'choice',
+        prompt: 'Впиши сполучник («що»): Ich denke, ___ der Kurs interessant ist.',
+        options: ['dass', 'weil', 'wann'],
+        answer: 'dass',
+        explanation: 'Після дієслів думки (denken, glauben, wissen) вживається сполучник «dass».'
+      },
+      {
+        topicTag: 'Підрядні речення та належність імен',
+        sourceLessonId: 'a1_23',
+        type: 'builder',
+        prompt: 'Збери речення з «wenn»: «Якщо йде дощ, ми залишаємося вдома».',
+        tokens: ['bleiben wir zu Hause.', 'Wenn es regnet,', 'zu Hause bleiben wir.'],
+        answer: 'Wenn es regnet, bleiben wir zu Hause.',
+        explanation: 'Підрядне «Wenn es regnet» стоїть перед комою, а головне починається з дієслова «bleiben».'
+      }
+    ]
+  },
+
+  {
+    id: 'a1_24',
+    level: 'A1',
+    order: 24,
+    isFree: false,
+    title: 'Числівники, дати, час, ціни та міри',
+    germanTitle: 'Zahlen, Datum, Uhrzeit, Preise & Maße',
+    goal: 'Називати числа, дати, час (офіційний і розмовний: halb, Viertel, vor, nach), ціни та одиниці виміру.',
+    ruleSummary:
+      '1) У двозначних числах німецькою спочатку називаємо одиниці, потім «und» і десятки: 24 = vierundzwanzig («чотири-і-двадцять»). 2) Порядкові числівники в датах: до 19 додаємо -te (am vierten Mai), від 20 — -ste (am zwanzigsten Juni); винятки: erste, dritte, siebte, achte. 3) У розмовному часі «halb acht» = 7:30 (пів до восьмої!).',
+    visualFormula: [
+      { label: 'Двозначні числа (навпаки!)', formula: '21 = einundzwanzig • 35 = fünfunddreißig • 100 = (ein)hundert', example: 'Das kostet fünfundvierzig Euro.' },
+      { label: 'Дати (am + порядковий + -n)', formula: '1. → erste • 3. → dritte • 7. → siebte • від 20 → -ste', example: 'Der Kurs beginnt am dritten Mai.' },
+      { label: 'Розмовний час (halb = -30 хв)', formula: 'halb neun = 08:30 • Viertel nach acht = 08:15 • Viertel vor acht = 07:45', example: 'Der Film beginnt um halb acht (19:30).' },
+    ],
+    ukrainianTrap:
+      '«halb acht» — це НЕ 8:30, а 7:30 (півдороги до восьмої години)! А в числах типу 47 («siebenundvierzig») спочатку чуємо «сім» (sieben), а потім «сорок» (vierzig).',
+    examTip:
+      'Goethe-Zertifikat A1 (Hören Teil 1 & 2): ціни в євро, номери потягів, дати та час зустрічей — це гарантовані бали на іспиті, якщо тренувати слух на числа й «halb»/«Viertel».',
+    exercises: [
+      {
+        topicTag: 'Числівники, дати, час та ціни',
+        sourceLessonId: 'a1_24',
+        type: 'choice',
+        prompt: 'Котра година за розмовним виразом «um halb zehn»?',
+        options: ['10:30', '09:30', '09:15'],
+        answer: '09:30',
+        explanation: '«halb zehn» означає «пів до десятої», тобто 09:30.'
+      },
+      {
+        topicTag: 'Числівники, дати, час та ціни',
+        sourceLessonId: 'a1_24',
+        type: 'fill',
+        prompt: 'Як пишеться німецькою число 23 (спочатку одиниці, потім und і десятки)?',
+        placeholder: 'Число словами...',
+        answer: 'dreiundzwanzig',
+        explanation: '23 = три (drei) + і (und) + двадцять (zwanzig) = dreiundzwanzig.'
+      },
+      {
+        topicTag: 'Числівники, дати, час та ціни',
+        sourceLessonId: 'a1_24',
+        type: 'choice',
+        prompt: 'Яка форма порядкового числівника правильна для 3-го числа (у даті з «am»)?',
+        options: ['am dreiten', 'am dritten', 'am drei'],
+        answer: 'am dritten',
+        explanation: '«dritte» — виняток при утворенні порядкових числівників, а в даті з «am» додається закінчення -n: am dritten.'
+      },
+      {
+        topicTag: 'Числівники, дати, час та ціни',
+        sourceLessonId: 'a1_24',
+        type: 'builder',
+        prompt: 'Збери речення про ціну: «Книга коштує 15 євро» (fünfzehn Euro).',
+        tokens: ['fünfzehn Euro.', 'kostet', 'Das Buch'],
+        answer: 'Das Buch kostet fünfzehn Euro.',
+        explanation: 'Das Buch (1) → kostet (2) → fünfzehn Euro (3).'
+      },
+      {
+        topicTag: 'Числівники, дати, час та ціни',
+        sourceLessonId: 'a1_24',
+        type: 'choice',
+        prompt: 'Що означає «Viertel vor acht»?',
+        options: ['07:45 (без п’ятнадцяти вісім)', '08:15 (п’ятнадцять по восьмій)', '08:45'],
+        answer: '07:45 (без п’ятнадцяти вісім)',
+        explanation: '«Viertel» — чверть години (15 хв), «vor» — до: чверть до восьмої = 07:45.'
+      },
+      {
+        topicTag: 'Числівники, дати, час та ціни',
+        sourceLessonId: 'a1_24',
+        type: 'fill',
+        prompt: 'Впиши прийменник для точної дати: Ich bin ___ 5. Mai geboren.',
+        placeholder: 'Прийменник...',
+        answer: 'am',
+        explanation: 'Перед конкретною датою вживаємо прийменник «am»: am 5. Mai.'
+      },
+      {
+        topicTag: 'Числівники, дати, час та ціни',
+        sourceLessonId: 'a1_24',
+        type: 'choice',
+        prompt: 'Яка форма порядкового числівника правильна для «1-й» (erste)?',
+        options: ['einste', 'erste', 'einseste'],
+        answer: 'erste',
+        explanation: 'Порядковий числівник від «eins» — «erste» (перший).'
+      },
+      {
+        topicTag: 'Числівники, дати, час та ціни',
+        sourceLessonId: 'a1_24',
+        type: 'builder',
+        prompt: 'Збери речення: «Я купую один кілограм яблук» (ein Kilogramm Äpfel).',
+        tokens: ['ein Kilogramm Äpfel.', 'kaufe', 'Ich'],
+        answer: 'Ich kaufe ein Kilogramm Äpfel.',
+        explanation: 'Ich (1) → kaufe (2) → ein Kilogramm Äpfel (3).'
+      }
+    ]
+  },
+
+  {
+    id: 'a1_25_final',
+    level: 'A1',
+    order: 25,
     isFree: false,
     isFinalExam: true,
     title: 'Фінальний іспит курсу A1 (Перевірка всіх тем)',
     germanTitle: 'Abschlusstest A1 • Goethe-Zertifikat Niveau',
     goal: 'Підсумкова перевірка всього курсу A1. Якщо припустишся помилки — отримаєш додаткові завдання саме на цю тему!',
     ruleSummary:
-      'Це фінальний контрольний тест за всіма 14 темами рівня A1: порядок слів, відмінювання дієслів, сильні дієслова, артиклі, Akkusativ, заперечення nicht/kein, присвійні та особові займенники, модальні дієслова, відокремлювані префікси, Imperativ, прийменники часу/місця та минулий час Präteritum/Perfekt. Якщо в якомусь завданні буде помилка, тренажер одразу додасть вправи на відпрацювання цієї теми.',
+      'Це фінальний контрольний тест за всіма темами рівня A1: порядок слів, дієслова, артиклі, відмінки Nominativ/Akkusativ/Dativ, заперечення nicht/kein, займенники, модальні дієслова, відокремлювані та невідокремлювані префікси, Imperativ, прийменники, прикметники, TeKaMoLo, складнопідрядні речення, дати та час. При помилці система автоматично додає вправи з відповідної теми.',
     visualFormula: [
-      { label: 'Формат фінального тесту', formula: '14 контрольних завдань по 1 на кожну тему курсу A1', example: 'Прохідний бал: від 80% без невідпрацьованих помилок' },
+      { label: 'Формат фінального тесту', formula: '14 контрольних завдань по ключових темах курсу A1', example: 'Прохідний бал: від 80% без невідпрацьованих помилок' },
       { label: 'Розумне відпрацювання', formula: 'Помилка в темі X → автоматично додаються вправи саме з теми X', example: 'Поки не закріпиш слабке місце — іспит не відпустить 😉' },
     ],
     ukrainianTrap:
@@ -1294,22 +2284,22 @@ export const GRAMMAR_LESSONS = [
         explanation: 'Іменник без артикля (Zeit, жіночий рід) заперечується словом keine без подвійного заперечення.'
       },
       {
-        topicTag: 'Присвійні займенники',
-        sourceLessonId: 'a1_07',
-        type: 'fill',
-        prompt: '[Тема 7: Присвійні займенники] Впиши «мій» у Akkusativ: Ich besuche heute ___ Freund. (der Freund)',
-        placeholder: 'Форма mein...',
-        answer: 'meinen',
-        explanation: 'Freund — чоловічого роду (der) у Akkusativ після besuchen, тому mein → meinen.'
+        topicTag: 'Dativ (дієслова та займенники)',
+        sourceLessonId: 'a1_15',
+        type: 'choice',
+        prompt: '[Тема 15: Dativ] Обери правильний займенник: Kannst du ___ (мені) bitte helfen?',
+        options: ['mich', 'mir', 'ich'],
+        answer: 'mir',
+        explanation: 'Дієслово helfen завжди вимагає Dativ: ich → mir.'
       },
       {
-        topicTag: 'Особові займенники в Akkusativ',
-        sourceLessonId: 'a1_08',
+        topicTag: 'Wechselpräpositionen (Wo? vs Wohin?)',
+        sourceLessonId: 'a1_17',
         type: 'choice',
-        prompt: '[Тема 8: Особові займенники] Заміни іменник: Kaufst du den Tisch? (der Tisch) — Ja, ich kaufe ___.',
-        options: ['er', 'ihn', 'es'],
-        answer: 'ihn',
-        explanation: 'Tisch — чоловічого роду (der), у Akkusativ «його» — це ihn.'
+        prompt: '[Тема 17: Wechselpräpositionen] Обери форму (Wo?): Das Handy liegt auf ___ Tisch. (der Tisch)',
+        options: ['den', 'dem', 'der'],
+        answer: 'dem',
+        explanation: 'Телефон уже лежить на столі (статика, Wo?), тому потрібен Dativ: auf dem Tisch.'
       },
       {
         topicTag: 'Модальні дієслова',
